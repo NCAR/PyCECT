@@ -127,7 +127,13 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
 	   else:
 	      rmask=this_file.variables['REGION_MASK']
 	      Zscore=pop_zpdf(output3d[fcount],nbin,(minrange,maxrange),ens_avg3d[vcount],ens_stddev3d[vcount],data._FillValue,threshold,rmask,opts_dict)
+	      #if fcount == 0 & vcount ==0:
+	      #   time_val = this_file.variables['time'][0]
+	      #   fout = "Zscore_"+str(time_val)+".txt"
+	      #   print Zscore.shape
+	      #   np.savetxt(fout,Zscore[0,3,:], fmt='%.3e')
 	      Zscore3d[vcount,fcount,:]=Zscore[:]
+	      #print 'zscore3d vcount,fcount=',vcount,fcount,Zscore3d[vcount,fcount]
 
     for vcount,vname in enumerate(var_name2d):
       #Read in vname's data of all files
@@ -139,7 +145,7 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
         else:
           output2d[fcount,:,:]=data[tslice,:,:]
 
-      #Generate ens_avg and ens_stddev to store in the ensemble summary file
+      #Generate ens_avg and esn_stddev to store in the ensemble summary file
       if popens:
          moutput2d=np.ma.masked_values(output2d,data._FillValue)
          ens_avg2d[vcount]=np.ma.average(moutput2d,axis=0)
@@ -163,8 +169,7 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
 
 	      flag2d = False
 	      count2d = 0
-	      #count2d,ret_val=calc_Z(output2d[fcount].astype(np.float64),avg2d.astype(np.float64),stddev2d.astype(np.float64),count2d,flag2d)
-	      count2d,ret_val=calc_Z(output2d[fcount],avg2d,stddev2d.astype(np.float64),count2d,flag2d)
+	      count2d,ret_val=calc_Z(output2d[fcount].astype(np.float64),avg2d.astype(np.float64),stddev2d.astype(np.float64),count2d,flag2d)
 	      Zscore=np.sum(np.square(ret_val))
 
 	      if (count2d < npts2d):
@@ -175,6 +180,7 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
 	      rmask=this_file.variables['REGION_MASK']
 	      Zscore=pop_zpdf(output2d[fcount],nbin,(minrange,maxrange),ens_avg2d[vcount],ens_stddev2d[vcount],data._FillValue,threshold,rmask,opts_dict)
 	      Zscore2d[vcount,fcount,:]=Zscore[:]
+	      #print 'zscore2d vcount,fcount=',vcount,fcount,Zscore2d[vcount,fcount]
      
     return Zscore3d,Zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d,gm3d,gm2d
 
@@ -201,6 +207,7 @@ def pop_zpdf(input_array,nbin,zrange,ens_avg,ens_stddev,FillValue,threshold,rmas
 
    #Masked the rmask<1 or rmask>6
    moutput2=np.ma.masked_where((rmask_array<1)|(rmask_array>6),moutput)
+   #print 'moutput2 count=',moutput2.count()
 
    #Use the masked array moutput2 to calculate Zscore_temp=(data-avg)/stddev
    Zscore_temp=np.fabs((moutput2.astype(np.float64)-ens_avg)/np.where(ens_stddev<=threshold,FillValue,ens_stddev))
@@ -217,6 +224,7 @@ def pop_zpdf(input_array,nbin,zrange,ens_avg,ens_stddev,FillValue,threshold,rmas
    #Else calculate zpdf and return as zscore
    #Count the unmasked value
    count=Zscore_temp.count()
+   #print 'Zscore count=',count
    Zscore,bins = np.histogram(Zscore_temp.compressed(),bins=nbin,range=zrange)
 
    #Normalize the number by dividing the count
@@ -254,7 +262,7 @@ def calculate_raw_score(k,v,npts3d,npts2d,ens_avg,ens_stddev,is_SE,opts_dict,Fil
 	      npts=npts3d
 	   
 	count,return_val=calc_Z(v,ens_avg[k].astype(np.float64),ens_stddev[k].astype(np.float64),count,False) 
-	Zscore=np.sum(np.square(return_val))
+	Zscore=np.sum(np.square(return_val.astype(np.float64)))
 	if npts == count: 
 	  Zscore=0
 	else:
@@ -280,6 +288,7 @@ def pre_PCA(gm):
 
     for var in range(nvar):
       for file in range(nfile):
+        #standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/np.where(sigma_gm[var]<=threshold,FillValue,sigma_gm[var])
         standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/sigma_gm[var]
 
     loadings_gm=princomp(standardized_global_mean)
@@ -313,14 +322,14 @@ def princomp(standardized_global_mean):
 # Calculate (val-avg)/stddev and exclude zero value
 #          
 def calc_Z(val,avg,stddev,count,flag):
-  return_val=np.empty(val.shape,dtype=np.float64,order='C')
-  tol =1.0e-12   
+  return_val=np.empty(val.shape,dtype=np.float32,order='C')
+  tol =1e-12   
   if stddev[(stddev > tol)].size ==0:
     if flag: 
       print "WARNING: ALL standard dev = 0"
       flag = False
     count =count + stddev[(stddev <= tol)].size
-    return_val = 0.
+    return_val = np.zeros(val.shape,dtype=np.float32,order='C')
   else:        
     if stddev[(stddev <= tol)].size > 0:
       if flag:
@@ -368,7 +377,7 @@ def calc_nrmse(orig_array,comp_array):
 #
 def area_avg(data, weight, is_SE):
 
-    #TO DO: tke into account missing values
+    #TO DO: take into account missing values
     if (is_SE == True):
         a = np.average(data, weights=weight)
     else: #FV
@@ -435,8 +444,8 @@ def get_area_wgt(o_files,is_SE,input_dims,nlev,popens):
            z_wgt = o_files[0].variables["dz"]  
         output3d = np.zeros((nlev, nlat, nlon))
         output2d = np.zeros((nlat, nlon))
-        #area_wgt = np.zeros(nlat) #note gaues weights are length nlat
-        area_wgt = gw
+        area_wgt = np.zeros(nlat) #note gaues weights are length nlat
+        area_wgt[:] = gw[:]
 
     return output3d,output2d,area_wgt,z_wgt
 #
@@ -1021,7 +1030,7 @@ def CECT_usage():
     print '   --minPCFail <num>       : minimum number of PCs that must fail the specified number of runs for a FAILURE (default = 3)'
     print '   --minRunFail <num>      : minimum number of runs that <minPCfail> PCs must fail for a FAILURE (default = 2)'
     print '   --numRunFile <num>      : total number of runs to include in test (default = 3)'
-    print '   --tslice <num>       : which time slice to use from input run files (default = 1)'
+    print '   --timeslice <num>       : which time slice to use from input run files (default = 1)'
     print '   --printVarTest          : print out variable comparisons to RMSZ and global means (turned off by default)'
     print '  ----------------------------'
     print '   Args for POP-CECT :'
@@ -1182,8 +1191,8 @@ def get_stride_list(len_of_list,me):
 #
 def gather_npArray_pop(npArray,me,array_shape):
     the_array=np.zeros(array_shape,dtype=np.float32)
-    print "array_shape=",array_shape
-    print "len array_shape=",len(array_shape)
+    #print "array_shape=",array_shape
+    #print "len array_shape=",len(array_shape)
      
     if me.get_rank()==0:
         j=me.get_rank()
