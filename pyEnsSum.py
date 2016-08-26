@@ -39,7 +39,7 @@ def main(argv):
     opts_dict['indir'] = './'
     opts_dict['sumfiledir'] = './'
     opts_dict['jsonfile'] = ''
-    opts_dict['verbose'] = True
+    opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = False
     opts_dict['maxnorm'] = False
     opts_dict['gmonly'] = False
@@ -365,6 +365,7 @@ def main(argv):
 
     if not opts_dict['cumul']:
         # Partition the var list
+        
         var3_list_loc=me.partition(d3_var_names,func=EqualStride(),involved=True)
         var2_list_loc=me.partition(d2_var_names,func=EqualStride(),involved=True)
     else:
@@ -375,7 +376,7 @@ def main(argv):
     if (verbose == True):
         print "Calculating global means ....."
     if not opts_dict['cumul']:
-        gm3d,gm2d = pyEnsLib.generate_global_mean_for_summary(o_files,var3_list_loc,var2_list_loc , is_SE, False,opts_dict)      
+        gm3d,gm2d,var_list = pyEnsLib.generate_global_mean_for_summary(o_files,var3_list_loc,var2_list_loc , is_SE, False,opts_dict)      
     if (verbose == True):
         print "Finish calculating global means ....."
 
@@ -400,7 +401,6 @@ def main(argv):
 	 
 	    # Gather global means 3d results
 	    gm3d=gather_npArray(gm3d,me,slice_index,(len(d3_var_names),len(o_files)))
-
 	    if not opts_dict['gmonly']:
 		# Gather zscore3d results
 		zscore3d=gather_npArray(zscore3d,me,slice_index,(len(d3_var_names),len(o_files)))
@@ -415,6 +415,8 @@ def main(argv):
 
 	    # Gather global means 2d results
 	    gm2d=gather_npArray(gm2d,me,slice_index,(len(d2_var_names),len(o_files)))
+
+            var_list=gather_list(var_list,me)
 
 	    if not opts_dict['gmonly']:
 		# Gather zscore2d results
@@ -449,7 +451,7 @@ def main(argv):
         else:
             gmall_temp=np.transpose(gmall[:,:])
             gmall=gmall_temp
-	mu_gm,sigma_gm,standardized_global_mean,loadings_gm,scores_gm=pyEnsLib.pre_PCA(gmall)
+	mu_gm,sigma_gm,standardized_global_mean,loadings_gm,scores_gm=pyEnsLib.pre_PCA(gmall,all_var_names,var_list,me)
 	v_gm[:,:]=gmall[:,:]
 	v_mu_gm[:]=mu_gm[:]
 	v_sigma_gm[:]=sigma_gm[:].astype(np.float32)
@@ -470,11 +472,11 @@ def get_cumul_filelist(opts_dict,indir,regx):
 	   for j in range(opts_dict['startMon'],opts_dict['endMon']+1):
 	       mon_str=str(j).zfill(2)
 	       regx='(^'+prefix+'(.)*'+str(i)+'(.)*-('+mon_str+'))'
-	       print 'regx=',regx
+	       #print 'regx=',regx
 	       res=[f for f in os.listdir(indir) if re.search(regx,f)]
 	       in_files=sorted(res)
 	       all_files.extend(in_files)
-   print "all_files=",all_files
+   #print "all_files=",all_files
    #in_files=res
    return all_files
    
@@ -501,6 +503,19 @@ def get_stride_list(len_of_list,me):
 	slice_index.append(index_arr[i::me.get_size()])
     return slice_index
 
+
+def gather_list(var_list,me):
+    whole_list=[]
+    if me.get_rank() == 0:
+       whole_list.extend(var_list)
+    for i in range(1,me.get_size()):
+       if me.get_rank() == 0:
+          rank_id,var_list=me.collect()
+          whole_list.extend(var_list)
+    if me.get_rank() != 0:
+       me.collect(var_list)
+    me.sync()
+    return whole_list
 # 
 # Gather arrays from each processor by the var_list to the master processor and make it an array
 #

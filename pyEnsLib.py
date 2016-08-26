@@ -275,27 +275,38 @@ def calculate_raw_score(k,v,npts3d,npts2d,ens_avg,ens_stddev,is_SE,opts_dict,Fil
 #
 # Create some variables and call a function to calculate PCA
 #
-def pre_PCA(gm):
+def pre_PCA(gm_32,all_var_names,whole_list,me):
     threshold= 1.0e-12
     FillValue= 1.0e+30
-    gm_len=gm.shape
+    gm_len=gm_32.shape
     nvar=gm_len[0]
     nfile=gm_len[1]
-    mu_gm=np.average(gm,axis=1).astype(np.float64)
-    sigma_gm=np.std(gm,axis=1,dtype=np.float64)
+    gm=gm_32.astype(np.float64)
+    mu_gm=np.average(gm,axis=1)
+    sigma_gm=np.std(gm,axis=1)
     standardized_global_mean=np.zeros(gm.shape,dtype=np.float64)
     scores_gm=np.zeros(gm.shape,dtype=np.float64)
 
     for var in range(nvar):
       for file in range(nfile):
         #standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/np.where(sigma_gm[var]<=threshold,FillValue,sigma_gm[var])
+        if np.any(sigma_gm[var]== 0.0) and all_var_names[var] not in set(whole_list):
+           whole_list.append(all_var_names[var])
+           if me.get_rank() == 0:
+              print "Warning: sigma_gm has zero values, cannot be divided"
+              print "\n"
+              print "*************************************************************************************"
+              print "Please exclude the following variable list from calculating ensemble summary file:"
+              print ",".join(['"{0}"'.format(item) for item in whole_list])
+              print "*************************************************************************************"
+              print "\n"
         standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/sigma_gm[var]
 
     loadings_gm=princomp(standardized_global_mean)
 
     #now do coord transformation on the standardized meana to get the scores
     scores_gm=np.dot(loadings_gm.T,standardized_global_mean)
-    sigma_scores_gm =np.std(scores_gm,axis=1,dtype=np.float64)
+    sigma_scores_gm =np.std(scores_gm,axis=1)
     return mu_gm.astype(np.float32),sigma_gm.astype(np.float32),standardized_global_mean.astype(np.float32),loadings_gm.astype(np.float32),sigma_scores_gm.astype(np.float32)
 
 #
@@ -485,8 +496,15 @@ def generate_global_mean_for_summary(o_files,var_name3d,var_name2d,is_SE,pepsi_g
 
         else:
            gm3d[:,fcount],gm2d[:,fcount]=calc_global_mean_for_onefile(fname,area_wgt,var_name3d,var_name2d,output3d,output2d,tslice,is_SE,nlev,opts_dict)
-    
-    return gm3d,gm2d
+  
+    var_list=[] 
+    for i in range(len(var_name3d)):
+        if not np.any(np.abs(gm3d[i,:]) >= 1.0e-15): 
+           var_list.append(var_name3d[i])
+    for i in range(len(var_name2d)):
+        if not np.any(np.abs(gm2d[i,:]) >= 1.0e-15): 
+           var_list.append(var_name2d[i])
+    return gm3d,gm2d,var_list
 
 #
 # Calculate global means for one OCN input file
