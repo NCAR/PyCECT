@@ -188,7 +188,7 @@ def main(argv):
 		countzscore[fcount]=pyEnsLib.evaluatestatus('zscore','zscoreRange',variables,'ens',results,'f'+str(fcount))
 
 	# Calculate the new run global mean
-	mean3d,mean2d=pyEnsLib.generate_global_mean_for_summary(ifiles,var_name3d,var_name2d,is_SE,opts_dict['pepsi_gm'],opts_dict)
+	mean3d,mean2d,varlist=pyEnsLib.generate_global_mean_for_summary(ifiles,var_name3d,var_name2d,is_SE,opts_dict['pepsi_gm'],opts_dict)
 	means=np.concatenate((mean3d,mean2d),axis=0)
 
 	# Add the new run global mean to the dictionary "results"
