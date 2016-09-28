@@ -301,7 +301,14 @@ def pre_PCA(gm_32,all_var_names,whole_list,me):
               print "*************************************************************************************"
               print "\n"
         standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/sigma_gm[var]
-
+        
+    standardized_rank=np.linalg.matrix_rank(standardized_global_mean)
+    print "standardized_global_mean rank = ",standardized_rank 
+    dep_var_list=get_failure_index(standardized_global_mean)
+    for i in dep_var_list:
+        whole_list.append(all_var_names[i])
+        print ",".join(['"{0}"'.format(item) for item in whole_list])
+    print "standardized_global_mean rank again = ",standardized_global_mean.shape 
     loadings_gm=princomp(standardized_global_mean)
 
     #now do coord transformation on the standardized meana to get the scores
@@ -850,17 +857,26 @@ def getopt_parseconfig(opts,optkeys,caller,opts_dict):
 #
 # Figure out the scores of the 3 new runs, standardized global means, then multiple by the loadings_gm
 #
-def standardized(gm,mu_gm,sigma_gm,loadings_gm):
+def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict):
     threshold=1.0e-12
     FillValue=1.0e+30
     nvar=gm.shape[0]
-    nfile=gm.shape[1] 
+    nfile=gm.shape[1]
+    sum_std_mean=np.zeros((nvar,),dtype=np.float64) 
     standardized_mean=np.zeros(gm.shape,dtype=np.float64)
     for var in range(nvar):
       for file in range(nfile):
         standardized_mean[var,file]=(gm[var,file].astype(np.float64)-mu_gm[var].astype(np.float64))/np.where(sigma_gm[var].astype(np.float64)<=threshold, FillValue,sigma_gm[var])
+        sum_std_mean[var]=sum_std_mean[var]+np.abs(standardized_mean[var,file])
     new_scores=np.dot(loadings_gm.T.astype(np.float64),standardized_mean)
-
+       
+    sorted_sum_std_mean=np.argsort(sum_std_mean)[::-1]
+    if opts_dict['prn_std_mean']:
+       print '************************************************************************'
+       print ' Sum of standardized mean of all variables in increasing order'
+       print '************************************************************************'
+       for var in range(nvar):
+           print sorted_sum_std_mean[var],'{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
     return new_scores
 
 #
@@ -1341,5 +1357,35 @@ def compare_raw_score(opts_dict,ifiles,timeslice,Var3d,Var2d):
         Zscore=0
         return Zscore,n_timeslice
 
+def get_failure_index(the_array):
+    mat_rows=the_array.shape[0] 
+    mat_cols=the_array.shape[1]
 
-    
+    mat_rank=np.linalg.matrix_rank(the_array)
+    deficit=mat_rows-mat_rank
+    deficit_row=[]
+    x=0
+    while(deficit>0):
+       for i in range(mat_rows):
+          temp_mat=np.delete(the_array,i,axis=0)
+          new_rank=np.linalg.matrix_rank(temp_mat)
+          if (new_rank == mat_rank):
+             print "removing row ", i
+             if len(deficit_row) != 0:
+                print "deficit_row=",deficit_row
+                x=i
+                for num,j in enumerate(deficit_row):
+                   if j-num<=i:
+                      print "j=",j,"i=",i
+                      x=x+1
+                deficit_row.append(x)
+             else:
+                deficit_row.append(i)
+                print "first deficit_row=",deficit_row
+             the_array=temp_mat
+             mat_rows=the_array.shape[0]
+             mat_rank=new_rank
+             deficit=mat_rows-mat_rank
+             break
+    print "deficit_row = ",deficit_row
+    return deficit_row

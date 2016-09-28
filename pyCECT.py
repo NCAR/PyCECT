@@ -20,7 +20,7 @@ def main(argv):
 
 
     # Get command line stuff and store in a dictionary
-    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold='
+    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold= prn_std_mean'
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -54,6 +54,7 @@ def main(argv):
     opts_dict['test_failure'] = True
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
+    opts_dict['prn_std_mean'] = False
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
     caller = 'CECT'
@@ -201,7 +202,7 @@ def main(argv):
 	    countgm[fcount]=pyEnsLib.evaluatestatus('means','gmRange',variables,'gm',results,'f'+str(fcount))
       
 	# Calculate the PCA scores of the new run
-	new_scores=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm)
+	new_scores=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict)
 	pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict)
 
 	# Print out 
