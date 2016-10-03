@@ -14,53 +14,6 @@ import Nio, Ngl
 import itertools
 from EET import comparison
 
-class comparison(object):
-
-    def __init__(self):
-        super(comparison, self).__init__()
-
-    def file_to_sets(self, compfile):
-        set_dict = {}
-        with open(compfile, 'r') as f:
-            for line in f:
-                line.strip
-                key, failset = line.replace(' ', '').split(';', 1)
-
-                try:
-                    failset = map(int, failset.split(','))
-                    failset = set(failset)
-
-                except:
-                    failset = set()
-
-                set_dict[key] = failset
-
-        return set_dict
-
-    def exhaustive_test(self, dictionary):
-        sims = dictionary.keys()
-
-        passed = failed = 0
-        for compset in itertools.combinations(sims, 3):
-            # This block is slightly slower than manually 
-            # specifying the pairs, but it generalizes
-            # easily.
-            failsets = [dictionary[s] for s in compset]
-            # The following three lines are adapted from 
-            # user doug's answer in
-            # http://stackoverflow.com/questions/27369373/pairwise-set-intersection-in-python
-            pairs = itertools.combinations(failsets, 2)
-            isect = lambda a, b: a.intersection(b)
-            isect_list = [isect(t[0], t[1]) for t in pairs]
-            isect_tot = set()
-            [isect_tot.update(x) for x in isect_list]
-
-            if len(isect_tot) > 2:
-                failed += 1
-            else:
-                passed +=1
-
-        return 100.*failed/(float(failed + passed))
 
 #
 # Parse header file of a netcdf to get the varaible 3d/2d/1d list
@@ -1491,7 +1444,6 @@ def plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index):
         wname_ens="ens_avg_"+i
         wks=Ngl.open_wks("png",wname)
         wks_ens=Ngl.open_wks("png",wname_ens)
-        print np.min(data_arr),np.max(data_arr)
         if data_arr.ndim == 3:
            Ngl.contour_map(wks,data_arr[lev,:],res)
            Ngl.contour_map(wks_ens,ens_arr[lev,:],res)

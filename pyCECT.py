@@ -117,7 +117,6 @@ def main(argv):
          else:
             frun_temp=opts_dict['indir']+'/'+frun_file
          if (os.path.isfile(frun_temp)):
-             print frun_temp
              ifiles.append(Nio.open_file(frun_temp,"r"))
          else:
              print "COULD NOT LOCATE FILE " +frun_temp+" EXISTING"
@@ -207,8 +206,7 @@ def main(argv):
 	# Calculate the PCA scores of the new run
 	new_scores,var_list=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg)
 	run_index=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict)
-        print run_index
-        run_index=[1,2,0]
+        # If there is failure, plot out the 3 variables that have the largest sum of standardized global mean
         if len(run_index)>0:
            pyEnsLib.plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index)
 
