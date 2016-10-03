@@ -10,6 +10,57 @@ import random
 import asaptools.simplecomm as simplecomm 
 import fnmatch
 import glob
+import Nio, Ngl
+import itertools
+from EET import comparison
+
+class comparison(object):
+
+    def __init__(self):
+        super(comparison, self).__init__()
+
+    def file_to_sets(self, compfile):
+        set_dict = {}
+        with open(compfile, 'r') as f:
+            for line in f:
+                line.strip
+                key, failset = line.replace(' ', '').split(';', 1)
+
+                try:
+                    failset = map(int, failset.split(','))
+                    failset = set(failset)
+
+                except:
+                    failset = set()
+
+                set_dict[key] = failset
+
+        return set_dict
+
+    def exhaustive_test(self, dictionary):
+        sims = dictionary.keys()
+
+        passed = failed = 0
+        for compset in itertools.combinations(sims, 3):
+            # This block is slightly slower than manually 
+            # specifying the pairs, but it generalizes
+            # easily.
+            failsets = [dictionary[s] for s in compset]
+            # The following three lines are adapted from 
+            # user doug's answer in
+            # http://stackoverflow.com/questions/27369373/pairwise-set-intersection-in-python
+            pairs = itertools.combinations(failsets, 2)
+            isect = lambda a, b: a.intersection(b)
+            isect_list = [isect(t[0], t[1]) for t in pairs]
+            isect_tot = set()
+            [isect_tot.update(x) for x in isect_list]
+
+            if len(isect_tot) > 2:
+                failed += 1
+            else:
+                passed +=1
+
+        return 100.*failed/(float(failed + passed))
 
 #
 # Parse header file of a netcdf to get the varaible 3d/2d/1d list
@@ -857,7 +908,7 @@ def getopt_parseconfig(opts,optkeys,caller,opts_dict):
 #
 # Figure out the scores of the 3 new runs, standardized global means, then multiple by the loadings_gm
 #
-def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict):
+def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg):
     threshold=1.0e-12
     FillValue=1.0e+30
     nvar=gm.shape[0]
@@ -875,9 +926,11 @@ def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict):
        print '************************************************************************'
        print ' Sum of standardized mean of all variables in increasing order'
        print '************************************************************************'
+       var_list=[]
        for var in range(nvar):
+           var_list.append(all_var_names[sorted_sum_std_mean[var]])
            print sorted_sum_std_mean[var],'{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
-    return new_scores
+    return new_scores,var_list
 
 #
 # Insert rmsz scores, global mean of new run to the dictionary results
@@ -1035,14 +1088,24 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
    print ' '
 
    #Record the index of comp_array which value is one
+   run_index=[]
+  
+   if opts_dict['fast']: 
+      eet = comparison()
+      faildict={}
    for j in range(comp_array.shape[1]):
        index_list=[]
        for i in range(opts_dict['nPC']):
            if comp_array[i][j] == 1:
               index_list.append(i+1)
        print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
+       run_index.append((j+1))
+       if opts_dict['fast']: 
+          faildict[str(j+1)]=set(index_list)
+          print "failure percent is %s" %eet.exhaustive_test(faildict)
 
    print ' '
+   return run_index
 #
 # Command options for pyCECT.py
 #
@@ -1281,7 +1344,7 @@ def get_files_from_glob(opts_dict):
            n_timeslice.append(temp)
        return n_timeslice
 #
-# 
+#Compare the testcase with the ensemble summary file to get a PCA score 
 #
 def compare_raw_score(opts_dict,ifiles,timeslice,Var3d,Var2d):
     rmask_var = 'REGION_MASK'
@@ -1357,6 +1420,7 @@ def compare_raw_score(opts_dict,ifiles,timeslice,Var3d,Var2d):
         Zscore=0
         return Zscore,n_timeslice
 
+# Get the deficit row number of the standardized global mean matrix
 def get_failure_index(the_array):
     mat_rows=the_array.shape[0] 
     mat_cols=the_array.shape[1]
@@ -1389,3 +1453,52 @@ def get_failure_index(the_array):
              break
     print "deficit_row = ",deficit_row
     return deficit_row
+
+#Plot out the variable data by pyNgl
+def plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index):
+    lev=opts_dict['lev']
+    var_list=["BURDENSEASALT","CDNUMC","ICWMR"]
+    runfile=Nio.open_file(in_files_list[run_index[0]],"r")
+    data_lat=runfile.variables["lat"][:]
+    data_lon=runfile.variables["lon"][:]
+    res=Ngl.Resources()
+    #Contour options
+    res.cnFillOn          = True
+    res.cnLinesOn         = False
+    res.cnLineLabelsOn    = False
+    #res.cnFillPalette     = "WhiteBlueGreenYellowRed"
+
+    #Main Title
+    res.tiMainFontHeightF = 0.018
+
+    #---Additional resources needed for putting contours on map
+    res.sfXArray          = data_lon
+    res.sfYArray          = data_lat
+    res.mpMinLatF         = min(data_lat)
+    res.mpMaxLatF         = max(data_lat)
+    res.mpMinLonF         = min(data_lon)
+    res.mpMaxLonF         = max(data_lon)
+    res.mpCenterLonF      = (min(data_lon)+max(data_lon))/2.
+
+    for count,i in enumerate(var_list):
+      if count<3:
+        ens_arr=ens_avg[i]
+        data_arr=runfile.variables[i][1]
+        long_name=runfile.variables[i].long_name
+        the_units=runfile.variables[i].units
+        res.tiMainString      ="%s (%s) ( cells)" % (long_name,the_units)
+        wname="pyCECT_plot_"+i 
+        wname_ens="ens_avg_"+i
+        wks=Ngl.open_wks("png",wname)
+        wks_ens=Ngl.open_wks("png",wname_ens)
+        print np.min(data_arr),np.max(data_arr)
+        if data_arr.ndim == 3:
+           Ngl.contour_map(wks,data_arr[lev,:],res)
+           Ngl.contour_map(wks_ens,ens_arr[lev,:],res)
+
+        else:
+           Ngl.contour_map(wks,data_arr[:],res)
+           Ngl.contour_map(wks_ens,ens_arr[:],res)
+    Ngl.end() 
+
+

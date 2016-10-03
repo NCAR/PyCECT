@@ -20,7 +20,7 @@ def main(argv):
 
 
     # Get command line stuff and store in a dictionary
-    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold= prn_std_mean'
+    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold= prn_std_mean lev= fast'
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -55,6 +55,8 @@ def main(argv):
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
     opts_dict['prn_std_mean'] = False
+    opts_dict['lev']=0
+    opts_dict['fast'] = False
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
     caller = 'CECT'
@@ -115,6 +117,7 @@ def main(argv):
          else:
             frun_temp=opts_dict['indir']+'/'+frun_file
          if (os.path.isfile(frun_temp)):
+             print frun_temp
              ifiles.append(Nio.open_file(frun_temp,"r"))
          else:
              print "COULD NOT LOCATE FILE " +frun_temp+" EXISTING"
@@ -202,8 +205,12 @@ def main(argv):
 	    countgm[fcount]=pyEnsLib.evaluatestatus('means','gmRange',variables,'gm',results,'f'+str(fcount))
       
 	# Calculate the PCA scores of the new run
-	new_scores=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict)
-	pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict)
+	new_scores,var_list=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg)
+	run_index=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict)
+        print run_index
+        run_index=[1,2,0]
+        if len(run_index)>0:
+           pyEnsLib.plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index)
 
 	# Print out 
 	if opts_dict['printVarTest']:
