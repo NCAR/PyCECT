@@ -874,12 +874,12 @@ def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg):
         sum_std_mean[var]=sum_std_mean[var]+np.abs(standardized_mean[var,file])
     new_scores=np.dot(loadings_gm.T.astype(np.float64),standardized_mean)
        
+    var_list=[]
     sorted_sum_std_mean=np.argsort(sum_std_mean)[::-1]
     if opts_dict['prn_std_mean']:
        print '************************************************************************'
        print ' Sum of standardized mean of all variables in increasing order'
        print '************************************************************************'
-       var_list=[]
        for var in range(nvar):
            var_list.append(all_var_names[sorted_sum_std_mean[var]])
            print sorted_sum_std_mean[var],'{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
@@ -1046,6 +1046,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
    if opts_dict['fast']: 
       eet = comparison()
       faildict={}
+
    for j in range(comp_array.shape[1]):
        index_list=[]
        for i in range(opts_dict['nPC']):
@@ -1055,8 +1056,9 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
        run_index.append((j+1))
        if opts_dict['fast']: 
           faildict[str(j+1)]=set(index_list)
-          print "failure percent is %s" %eet.exhaustive_test(faildict)
 
+
+   print "failure percent is %s" %eet.exhaustive_test(faildict)
    print ' '
    return run_index
 #

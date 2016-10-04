@@ -207,8 +207,9 @@ def main(argv):
 	new_scores,var_list=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg)
 	run_index=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict)
         # If there is failure, plot out the 3 variables that have the largest sum of standardized global mean
-        if len(run_index)>0:
-           pyEnsLib.plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index)
+        if opts_dict['prn_std_mean']:
+            if len(run_index)>0:
+                 pyEnsLib.plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index)
 
 	# Print out 
 	if opts_dict['printVarTest']:
