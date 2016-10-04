@@ -1419,7 +1419,7 @@ def plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index):
     res.cnFillOn          = True
     res.cnLinesOn         = False
     res.cnLineLabelsOn    = False
-    #res.cnFillPalette     = "WhiteBlueGreenYellowRed"
+    res.cnFillPalette     = "WhiteBlueGreenYellowRed"
 
     #Main Title
     res.tiMainFontHeightF = 0.018
