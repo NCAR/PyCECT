@@ -869,9 +869,9 @@ def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg):
     sum_std_mean=np.zeros((nvar,),dtype=np.float64) 
     standardized_mean=np.zeros(gm.shape,dtype=np.float64)
     for var in range(nvar):
-      for file in range(nfile):
-        standardized_mean[var,file]=(gm[var,file].astype(np.float64)-mu_gm[var].astype(np.float64))/np.where(sigma_gm[var].astype(np.float64)<=threshold, FillValue,sigma_gm[var])
-        sum_std_mean[var]=sum_std_mean[var]+np.abs(standardized_mean[var,file])
+       for file in range(nfile):
+           standardized_mean[var,file]=(gm[var,file].astype(np.float64)-mu_gm[var].astype(np.float64))/np.where(sigma_gm[var].astype(np.float64)<=threshold, FillValue,sigma_gm[var])
+           sum_std_mean[var]=sum_std_mean[var]+np.abs(standardized_mean[var,file])
     new_scores=np.dot(loadings_gm.T.astype(np.float64),standardized_mean)
        
     var_list=[]
@@ -882,7 +882,7 @@ def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg):
        print '************************************************************************'
        for var in range(nvar):
            var_list.append(all_var_names[sorted_sum_std_mean[var]])
-           print sorted_sum_std_mean[var],'{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
+           print '{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
     return new_scores,var_list
 
 #
@@ -1421,7 +1421,7 @@ def plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index):
     res.cnFillOn          = True
     res.cnLinesOn         = False
     res.cnLineLabelsOn    = False
-    #res.cnFillPalette     = "WhiteBlueGreenYellowRed"
+    res.cnFillPalette     = "WhiteBlueGreenYellowRed"
 
     #Main Title
     res.tiMainFontHeightF = 0.018
