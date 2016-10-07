@@ -1046,23 +1046,33 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
    run_index=[]
   
    if opts_dict['fast']: 
-      eet = exhaustive_test()
-      faildict={}
+       eet = exhaustive_test()
+       faildict={}
 
-   for j in range(comp_array.shape[1]):
-       index_list=[]
-       for i in range(opts_dict['nPC']):
-           if comp_array[i][j] == 1:
-              index_list.append(i+1)
-       print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
-       run_index.append((j+1))
-       if opts_dict['fast']: 
-          faildict[str(j+1)]=set(index_list)
+       for j in range(comp_array.shape[1]):
+           index_list=[]
+           for i in range(opts_dict['nPC']):
+               if comp_array[i][j] == 1:
+                   index_list.append(i+1)
+           print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
+           run_index.append((j+1))
+           faildict[str(j+1)]=set(index_list)
 
-   passes, failures = eet.exhaustive_test(faildict)
-   print "%d tests failed out of %d possible tests" % (failures, passes + failures)
-   print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
-   print ' '
+       passes, failures = eet.test_combinations(faildict)
+       print ' '
+       print "%d tests failed out of %d possible tests" % (failures, passes + failures)
+       print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
+       print ' '
+
+   else:
+       for j in range(comp_array.shape[1]):
+           index_list=[]
+           for i in range(opts_dict['nPC']):
+               if comp_array[i][j] == 1:
+                   index_list.append(i+1)
+           print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
+           run_index.append((j+1))
+
    return run_index
 #
 # Command options for pyCECT.py
