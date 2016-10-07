@@ -7,7 +7,7 @@ import itertools
 class exhaustive_test(object):
 
     def __init__(self):
-        super(comparison, self).__init__()
+        super(exhaustive_test, self).__init__()
 
     def file_to_sets(self, compfile):
         set_dict = {}
