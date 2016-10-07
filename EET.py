@@ -4,7 +4,7 @@ import re
 import argparse
 import itertools
 
-class comparison(object):
+class exhaustive_test(object):
 
     def __init__(self):
         super(comparison, self).__init__()
@@ -27,7 +27,7 @@ class comparison(object):
 
         return set_dict
 
-    def exhaustive_test(self, dictionary):
+    def test_combinations(self, dictionary):
         sims = dictionary.keys()
 
         passed = failed = 0
@@ -50,7 +50,7 @@ class comparison(object):
             else:
                 passed +=1
 
-        return 100.*failed/(float(failed + passed))
+        return passed, failed
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="script to calculate all combinations of ensemble tests")
@@ -59,6 +59,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    comp = comparison()
-    compare_dict = comp.file_to_sets(args.compfile)
-    print "failure percent is %s" % comp.exhaustive_test(compare_dict)
+    eet = exhaustive_test()
+    compare_dict = eet.file_to_sets(args.compfile)
+    print "failure percent is %s" % eet.test_combinations(compare_dict)

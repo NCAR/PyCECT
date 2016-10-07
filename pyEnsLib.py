@@ -12,7 +12,7 @@ import fnmatch
 import glob
 import Nio, Ngl
 import itertools
-from EET import comparison
+from EET import exhaustive_test
 
 
 #
@@ -1011,24 +1011,26 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
 
    false_positive=check_falsepositive(opts_dict,sum_index)
    
-   #If the length of sum_index is larger than min_PC_fail, the three runs failed
-   if len(sum_index) >= opts_dict['minPCFail']:
-      decision='FAILED'
-   else:
-      decision='PASSED'
-   if num_run_less == False:
-     print ' '
-     print "Summary: "+str(totalcount)+" PC scores failed at least "+str(opts_dict['minRunFail'])+" runs: ",sum_index 
-     print ' '
-     print 'These runs '+decision+' according to our testing criterion.'
-     if decision == 'FAILED' and false_positive != 1.0:
-       print 'The probability of this test failing although everything functions correctly (false positive) is '+'{0:5.2f}'.format(false_positive*100)+'%.'
-     print ' '
-     print ' '
-   else:
-     print ' '
-     print 'The number of run files is less than minRunFail (=2), so we cannot determin an overall pass or fail.'
-     print ' ' 
+   #If the length of sum_index is larger than min_PC_fail, the three runs failed.
+   #This doesn't apply for UF-ECT.
+   if not opts_dict['fast']:
+     if len(sum_index) >= opts_dict['minPCFail']:
+        decision='FAILED'
+     else:
+        decision='PASSED'
+     if num_run_less == False:
+       print ' '
+       print "Summary: "+str(totalcount)+" PC scores failed at least "+str(opts_dict['minRunFail'])+" runs: ",sum_index 
+       print ' '
+       print 'These runs '+decision+' according to our testing criterion.'
+       if decision == 'FAILED' and false_positive != 1.0:
+         print 'The probability of this test failing although everything functions correctly (false positive) is '+'{0:5.2f}'.format(false_positive*100)+'%.'
+       print ' '
+       print ' '
+     else:
+       print ' '
+       print 'The number of run files is less than minRunFail (=2), so we cannot determin an overall pass or fail.'
+       print ' ' 
 
    #Record the histogram of comp_array which value is one by the PCA scores
    for i in range(opts_dict['nPC']):
@@ -1044,7 +1046,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
    run_index=[]
   
    if opts_dict['fast']: 
-      eet = comparison()
+      eet = exhaustive_test()
       faildict={}
 
    for j in range(comp_array.shape[1]):
@@ -1057,8 +1059,9 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
        if opts_dict['fast']: 
           faildict[str(j+1)]=set(index_list)
 
-
-   print "failure percent is %s" %eet.exhaustive_test(faildict)
+   passes, failures = eet.exhaustive_test(faildict)
+   print "%d tests failed out of %d possible tests" % (failures, passes + failures)
+   print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
    print ' '
    return run_index
 #
