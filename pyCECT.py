@@ -102,6 +102,9 @@ def main(argv):
           glob_files=glob.glob(full_glob_str)
           in_files.extend(glob_files)
           #in_files_temp=os.listdir(opts_dict['indir'])
+       else:
+          print "Error: "+opts_dict['indir']+" is not existing"
+          sys.exit()
     in_files.sort()
 
     if popens:
