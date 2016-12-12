@@ -878,7 +878,7 @@ def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg):
     sorted_sum_std_mean=np.argsort(sum_std_mean)[::-1]
     if opts_dict['prn_std_mean']:
        print '************************************************************************'
-       print ' Sum of standardized mean of all variables in increasing order'
+       print ' Sum of standardized mean of all variables in decreasing order'
        print '************************************************************************'
        for var in range(nvar):
            var_list.append(all_var_names[sorted_sum_std_mean[var]])
@@ -1106,6 +1106,8 @@ def CECT_usage():
     print '   --pop_threshold <num>   : set pop threshold, default is 0.9'
     print '   --input_globs <search pattern> : set the search pattern of the testcase file to get from '
     print '                           the input directory (indir), such as core48.pop.h.0003-12 or core48.pop.h.0003'
+    print '   --prn_std_mean          : enable printing out sum of standardized mean of all variables in decreasing order'
+    print '   --fast                  : enable ultra-fast mode'
     print 'Version 2.0.0'
 
 #
