@@ -1097,6 +1097,8 @@ def CECT_usage():
     print '   --numRunFile <num>      : total number of runs to include in test (default = 3)'
     print '   --timeslice <num>       : which time slice to use from input run files (default = 1)'
     print '   --printVarTest          : print out variable comparisons to RMSZ and global means (turned off by default)'
+    print '   --prn_std_mean          : enable printing out sum of standardized mean of all variables in decreasing order'
+    print '   --fast                  : enable ultra-fast mode'
     print '  ----------------------------'
     print '   Args for POP-CECT :'
     print '  ----------------------------'
@@ -1106,8 +1108,6 @@ def CECT_usage():
     print '   --pop_threshold <num>   : set pop threshold, default is 0.9'
     print '   --input_globs <search pattern> : set the search pattern of the testcase file to get from '
     print '                           the input directory (indir), such as core48.pop.h.0003-12 or core48.pop.h.0003'
-    print '   --prn_std_mean          : enable printing out sum of standardized mean of all variables in decreasing order'
-    print '   --fast                  : enable ultra-fast mode'
     print 'Version 2.0.0'
 
 #
