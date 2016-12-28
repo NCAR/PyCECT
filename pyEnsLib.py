@@ -510,10 +510,10 @@ def generate_global_mean_for_summary(o_files,var_name3d,var_name2d,is_SE,pepsi_g
   
     var_list=[] 
     for i in range(len(var_name3d)):
-        if not np.any(np.abs(gm3d[i,:]) >= 1.0e-15): 
+        if not np.any(np.abs(gm3d[i]) >= 1.0e-15): 
            var_list.append(var_name3d[i])
     for i in range(len(var_name2d)):
-        if not np.any(np.abs(gm2d[i,:]) >= 1.0e-15): 
+        if not np.any(np.abs(gm2d[i]) >= 1.0e-15): 
            var_list.append(var_name2d[i])
     return gm3d,gm2d,var_list
 
@@ -575,6 +575,10 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
            print 'Error: the testing file does not have the variable '+vname+' that in the ensemble summary file'
            continue
 	data = fname.variables[vname]
+        if not data[tslice].size:
+           print vname+" data is empty"
+           sys.exit(2)
+        
 	if (is_SE == True):
             if not cumul: 
 	        output3d[:,:] = data[tslice,:,:] 
@@ -587,7 +591,6 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
 		gm_lev[k] = area_avg(output3d[k,:,:], area_wgt, is_SE)
 	#note: averaging over levels should probably be pressure-weighted(TO DO)        
 	gm3d[count] = np.mean(gm_lev)         
-
 	
     #calculate global mean for each 2D variable 
     for count, vname in enumerate(var_name2d):

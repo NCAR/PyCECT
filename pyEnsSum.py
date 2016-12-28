@@ -113,11 +113,14 @@ def main(argv):
         if opts_dict['regx']:
            in_files_list=get_cumul_filelist(opts_dict,opts_dict['indir'],opts_dict['regx'])
         in_files=me.partition(in_files_list,func=EqualLength(),involved=True)
-        if me.get_rank()==0:
+        if me.get_rank()==0 and opts_dict['verbose']:
            print 'in_files=',in_files
 
     # Open the files in the input directory
     o_files=[]
+    if me.get_rank() == 0 and opts_dict['verbose']:
+       for i in in_files:
+           print "in_files =",i
     for onefile in in_files[0:esize]:
         if (os.path.isfile(input_dir+'/' + onefile)):
             o_files.append(Nio.open_file(input_dir+'/' + onefile,"r"))
@@ -308,6 +311,7 @@ def main(argv):
 
 	    v_RMSZ = nc_sumfile.create_variable("RMSZ", 'f', ('nvars', 'ens_size'))
 	v_gm = nc_sumfile.create_variable("global_mean", 'f', ('nvars', 'ens_size'))
+        v_standardized_gm=nc_sumfile.create_variable("standardized_gm",'f',('nvars','ens_size'))
 	v_loadings_gm = nc_sumfile.create_variable('loadings_gm','f',('nvars','nvars'))
 	v_mu_gm = nc_sumfile.create_variable('mu_gm','f',('nvars',))
 	v_sigma_gm = nc_sumfile.create_variable('sigma_gm','f',('nvars',))
@@ -376,7 +380,7 @@ def main(argv):
     if (verbose == True):
         print "Calculating global means ....."
     if not opts_dict['cumul']:
-        gm3d,gm2d,var_list = pyEnsLib.generate_global_mean_for_summary(o_files,var3_list_loc,var2_list_loc , is_SE, False,opts_dict)      
+        gm3d,gm2d,var_list = pyEnsLib.generate_global_mean_for_summary(o_files,var3_list_loc,var2_list_loc , is_SE, False,opts_dict)
     if (verbose == True):
         print "Finish calculating global means ....."
 
@@ -452,7 +456,11 @@ def main(argv):
             gmall_temp=np.transpose(gmall[:,:])
             gmall=gmall_temp
 	mu_gm,sigma_gm,standardized_global_mean,loadings_gm,scores_gm=pyEnsLib.pre_PCA(gmall,all_var_names,var_list,me)
+        if me.get_rank()==0:
+           print standardized_global_mean.size
+           print standardized_global_mean
 	v_gm[:,:]=gmall[:,:]
+        v_standardized_gm[:,:]=standardized_global_mean[:,:]
 	v_mu_gm[:]=mu_gm[:]
 	v_sigma_gm[:]=sigma_gm[:].astype(np.float32)
 	v_loadings_gm[:,:]=loadings_gm[:,:]
