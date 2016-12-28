@@ -8,6 +8,7 @@ import pyEnsLib
 import json
 import random
 import glob
+import re
 from datetime import datetime
 from asaptools.partition import EqualStride, Duplicate
 import asaptools.simplecomm as simplecomm 
@@ -20,7 +21,7 @@ def main(argv):
 
 
     # Get command line stuff and store in a dictionary
-    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold= prn_std_mean lev= fast'
+    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold= prn_std_mean lev= fast json_case= '
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -57,6 +58,7 @@ def main(argv):
     opts_dict['prn_std_mean'] = False
     opts_dict['lev']=0
     opts_dict['fast'] = False
+    opts_dict['json_case'] = ''
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
     caller = 'CECT'
@@ -64,24 +66,26 @@ def main(argv):
     opts_dict = pyEnsLib.getopt_parseconfig(opts,optkeys,caller,opts_dict)
     popens = opts_dict['popens']
 
-    # Print out timestamp, input ensemble file and new run directory
-    dt=datetime.now()
-    verbose = opts_dict['verbose']
-    print '--------pyCECT--------'
-    print ' '
-    print dt.strftime("%A, %d. %B %Y %I:%M%p")
-    print ' '
-    print 'Ensemble summary file = '+opts_dict['sumfile']
-    print ' '
-    print 'Testcase file directory = '+opts_dict['indir']    
-    print ' '
-    print ' '
-
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:
         me=simplecomm.create_comm()
     else:
         me=simplecomm.create_comm(not opts_dict['mpi_enable'])
+
+    # Print out timestamp, input ensemble file and new run directory
+    dt=datetime.now()
+    verbose = opts_dict['verbose']
+    if me.get_rank()==0:
+	print '--------pyCECT--------'
+	print ' '
+	print dt.strftime("%A, %d. %B %Y %I:%M%p")
+	print ' '
+	print 'Ensemble summary file = '+opts_dict['sumfile']
+	print ' '
+	print 'Testcase file directory = '+opts_dict['indir']    
+	print ' '
+	print ' '
+
   
     ifiles=[]
     in_files=[]
@@ -93,7 +97,21 @@ def main(argv):
             in_files=random.sample(in_files_first,opts_dict['npick'])
             print 'Testcase files:'
             print '\n'.join(in_files)
-            
+           
+    elif opts_dict['json_case']: 
+       json_file=opts_dict['json_case']
+       if (os.path.exists(json_file)):
+          fd=open(json_file)
+          metainfo=json.load(fd)
+          if 'CaseName' in metainfo:
+              casename=metainfo['CaseName']
+	      if (os.path.exists(opts_dict['indir'])):
+		 for name in casename: 
+		     wildname='*.'+name+'.*'
+		     full_glob_str=os.path.join(opts_dict['indir'],wildname)
+		     glob_file=glob.glob(full_glob_str)
+		     in_files.extend(glob_file)
+       print in_files
     else: 
        wildname='*'+opts_dict['input_globs']+'*'
        # Open all input files
@@ -111,6 +129,8 @@ def main(argv):
     else:
         # Random pick non pop files
         in_files_list=pyEnsLib.Random_pickup(in_files,opts_dict)
+        #in_files_list=in_files
+    print in_files
     for frun_file in in_files_list:
          if frun_file.find(opts_dict['indir']) != -1:
             frun_temp=frun_file
@@ -204,12 +224,34 @@ def main(argv):
 	    countgm[fcount]=pyEnsLib.evaluatestatus('means','gmRange',variables,'gm',results,'f'+str(fcount))
       
 	# Calculate the PCA scores of the new run
-	new_scores,var_list=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg)
-	run_index=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict)
+	new_scores,var_list=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg,me)
+	run_index=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me)
         # If there is failure, plot out the 3 variables that have the largest sum of standardized global mean
+        #print in_files_list
         if opts_dict['prn_std_mean']:
             if len(run_index)>0:
-                 pyEnsLib.plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index)
+               json_file=opts_dict['json_case']
+	       if (os.path.exists(json_file)):
+		  fd=open(json_file)
+		  metainfo=json.load(fd)
+		  caseindex=metainfo['CaseIndex']
+		  enspath=str(metainfo['EnsPath'][0])
+		  #print caseindex
+		  if (os.path.exists(enspath)):
+                     i=0
+                     comp_file=[]
+                     search = '\.[0-9]{3}\.'
+                     for name in in_files_list:
+                        s=re.search(search,name)
+                        in_files_index=s.group(0)
+                        if in_files_index[1:4] in caseindex:
+                           ens_index=str(caseindex[in_files_index[1:4]])
+                           wildname='*.'+ens_index+'.*'
+                           full_glob_str=os.path.join(enspath,wildname)
+                           glob_file=glob.glob(full_glob_str)
+                           comp_file.extend(glob_file)
+	             print "comp_file=",comp_file		 
+		     pyEnsLib.plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me)
 
 	# Print out 
 	if opts_dict['printVarTest']:
@@ -228,8 +270,10 @@ def main(argv):
 		pyEnsLib.printsummary(results,'gm','means','gmRange',fcount,variables,'global mean')
 		print ' '
 		print '----------------------------------------------------------------------------'
+    if me.get_rank() == 0:
+	print ' '
+	print "Testing complete."
+	print ' '
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-    print ' '
-    print "Testing complete."
