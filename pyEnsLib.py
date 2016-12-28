@@ -8,6 +8,7 @@ import re
 import json
 import random
 import asaptools.simplecomm as simplecomm 
+from asaptools.partition import  Duplicate
 import fnmatch
 import glob
 import Nio, Ngl
@@ -578,7 +579,7 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
         if not data[tslice].size:
            print vname+" data is empty"
            sys.exit(2)
-        
+
 	if (is_SE == True):
             if not cumul: 
 	        output3d[:,:] = data[tslice,:,:] 
@@ -591,6 +592,7 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
 		gm_lev[k] = area_avg(output3d[k,:,:], area_wgt, is_SE)
 	#note: averaging over levels should probably be pressure-weighted(TO DO)        
 	gm3d[count] = np.mean(gm_lev)         
+
 	
     #calculate global mean for each 2D variable 
     for count, vname in enumerate(var_name2d):
@@ -864,7 +866,7 @@ def getopt_parseconfig(opts,optkeys,caller,opts_dict):
 #
 # Figure out the scores of the 3 new runs, standardized global means, then multiple by the loadings_gm
 #
-def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg):
+def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg,me):
     threshold=1.0e-12
     FillValue=1.0e+30
     nvar=gm.shape[0]
@@ -879,13 +881,15 @@ def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg):
        
     var_list=[]
     sorted_sum_std_mean=np.argsort(sum_std_mean)[::-1]
-    if opts_dict['prn_std_mean']:
-       print '************************************************************************'
-       print ' Sum of standardized mean of all variables in decreasing order'
-       print '************************************************************************'
+    if (opts_dict['prn_std_mean']) :
+       if me.get_rank() == 0:
+	   print '************************************************************************'
+	   print ' Sum of standardized mean of all variables in increasing order'
+	   print '************************************************************************'
        for var in range(nvar):
            var_list.append(all_var_names[sorted_sum_std_mean[var]])
-           print '{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
+	   if me.get_rank() == 0:
+	       print '{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
     return new_scores,var_list
 
 #
@@ -980,16 +984,17 @@ def evaluatestatus(name,rangename,variables,key,results,thefile):
 #
 # Evaluate if the new run PCA scores pass or fail by comparing with the PCA scores of the ensemble summary
 #
-def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
+def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
 
    comp_array=np.zeros(new_scores.shape,dtype=np.int32)
    sum=np.zeros(new_scores.shape[0],dtype=np.int32)
    eachruncount=np.zeros(new_scores.shape[1],dtype=np.int32)
    totalcount=0
    sum_index=[]
-   print '*********************************************** '
-   print 'PCA Test Results'
-   print '*********************************************** '
+   if me.get_rank()==0:
+       print '*********************************************** '
+       print 'PCA Test Results'
+       print '*********************************************** '
   
    #Test to check if new_scores out of range of sigMul*sigma_scores_gm
    #for i in range(new_scores.shape[0]):
@@ -1021,7 +1026,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
         decision='FAILED'
      else:
         decision='PASSED'
-     if num_run_less == False:
+     if (num_run_less == False) and (me.get_rank()==0):
        print ' '
        print "Summary: "+str(totalcount)+" PC scores failed at least "+str(opts_dict['minRunFail'])+" runs: ",sum_index 
        print ' '
@@ -1030,7 +1035,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
          print 'The probability of this test failing although everything functions correctly (false positive) is '+'{0:5.2f}'.format(false_positive*100)+'%.'
        print ' '
        print ' '
-     else:
+     elif me.get_rank() == 0:
        print ' '
        print 'The number of run files is less than minRunFail (=2), so we cannot determin an overall pass or fail.'
        print ' ' 
@@ -1041,9 +1046,10 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
        for j in range(comp_array.shape[1]):
            if comp_array[i][j] == 1:
               index_list.append(j+1)
-       if len(index_list) > 0:
+       if len(index_list) > 0 and me.get_rank() == 0:
           print "PC "+str(i+1)+": failed "+str(len(index_list))+" runs ",index_list
-   print ' '
+   if me.get_rank() == 0:
+       print ' '
 
    #Record the index of comp_array which value is one
    run_index=[]
@@ -1057,15 +1063,17 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
            for i in range(opts_dict['nPC']):
                if comp_array[i][j] == 1:
                    index_list.append(i+1)
-           print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
+           if me.get_rank() == 0:
+               print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
            run_index.append((j+1))
            faildict[str(j+1)]=set(index_list)
 
        passes, failures = eet.test_combinations(faildict)
-       print ' '
-       print "%d tests failed out of %d possible tests" % (failures, passes + failures)
-       print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
-       print ' '
+       if me.get_rank() == 0:
+	   print ' '
+	   print "%d tests failed out of %d possible tests" % (failures, passes + failures)
+	   print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
+	   print ' '
 
    else:
        for j in range(comp_array.shape[1]):
@@ -1073,7 +1081,8 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict):
            for i in range(opts_dict['nPC']):
                if comp_array[i][j] == 1:
                    index_list.append(i+1)
-           print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
+           if me.get_rank() == 0:
+               print "Run "+str(j+1)+": "+str(eachruncount[j])+" PC scores failed ",index_list
            run_index.append((j+1))
 
    return run_index
@@ -1426,20 +1435,42 @@ def get_failure_index(the_array):
              break
     print "deficit_row = ",deficit_row
     return deficit_row
+#
+# Plot out the variable data that have largest stddev by pyNgl
+#
+def plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me):
+    
+    import warnings
+    from skimage import io,measure
 
-#Plot out the variable data by pyNgl
-def plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index):
-    lev=opts_dict['lev']
-    var_list=["BURDENSEASALT","CDNUMC","ICWMR"]
-    runfile=Nio.open_file(in_files_list[run_index[0]],"r")
+       
+    
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    #lev=opts_dict['lev']
+    lev=me.get_rank()
+    if me.get_rank() == 1:
+       print var_list
+       print len(var_list)
+    #var_list=["FSNS","CLDLIQ","FSNT","FSNTOA","FSNSC","ICIMR","AWNC"]
+
+
+    if opts_dict['mpi_enable']:
+       in_files_list=me.partition(in_files_list,func=Duplicate(),involved=True)
+       comp_file=me.partition(comp_file,func=Duplicate(),involved=True)
+       #print me.get_rank(),in_files_list[0]
+    runfile=Nio.open_file(in_files_list[0],"r")
+    ensfile=Nio.open_file(comp_file[0],"r")
     data_lat=runfile.variables["lat"][:]
     data_lon=runfile.variables["lon"][:]
     res=Ngl.Resources()
+
     #Contour options
     res.cnFillOn          = True
+    res.cnFillMode        ="RasterFill"
     res.cnLinesOn         = False
     res.cnLineLabelsOn    = False
     res.cnFillPalette     = "WhiteBlueGreenYellowRed"
+    res.cnConstFEnableFill =True
 
     #Main Title
     res.tiMainFontHeightF = 0.018
@@ -1454,23 +1485,104 @@ def plot_variable(in_files_list,ens_avg,opts_dict,var_list,run_index):
     res.mpCenterLonF      = (min(data_lon)+max(data_lon))/2.
 
     for count,i in enumerate(var_list):
-      if count<3:
-        ens_arr=ens_avg[i]
-        data_arr=runfile.variables[i][1]
+      if (count<117) & (count>=110):
+        if i in ensfile.variables:
+           ens_arr=ensfile.variables[i][1]
+           
+        else:
+           print i+" is not in ensemble files"
+           sys.exit()
+        if i in runfile.variables:
+           data_arr=runfile.variables[i][1]
+        else:
+           print i+" is not in run files"
+           sys.exit()
+        if ens_arr.size != data_arr.size:
+           print "Error: ensemble file dose not have the same shape as the run file!"
+           sys.exit()
         long_name=runfile.variables[i].long_name
         the_units=runfile.variables[i].units
-        res.tiMainString      ="%s (%s) ( cells)" % (long_name,the_units)
-        wname="pyCECT_plot_"+i 
-        wname_ens="ens_avg_"+i
-        wks=Ngl.open_wks("png",wname)
-        wks_ens=Ngl.open_wks("png",wname_ens)
-        if data_arr.ndim == 3:
-           Ngl.contour_map(wks,data_arr[lev,:],res)
-           Ngl.contour_map(wks_ens,ens_arr[lev,:],res)
+        dim=runfile.variables[i].dimensions
+        for dim_val in dim:
+            if dim_val.find('lev') != -1:
+               lev_true=1
+               break 
+            else:
+               lev_true=0
 
-        else:
-           Ngl.contour_map(wks,data_arr[:],res)
-           Ngl.contour_map(wks_ens,ens_arr[:],res)
+        res.tiMainString      ="%s (%s) ( cells)" % (long_name,the_units)
+        wname="pyCECT_plot_"+i+"_"+str(me.get_rank()) 
+        wname_ens="ens_avg_"+i+"_"+str(me.get_rank())
+	wks=Ngl.open_wks("png",wname)
+	wks_ens=Ngl.open_wks("png",wname_ens)
+	#if data_arr.ndim == 3:
+	if lev_true == 1:
+           min_data=np.min(data_arr[lev])
+           max_data=np.max(data_arr[lev])
+           min_ens=np.min(ens_arr[lev])
+           max_ens=np.max(ens_arr[lev])
+           rng=(max(max_data,max_ens)-min(min_data,min_ens))/8
+           print "min_data=",i,lev,min_data,max_data,rng
+           if rng !=0.0:
+              res.cnLevelSelectionMode="ManualLevels"
+              res.cnLevelSpacingF=rng
+              res.cnMinLevelValF=min(min_data,min_ens)
+              res.cnMaxLevelValF=max(max_data,max_ens)
+              res.lbLabelBarOn=True
+           else:
+              res.cnLevelSelectionMode="AutomaticLevels"
+              #res.lbLabelBarOn=False
+           res.cnLevelSpacingF=rng
+	   Ngl.contour_map(wks,data_arr[lev],res)
+	   Ngl.contour_map(wks_ens,ens_arr[lev],res)
+
+	else:
+           min_data=np.min(data_arr)
+           max_data=np.max(data_arr)
+           min_ens=np.min(ens_arr)
+           max_ens=np.max(ens_arr)
+           rng=(max(max_data,max_ens)-min(min_data,min_ens))/8
+           if rng != 0.0:
+              res.cnLevelSelectionMode="ManualLevels"
+              res.cnLevelSpacingF=rng
+              res.cnMinLevelValF=min(min_data,min_ens)
+              res.cnMaxLevelValF=max(max_data,max_ens)
+              res.lbLabelBarOn=True
+              print "min_data=",i,lev,min_data,max_data,rng
+           else:
+              res.cnLevelSelectionMode="AutomaticLevels"
+              #res.lbLabelBarOn=False
+              print "auto min_data=",i,lev,min_data,max_data,rng
+              
+	   Ngl.contour_map(wks,data_arr,res)
+	   Ngl.contour_map(wks_ens,ens_arr,res)
+	ens_image=io.imread(wname_ens+".png")
+	comp_image=io.imread(wname+".png")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+	    ssim_ens_vs_comp=measure.compare_ssim(ens_image,comp_image,multichannel=True)
+        ssim_dict={}
+        ssim_dict[str(me.get_rank())]=ssim_ens_vs_comp
+        ssim_dict=me.allreduce(ssim_dict,'min')
+        min_ssim=1.0
+        min_index=0
+        if me.get_rank() == 0:
+           sum_val=0
+           fout=open("ssim_index_output.txt","a")
+           print ssim_dict
+           fout.write(opts_dict['json_case']+"\n")
+           for k,v in ssim_dict.items():
+               if v<min_ssim:
+                  min_ssim=v
+                  min_index=k
+               sum_val=sum_val+v
+               fout.write("Level "+str(k)+" ssim= "+str(v)+"\n")
+           avg_val=sum_val/len(ssim_dict)
+           print "ssim_dict length=",len(ssim_dict)
+           print "On level ",min_index,i," have the worst ssim index = ",min_ssim
+           fout.write("On level "+str(min_index)+","+str(i)+", have the worst ssim index = "+str(min_ssim)+"\n")
+           fout.write("On level "+str(min_index)+","+str(i)+", have the average ssim index = "+str(avg_val)+"\n")
+
     Ngl.end() 
 
 

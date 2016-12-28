@@ -456,9 +456,6 @@ def main(argv):
             gmall_temp=np.transpose(gmall[:,:])
             gmall=gmall_temp
 	mu_gm,sigma_gm,standardized_global_mean,loadings_gm,scores_gm=pyEnsLib.pre_PCA(gmall,all_var_names,var_list,me)
-        if me.get_rank()==0:
-           print standardized_global_mean.size
-           print standardized_global_mean
 	v_gm[:,:]=gmall[:,:]
         v_standardized_gm[:,:]=standardized_global_mean[:,:]
 	v_mu_gm[:]=mu_gm[:]
