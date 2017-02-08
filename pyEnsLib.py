@@ -1021,7 +1021,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
    
    #If the length of sum_index is larger than min_PC_fail, the three runs failed.
    #This doesn't apply for UF-ECT.
-   if not opts_dict['fast']:
+   if not opts_dict['eet']:
      if len(sum_index) >= opts_dict['minPCFail']:
         decision='FAILED'
      else:
@@ -1054,7 +1054,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
    #Record the index of comp_array which value is one
    run_index=[]
   
-   if opts_dict['fast']: 
+   if opts_dict['eet']: 
        eet = exhaustive_test()
        faildict={}
 
@@ -1110,7 +1110,7 @@ def CECT_usage():
     print '   --timeslice <num>       : which time slice to use from input run files (default = 1)'
     print '   --printVarTest          : print out variable comparisons to RMSZ and global means (turned off by default)'
     print '   --prn_std_mean          : enable printing out sum of standardized mean of all variables in decreasing order'
-    print '   --fast                  : enable ultra-fast mode'
+    print '   --eet                   : enable Ensemble Exhaustive Test (EET) to compute failure percent'
     print '  ----------------------------'
     print '   Args for POP-CECT :'
     print '  ----------------------------'

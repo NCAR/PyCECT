@@ -21,7 +21,7 @@ def main(argv):
 
 
     # Get command line stuff and store in a dictionary
-    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold= prn_std_mean lev= fast json_case= '
+    s='verbose sumfile= indir= input_globs= tslice= nPC= sigMul= minPCFail= minRunFail= numRunFile= printVarTest popens jsonfile= mpi_enable nbin= minrange= maxrange= outfile= casejson= npick= pepsi_gm test_failure pop_tol= pop_threshold= prn_std_mean lev= eet json_case= '
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -57,7 +57,7 @@ def main(argv):
     opts_dict['pop_threshold'] = 0.90
     opts_dict['prn_std_mean'] = False
     opts_dict['lev']=0
-    opts_dict['fast'] = False
+    opts_dict['eet'] = False
     opts_dict['json_case'] = ''
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -130,7 +130,7 @@ def main(argv):
         # Random pick non pop files
         in_files_list=pyEnsLib.Random_pickup(in_files,opts_dict)
         #in_files_list=in_files
-    print in_files
+
     for frun_file in in_files_list:
          if frun_file.find(opts_dict['indir']) != -1:
             frun_temp=frun_file

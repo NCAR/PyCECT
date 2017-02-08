@@ -46,12 +46,13 @@ class exhaustive_test(object):
             [isect_tot.update(x) for x in isect_list]
 
             if len(isect_tot) > 2:
-                print "this set failed"
-                print compset
+                # print statements for debugging
+                # print "this set failed"
+                # print compset
                 failed += 1
             else:
-                print "this set passed"
-                print compset
+                # print "this set passed"
+                # print compset
                 passed +=1
 
         return passed, failed
