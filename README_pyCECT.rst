@@ -25,6 +25,7 @@ X. Huang, and F.O. Byan "Evaluating Consistency in the Ocean Model Component of
 the Community Earth System Model", submitted to Geoscientific Model Development 
 Discussions, Dec. 2015
 
+Details on UF-CAM-ECT are pending.
 
 :AUTHORS: Haiying Xu, Allison Baker
 :VERSION: 3.0.0
