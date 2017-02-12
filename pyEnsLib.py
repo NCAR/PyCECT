@@ -1021,7 +1021,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
    
    #If the length of sum_index is larger than min_PC_fail, the three runs failed.
    #This doesn't apply for UF-ECT.
-   if not opts_dict['eet']:
+   if opts_dict['numRunFile'] > opts_dict['eet']:
      if len(sum_index) >= opts_dict['minPCFail']:
         decision='FAILED'
      else:
@@ -1053,8 +1053,8 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
 
    #Record the index of comp_array which value is one
    run_index=[]
-  
-   if opts_dict['eet']: 
+
+   if opts_dict['eet'] >= opts_dict['numRunFile']: 
        eet = exhaustive_test()
        faildict={}
 
@@ -1110,7 +1110,7 @@ def CECT_usage():
     print '   --tslice <num>          : which time slice to use from input run files (default = 1)'
     print '   --printVarTest          : print out variable comparisons to RMSZ and global means (turned off by default)'
     print '   --prn_std_mean          : enable printing out sum of standardized mean of all variables in decreasing order'
-    print '   --eet                   : enable Ensemble Exhaustive Test (EET) to compute failure percent'
+    print '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (at least 3)'
     print '  ----------------------------'
     print '   Args for POP-CECT :'
     print '  ----------------------------'
@@ -1179,8 +1179,12 @@ def EnsSumPop_usage():
 # Random pick up three files out of a lot files
 #
 def Random_pickup(ifiles,opts_dict):
-    if len(ifiles) > opts_dict['minRunFail']:
-      random_index=random.sample(range(0,len(ifiles)),opts_dict['numRunFile'])
+    if opts_dict['numRunFile'] > opts_dict['eet']:
+      nFiles = opts_dict['numRunFile']
+    else:
+      nFiles = opts_dict['eet']
+    if len(ifiles) > nFiles:
+      random_index=random.sample(range(0,len(ifiles)),nFiles)
     else:
       random_index=range(len(ifiles))
     new_ifiles=[]
@@ -1239,7 +1243,12 @@ def check_falsepositive(opts_dict,sum_index):
     minRunFail = 2
     numRunFile = 3
 
-    if (nPC == opts_dict['nPC']) and (sigMul == opts_dict['sigMul']) and (minPCFail == opts_dict['minPCFail']) and (minRunFail == opts_dict['minRunFail']) and (numRunFile == opts_dict['numRunFile']):
+    if opts_dict['numRunFile'] > opts_dict['eet']:
+      nFiles = opts_dict['numRunFile']
+    else:
+      nFiles = opts_dict['eet']
+
+    if (nPC == opts_dict['nPC']) and (sigMul == opts_dict['sigMul']) and (minPCFail == opts_dict['minPCFail']) and (minRunFail == opts_dict['minRunFail']) and (numRunFile == nFiles):
        false_positive=fp[len(sum_index)-1]
     else:
        false_positive=1.0
