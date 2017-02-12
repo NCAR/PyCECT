@@ -1068,7 +1068,7 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
            run_index.append((j+1))
            faildict[str(j+1)]=set(index_list)
 
-       passes, failures = eet.test_combinations(faildict)
+       passes, failures = eet.test_combinations(faildict, runsPerTest=opts_dict['numRunFile'], nRunFails=opts_dict['minRunFail'])
        if me.get_rank() == 0:
 	   print ' '
 	   print "%d tests failed out of %d possible tests" % (failures, passes + failures)

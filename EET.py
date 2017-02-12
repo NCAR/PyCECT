@@ -27,11 +27,11 @@ class exhaustive_test(object):
 
         return set_dict
 
-    def test_combinations(self, dictionary):
+    def test_combinations(self, dictionary, runsPerTest=3, nRunFails=2):
         sims = dictionary.keys()
 
         passed = failed = 0
-        for compset in itertools.combinations(sims, 3):
+        for compset in itertools.combinations(sims, runsPerTest):
             # This block is slightly slower than manually 
             # specifying the pairs, but it generalizes
             # easily.
@@ -45,7 +45,7 @@ class exhaustive_test(object):
             isect_tot = set()
             [isect_tot.update(x) for x in isect_list]
 
-            if len(isect_tot) > 2:
+            if len(isect_tot) > nRunFails:
                 # print statements for debugging
                 # print "this set failed"
                 # print compset
