@@ -91,7 +91,7 @@ def main(argv):
 	print ' '
 
     # Ensure sensible EET value
-    if not opts_dict['eet'] >= 0:
+    if opts_dict['eet'] and opts_dict['numRunFile'] > opts_dict['eet']:
         pyEnsLib.CECT_usage()
         sys.exit(2)
 

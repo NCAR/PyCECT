@@ -1110,7 +1110,7 @@ def CECT_usage():
     print '   --tslice <num>          : which time slice to use from input run files (default = 1)'
     print '   --printVarTest          : print out variable comparisons to RMSZ and global means (turned off by default)'
     print '   --prn_std_mean          : enable printing out sum of standardized mean of all variables in decreasing order'
-    print '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (at least 3)'
+    print '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (greater than or equal to numRunFile)'
     print '  ----------------------------'
     print '   Args for POP-CECT :'
     print '  ----------------------------'
