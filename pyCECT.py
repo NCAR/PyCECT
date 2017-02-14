@@ -123,6 +123,10 @@ def main(argv):
           full_glob_str=os.path.join(opts_dict['indir'],wildname)
           glob_files=glob.glob(full_glob_str)
           in_files.extend(glob_files)
+          num_file=len(in_files)
+          if opts_dict['numRunFile'] > num_file:
+             print "You requested more numRunFile than it is available at the indir, please change"
+             sys.exit()
           #in_files_temp=os.listdir(opts_dict['indir'])
     in_files.sort()
 
