@@ -25,7 +25,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= printVarTest popens 
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile= 
          casejson= npick= pepsi_gm test_failure pop_tol= 
-         pop_threshold= prn_std_mean lev= eet json_case= """
+         pop_threshold= prn_std_mean lev= eet= json_case= """
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -60,8 +60,8 @@ def main(argv):
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
     opts_dict['prn_std_mean'] = False
-    opts_dict['lev']=0
-    opts_dict['eet'] = False
+    opts_dict['lev'] = 0
+    opts_dict['eet'] = 0
     opts_dict['json_case'] = ''
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -89,6 +89,11 @@ def main(argv):
 	print 'Testcase file directory = '+opts_dict['indir']    
 	print ' '
 	print ' '
+
+    # Ensure sensible EET value
+    if opts_dict['eet'] and opts_dict['numRunFile'] > opts_dict['eet']:
+        pyEnsLib.CECT_usage()
+        sys.exit(2)
 
   
     ifiles=[]
