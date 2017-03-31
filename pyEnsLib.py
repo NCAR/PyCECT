@@ -312,8 +312,8 @@ def pre_PCA(gm_32,all_var_names,whole_list,me):
     dep_var_list=get_failure_index(standardized_global_mean)
     for i in dep_var_list:
         whole_list.append(all_var_names[i])
-        print ",".join(['"{0}"'.format(item) for item in whole_list])
-    print "standardized_global_mean rank again = ",standardized_global_mean.shape 
+    print ",".join(['"{0}"'.format(item) for item in whole_list])
+    #print "standardized_global_mean rank again = ",standardized_global_mean.shape 
     loadings_gm=princomp(standardized_global_mean)
 
     #now do coord transformation on the standardized meana to get the scores
@@ -372,7 +372,8 @@ def read_jsonlist(metajson,method_name):
   fd=open(metajson)
   metainfo = json.load(fd)
   if method_name == 'ES':
-     varList = metainfo['ExcludedVar']
+     #varList = metainfo['ExcludedVar']
+     varList = metainfo['IncludedVar']
      return varList
   elif method_name == 'ESP':
      var2d = metainfo['Var2d']
@@ -1425,24 +1426,24 @@ def get_failure_index(the_array):
           temp_mat=np.delete(the_array,i,axis=0)
           new_rank=np.linalg.matrix_rank(temp_mat)
           if (new_rank == mat_rank):
-             print "removing row ", i
+             #print "removing row ", i
              if len(deficit_row) != 0:
-                print "deficit_row=",deficit_row
+                #print "deficit_row=",deficit_row
                 x=i
                 for num,j in enumerate(deficit_row):
                    if j-num<=i:
-                      print "j=",j,"i=",i
+                      #print "j=",j,"i=",i
                       x=x+1
                 deficit_row.append(x)
              else:
                 deficit_row.append(i)
-                print "first deficit_row=",deficit_row
+                #print "first deficit_row=",deficit_row
              the_array=temp_mat
              mat_rows=the_array.shape[0]
              mat_rank=new_rank
              deficit=mat_rows-mat_rank
              break
-    print "deficit_row = ",deficit_row
+    #print "deficit_row = ",deficit_row
     return deficit_row
 #
 # Plot out the variable data that have largest stddev by pyNgl

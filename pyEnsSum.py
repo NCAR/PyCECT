@@ -69,7 +69,8 @@ def main(argv):
     # Now find file names in indir
     input_dir = opts_dict['indir']
     # The var list that will be excluded
-    ex_varlist=[]
+    #ex_varlist=[]
+    inc_varlist=[]
 
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:
@@ -81,11 +82,16 @@ def main(argv):
     if me.get_rank() == 0:
 	if opts_dict['jsonfile']:
 	    # Read in the excluded var list
-	    ex_varlist=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ES')
+	    #ex_varlist=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ES')
+	    # Read in the included var list
+	    inc_varlist=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ES')
 
     # Broadcast the excluded var list to each processor
+    #if opts_dict['mpi_enable']:
+    #	ex_varlist=me.partition(ex_varlist,func=Duplicate(),involved=True)
+    # Broadcast the excluded var list to each processor
     if opts_dict['mpi_enable']:
-	ex_varlist=me.partition(ex_varlist,func=Duplicate(),involved=True)
+	inc_varlist=me.partition(inc_varlist,func=Duplicate(),involved=True)
         
     in_files=[]
     if(os.path.exists(input_dir)):
@@ -190,13 +196,24 @@ def main(argv):
                 sys.exit() 
 
     # Get 2d vars, 3d vars and all vars (For now include all variables) 
-    vars_dict = o_files[0].variables
+    vars_dict_all = o_files[0].variables
     # Remove the excluded variables (specified in json file) from variable dictionary
-    if ex_varlist:
-	for i in ex_varlist:
-          if i in vars_dict:
-	    del vars_dict[i]
+    #if ex_varlist:
+    #	for i in ex_varlist:
+    #      if i in vars_dict:
+    #	    del vars_dict[i]
+
+    #Given an included var list, remove all float var that are not on the list
+    vars_dict=vars_dict_all.copy()
+    if inc_varlist:
+        for k,v in vars_dict_all.iteritems():
+           if (k not in inc_varlist) and (vars_dict_all[k].typecode()=='f'):
+            #print vars_dict_all[k].typecode()
+            #print k
+            del vars_dict[k]
+ 
     num_vars = len(vars_dict)
+
     if (verbose == True):
         print 'Number of variables (including metadata) found =  ', num_vars
     str_size = 0
@@ -385,9 +402,9 @@ def main(argv):
         print "Finish calculating global means ....."
 
     # Calculate RMSZ scores  
-    if (verbose == True):
-        print "Calculating RMSZ scores ....."
     if (not opts_dict['gmonly']) | (opts_dict['cumul']):
+	if (verbose == True):
+	    print "Calculating RMSZ scores ....."
         zscore3d,zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d,temp1,temp2=pyEnsLib.calc_rmsz(o_files,var3_list_loc,var2_list_loc,is_SE,opts_dict)    
 
     # Calculate max norm ensemble
