@@ -372,9 +372,14 @@ def read_jsonlist(metajson,method_name):
   fd=open(metajson)
   metainfo = json.load(fd)
   if method_name == 'ES':
+     exclude=False
      #varList = metainfo['ExcludedVar']
-     varList = metainfo['IncludedVar']
-     return varList
+     if 'ExcludedVar' in metainfo:
+        exclude=True
+        varList = metainfo['ExcludedVar']
+     elif 'IncludedVar' in metainfo:
+        varList = metainfo['IncludedVar']
+     return varList,exclude
   elif method_name == 'ESP':
      var2d = metainfo['Var2d']
      var3d = metainfo['Var3d']
