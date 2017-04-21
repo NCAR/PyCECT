@@ -120,7 +120,10 @@ def main(argv):
 		     full_glob_str=os.path.join(opts_dict['indir'],wildname)
 		     glob_file=glob.glob(full_glob_str)
 		     in_files.extend(glob_file)
-       print in_files
+       else:
+          print "Error: "+opts_dict['json_case']+" does not exist"
+          sys.exit()
+       print "in_files=",in_files
     else: 
        wildname='*'+opts_dict['input_globs']+'*'
        # Open all input files
@@ -175,7 +178,7 @@ def main(argv):
                         np.savetxt(fout,j,fmt='%-7.2e')
     else:
 	# Read all variables from the ensemble summary file
-	ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE_sum=pyEnsLib.read_ensemble_summary(opts_dict['sumfile']) 
+	ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE_sum,std_gm=pyEnsLib.read_ensemble_summary(opts_dict['sumfile']) 
 
 	if len(ens_rmsz) == 0:
 	    gmonly = True
@@ -237,11 +240,29 @@ def main(argv):
 	    countgm[fcount]=pyEnsLib.evaluatestatus('means','gmRange',variables,'gm',results,'f'+str(fcount))
       
 	# Calculate the PCA scores of the new run
-	new_scores,var_list=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg,me)
+	new_scores,var_list,comp_std_gm=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg,me)
 	run_index=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me)
         # If there is failure, plot out the 3 variables that have the largest sum of standardized global mean
         #print in_files_list
         if opts_dict['prn_std_mean']:
+            # Plot out standardized mean and compared standardized mean in box plots
+            import seaborn as sns
+            b=list(pyEnsLib.chunk(ens_var_name,2))
+            for f,alist in enumerate(b):
+                list_array=[]
+                list_array2=[]
+		#print alist
+                for fc,avar in enumerate(alist):
+                    #print fc,avar
+                    list_array.append(std_gm[avar])
+                    list_array2.append(comp_std_gm[f+fc])
+                sns.boxplot(data=list_array,whis=[1.0,99.0],fliersize=0.0)
+                sns.stripplot(data=list_array2,jitter=True,color="r")
+                #sns.stripplot(data=list_array2,jitter=True,color=".3")
+                sns.plt.xticks(range(len(alist)),alist,fontsize=8,rotation=-45)
+                sns.plt.savefig(alist[0]+"_fail_019.png")
+                sns.plt.clf()
+            '''
             if len(run_index)>0:
                json_file=opts_dict['json_case']
 	       if (os.path.exists(json_file)):
@@ -265,7 +286,7 @@ def main(argv):
                            comp_file.extend(glob_file)
 	             print "comp_file=",comp_file		 
 		     pyEnsLib.plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me)
-
+            '''
 	# Print out 
 	if opts_dict['printVarTest']:
 	    print '*********************************************** '

@@ -155,6 +155,7 @@ def main(argv):
     if me.get_rank()==0 and (verbose == True):
         print "Getting spatial dimensions"
     nlev = -1
+    nilev = -1
     ncol = -1
     nlat = -1
     nlon = -1
@@ -167,6 +168,8 @@ def main(argv):
     for key in input_dims:
         if key == "lev":
             nlev = input_dims["lev"]
+        elif key == "ilev":
+            nilev = input_dims["ilev"]
         elif key == "ncol":
             ncol = input_dims["ncol"]
         elif (key == "nlon") or (key =="lon"):
@@ -219,6 +222,7 @@ def main(argv):
     # Get 2d vars, 3d vars and all vars (For now include all variables) 
     vars_dict_all = o_files[0].variables
     # Remove the excluded variables (specified in json file) from variable dictionary
+    #print len(vars_dict_all)
     if exclude:
         vars_dict=vars_dict_all
     	for i in ex_varlist:
@@ -234,6 +238,10 @@ def main(argv):
             del vars_dict[k]
  
     num_vars = len(vars_dict)
+    #print num_vars
+    #if me.get_rank() == 0:
+    #   for k,v in vars_dict.iteritems():
+    #       print 'vars_dict',k,vars_dict[k].typecode()
 
     str_size = 0
 
@@ -261,19 +269,22 @@ def main(argv):
             if ((vr == 3) and (vs[1] == nlat and vs[2] == nlon)):  
                 is_2d = True 
                 num_2d += 1
-            elif ((vr == 4) and (vs[2] == nlat and vs[3] == nlon and vs[1] == nlev )):  
+            elif ((vr == 4) and (vs[2] == nlat and vs[3] == nlon and (vs[1] == nlev or vs[1]==nilev ))):  
                 is_3d = True 
                 num_3d += 1
+                    
         if (is_3d == True) :
             str_size = max(str_size, len(k))
             d3_var_names.append(k)
         elif  (is_2d == True):    
             str_size = max(str_size, len(k))
             d2_var_names.append(k)
+        #else:
+        #    print 'var=',k
 
     if me.get_rank() == 0 and (verbose == True):
-        print 'Number of variables (including metadata) found:  ', num_vars
-        print '3D variables: '+str(num_3d)+', 2D variables: '+str(num_2d)+', metadata: '+str(num_vars-num_3d-num_2d)
+        print 'Number of variables found:  ', num_3d+num_2d
+        print '3D variables: '+str(num_3d)+', 2D variables: '+str(num_2d)
 
     # Now sort these and combine (this sorts caps first, then lower case - 
     # which is what we want)
@@ -293,8 +304,8 @@ def main(argv):
     all_var_names += d2_var_names
     n_all_var_names = len(all_var_names)
 
-    if me.get_rank() == 0 and (verbose == True):
-        print 'num vars = ', n_all_var_names, '(3d = ', num_3d, ' and 2d = ', num_2d, ")"
+    #if me.get_rank() == 0 and (verbose == True):
+    #    print 'num vars = ', n_all_var_names, '(3d = ', num_3d, ' and 2d = ', num_2d, ")"
 
     # Create new summary ensemble file
     this_sumfile = opts_dict["sumfile"]

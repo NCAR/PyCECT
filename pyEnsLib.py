@@ -13,6 +13,7 @@ import fnmatch
 import glob
 import Nio, Ngl
 import itertools
+from itertools import islice
 from EET import exhaustive_test
 
 
@@ -311,8 +312,12 @@ def pre_PCA(gm_32,all_var_names,whole_list,me):
     print "standardized_global_mean rank = ",standardized_rank 
     dep_var_list=get_failure_index(standardized_global_mean)
     for i in dep_var_list:
-        whole_list.append(all_var_names[i])
-    print ",".join(['"{0}"'.format(item) for item in whole_list])
+       whole_list.append(all_var_names[i])
+    if whole_list:
+       print "********************************************************************************************"
+       print "The following variables are dependent, please exclude them from computing ensemble summary"
+       print ",".join(['"{0}"'.format(item) for item in whole_list])
+       print "********************************************************************************************"
     #print "standardized_global_mean rank again = ",standardized_global_mean.shape 
     loadings_gm=princomp(standardized_global_mean)
 
@@ -577,7 +582,6 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
     for count, vname in enumerate(var_name3d):
 	#if (verbose == True):
 	#    print "calculating GM for variable ", vname
-	gm_lev = np.zeros(nlev)
         if vname not in fname.variables:
            print 'Error: the testing file does not have the variable '+vname+' that in the ensemble summary file'
            continue
@@ -588,14 +592,25 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
 
 	if (is_SE == True):
             if not cumul: 
-	        output3d[:,:] = data[tslice,:,:] 
-	    for k in range(nlev):
-		gm_lev[k] = area_avg(output3d[k,:], area_wgt, is_SE)
+               temp=data[tslice].shape[0]
+	       gm_lev = np.zeros(temp)
+	       for k in range(temp):
+		   gm_lev[k] = area_avg(data[tslice,k,:], area_wgt, is_SE)
+            else:
+	       gm_lev = np.zeros(nlev)
+	       for k in range(nlev):
+		   gm_lev[k] = area_avg(output3d[k,:], area_wgt, is_SE)
 	else:
             if not cumul:
-	        output3d[:,:,:] = data[tslice,:,:,:] 
-	    for k in range(nlev):
-		gm_lev[k] = area_avg(output3d[k,:,:], area_wgt, is_SE)
+               temp=data[tslice].shape[0]
+	       gm_lev = np.zeros(temp)
+	       for k in range(temp):
+	           gm_lev[k] = area_avg(data[tslice,k,:,:], area_wgt, is_SE)
+	        #output3d[:,:,:] = data[tslice,:,:,:] 
+            else:
+               gm_lev=np.zeros(nlev)
+	       for k in range(nlev):
+	           gm_lev[k] = area_avg(output3d[k,:,:], area_wgt, is_SE)
 	#note: averaging over levels should probably be pressure-weighted(TO DO)        
 	gm3d[count] = np.mean(gm_lev)         
 
@@ -639,6 +654,7 @@ def read_ensemble_summary(ens_file):
   ens_var_name=[]
   ens_rmsz={}
   ens_gm={}
+  std_gm={}  
   #mu_gm={}
   #sigma_gm={}
   #loadings_gm={}
@@ -694,7 +710,12 @@ def read_ensemble_summary(ens_file):
         temp_name=ens_var_name[m]
         ens_gm[temp_name]=i
         m=m+1
-     
+    elif k == 'standardized_gm':
+      m=0
+      for i in v[0:len(v)]:
+        temp_name=ens_var_name[m]
+        std_gm[temp_name]=i
+        m=m+1 
     elif k == 'mu_gm':
       mu_gm=np.zeros((num_var3d+num_var2d),dtype=np.float32)
       mu_gm[:]=v[:]
@@ -708,7 +729,7 @@ def read_ensemble_summary(ens_file):
       sigma_scores_gm=np.zeros((num_var3d+num_var2d),dtype=np.float32)
       sigma_scores_gm[:]=v[:]
   
-  return ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_var3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE
+  return ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_var3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE,std_gm
 
 
 #
@@ -896,7 +917,7 @@ def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg,m
            var_list.append(all_var_names[sorted_sum_std_mean[var]])
 	   if me.get_rank() == 0:
 	       print '{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
-    return new_scores,var_list
+    return new_scores,var_list,standardized_mean
 
 #
 # Insert rmsz scores, global mean of new run to the dictionary results
@@ -1194,6 +1215,7 @@ def Random_pickup(ifiles,opts_dict):
     else:
       random_index=range(len(ifiles))
     new_ifiles=[]
+    print "Randomly pick input files:"
     for i in random_index:
        new_ifiles.append(ifiles[i])
        print ifiles[i]
@@ -1600,4 +1622,6 @@ def plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me):
 
     Ngl.end() 
 
-
+def chunk(it,size):
+    it = iter(it)
+    return iter(lambda:tuple(islice(it,size)),())
