@@ -30,6 +30,10 @@ This package includes:
                             The variable list that will excluded from
                             reading and processing
 
+        included_varlist.json
+                            The variable list that will be included for
+                            reading and processing
+
 
 Before you start to use the package, you need to load the following modules: 
 ----------------------------------------------------------------------------
@@ -78,10 +82,11 @@ Examples for generating summary files:
 	   metadata of intel_summary.nc):
 	    --tag cesm1_3_beta11
 
-           We can exclude some variables from the analysis by specifying them 
+           We can exclude or include some variables from the analysis by specifying them 
 	   in a json file:
             --jsonfile ens_excluded_varlist.json
-       
+            or --jsonfile included_varlist.json 
+
            To generate only global_mean and related PCA loadings (i.e., exclude 
 	   RMSZ and max-error calculations.  This speeds up the calculation and 
 	   is useful for large ensemble sizes if RMSZ info is not needed.):
