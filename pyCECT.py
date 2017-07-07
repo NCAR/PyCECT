@@ -80,15 +80,15 @@ def main(argv):
     dt=datetime.now()
     verbose = opts_dict['verbose']
     if me.get_rank()==0:
-	print '--------pyCECT--------'
-	print ' '
-	print dt.strftime("%A, %d. %B %Y %I:%M%p")
-	print ' '
-	print 'Ensemble summary file = '+opts_dict['sumfile']
-	print ' '
-	print 'Testcase file directory = '+opts_dict['indir']    
-	print ' '
-	print ' '
+        print '--------pyCECT--------'
+        print ' '
+        print dt.strftime("%A, %d. %B %Y %I:%M%p")
+        print ' '
+        print 'Ensemble summary file = '+opts_dict['sumfile']
+        print ' '
+        print 'Testcase file directory = '+opts_dict['indir']    
+        print ' '
+        print ' '
 
     # Ensure sensible EET value
     if opts_dict['eet'] and opts_dict['numRunFile'] > opts_dict['eet']:
@@ -114,12 +114,12 @@ def main(argv):
           metainfo=json.load(fd)
           if 'CaseName' in metainfo:
               casename=metainfo['CaseName']
-	      if (os.path.exists(opts_dict['indir'])):
-		 for name in casename: 
-		     wildname='*.'+name+'.*'
-		     full_glob_str=os.path.join(opts_dict['indir'],wildname)
-		     glob_file=glob.glob(full_glob_str)
-		     in_files.extend(glob_file)
+              if (os.path.exists(opts_dict['indir'])):
+                 for name in casename: 
+                     wildname='*.'+name+'.*'
+                     full_glob_str=os.path.join(opts_dict['indir'],wildname)
+                     glob_file=glob.glob(full_glob_str)
+                     in_files.extend(glob_file)
        else:
           print "Error: "+opts_dict['json_case']+" does not exist"
           sys.exit()
@@ -144,8 +144,8 @@ def main(argv):
 
     else:
         # Random pick non pop files
-        in_files_list=pyEnsLib.Random_pickup(in_files,opts_dict)
-        #in_files_list=in_files
+        #in_files_list=pyEnsLib.Random_pickup(in_files,opts_dict)
+        in_files_list=in_files
 
     for frun_file in in_files_list:
          if frun_file.find(opts_dict['indir']) != -1:
@@ -173,105 +173,141 @@ def main(argv):
             zmall = pyEnsLib.gather_npArray_pop(zmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(ifiles),opts_dict['nbin'])) 
             if me.get_rank()==0:
                 fout = open(opts_dict['outfile'],"w")
-		for i in range(me.get_size()):
-		    for j in zmall[i]:
+                for i in range(me.get_size()):
+                    for j in zmall[i]:
                         np.savetxt(fout,j,fmt='%-7.2e')
     else:
-	# Read all variables from the ensemble summary file
-	ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE_sum,std_gm=pyEnsLib.read_ensemble_summary(opts_dict['sumfile']) 
+        # Read all variables from the ensemble summary file
+        ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE_sum,std_gm=pyEnsLib.read_ensemble_summary(opts_dict['sumfile']) 
 
-	if len(ens_rmsz) == 0:
-	    gmonly = True
-	# Add ensemble rmsz and global mean to the dictionary "variables"
-	variables={}
-	if not gmonly:
-	    for k,v in ens_rmsz.iteritems():
-		pyEnsLib.addvariables(variables,k,'zscoreRange',v)
+        if len(ens_rmsz) == 0:
+            gmonly = True
+        # Add ensemble rmsz and global mean to the dictionary "variables"
+        variables={}
+        if not gmonly:
+            for k,v in ens_rmsz.iteritems():
+                pyEnsLib.addvariables(variables,k,'zscoreRange',v)
 
-	for k,v in ens_gm.iteritems():
-	    pyEnsLib.addvariables(variables,k,'gmRange',v)
+        for k,v in ens_gm.iteritems():
+            pyEnsLib.addvariables(variables,k,'gmRange',v)
 
-	# Get 3d variable name list and 2d variable name list seperately
-	var_name3d=[]
-	var_name2d=[]
-	for vcount,v in enumerate(ens_var_name):
-	  if vcount < num_3d:
-	    var_name3d.append(v)
-	  else:
-	    var_name2d.append(v)
+        # Get 3d variable name list and 2d variable name list seperately
+        var_name3d=[]
+        var_name2d=[]
+        for vcount,v in enumerate(ens_var_name):
+          if vcount < num_3d:
+            var_name3d.append(v)
+          else:
+            var_name2d.append(v)
 
-	# Get ncol and nlev value
-	npts3d,npts2d,is_SE=pyEnsLib.get_ncol_nlev(ifiles[0])
+        # Get ncol and nlev value
+        npts3d,npts2d,is_SE=pyEnsLib.get_ncol_nlev(ifiles[0])
  
         if (is_SE ^ is_SE_sum):
            print 'Warning: please note the ensemble summary file is different from the testing files, they use different grids'
            
      
-	# Compare the new run and the ensemble summary file to get rmsz score
-	results={}
-	countzscore=np.zeros(len(ifiles),dtype=np.int32)
-	countgm=np.zeros(len(ifiles),dtype=np.int32)
-	if not gmonly:
-	    for fcount,fid in enumerate(ifiles): 
-		otimeSeries = fid.variables 
-		for var_name in ens_var_name: 
-		    orig=otimeSeries[var_name]
-		    Zscore,has_zscore=pyEnsLib.calculate_raw_score(var_name,orig[opts_dict['tslice']],npts3d,npts2d,ens_avg,ens_stddev,is_SE,opts_dict,0,0,0) 
-		    if has_zscore:
-			# Add the new run rmsz zscore to the dictionary "results"
-			pyEnsLib.addresults(results,'zscore',Zscore,var_name,'f'+str(fcount))
+        # Compare the new run and the ensemble summary file to get rmsz score
+        results={}
+        countzscore=np.zeros(len(ifiles),dtype=np.int32)
+        countgm=np.zeros(len(ifiles),dtype=np.int32)
+        if not gmonly:
+            for fcount,fid in enumerate(ifiles): 
+                otimeSeries = fid.variables 
+                for var_name in ens_var_name: 
+                    orig=otimeSeries[var_name]
+                    Zscore,has_zscore=pyEnsLib.calculate_raw_score(var_name,orig[opts_dict['tslice']],npts3d,npts2d,ens_avg,ens_stddev,is_SE,opts_dict,0,0,0) 
+                    if has_zscore:
+                        # Add the new run rmsz zscore to the dictionary "results"
+                        pyEnsLib.addresults(results,'zscore',Zscore,var_name,'f'+str(fcount))
 
 
-	    # Evaluate the new run rmsz score if is in the range of the ensemble summary rmsz zscore range
-	    for fcount,fid in enumerate(ifiles):
-		countzscore[fcount]=pyEnsLib.evaluatestatus('zscore','zscoreRange',variables,'ens',results,'f'+str(fcount))
+            # Evaluate the new run rmsz score if is in the range of the ensemble summary rmsz zscore range
+            for fcount,fid in enumerate(ifiles):
+                countzscore[fcount]=pyEnsLib.evaluatestatus('zscore','zscoreRange',variables,'ens',results,'f'+str(fcount))
 
-	# Calculate the new run global mean
-	mean3d,mean2d,varlist=pyEnsLib.generate_global_mean_for_summary(ifiles,var_name3d,var_name2d,is_SE,opts_dict['pepsi_gm'],opts_dict)
-	means=np.concatenate((mean3d,mean2d),axis=0)
+        # Calculate the new run global mean
+        mean3d,mean2d,varlist=pyEnsLib.generate_global_mean_for_summary(ifiles,var_name3d,var_name2d,is_SE,opts_dict['pepsi_gm'],opts_dict)
+        means=np.concatenate((mean3d,mean2d),axis=0)
 
-	# Add the new run global mean to the dictionary "results"
-	for i in range(means.shape[1]):
-	    for j in range(means.shape[0]):
-		pyEnsLib.addresults(results,'means',means[j][i],ens_var_name[j],'f'+str(i))
+        # Add the new run global mean to the dictionary "results"
+        for i in range(means.shape[1]):
+            for j in range(means.shape[0]):
+                pyEnsLib.addresults(results,'means',means[j][i],ens_var_name[j],'f'+str(i))
 
-	# Evaluate the new run global mean if it is in the range of the ensemble summary global mean range
-	for fcount,fid in enumerate(ifiles):
-	    countgm[fcount]=pyEnsLib.evaluatestatus('means','gmRange',variables,'gm',results,'f'+str(fcount))
+        # Evaluate the new run global mean if it is in the range of the ensemble summary global mean range
+        for fcount,fid in enumerate(ifiles):
+            countgm[fcount]=pyEnsLib.evaluatestatus('means','gmRange',variables,'gm',results,'f'+str(fcount))
       
-	# Calculate the PCA scores of the new run
-	new_scores,var_list,comp_std_gm=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg,me)
-	run_index=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me)
-        # If there is failure, plot out the 3 variables that have the largest sum of standardized global mean
-        #print in_files_list
-        if opts_dict['prn_std_mean']:
-            # Plot out standardized mean and compared standardized mean in box plots
+        # Calculate the PCA scores of the new run
+        new_scores,var_list,comp_std_gm=pyEnsLib.standardized(means,mu_gm,sigma_gm,loadings_gm,ens_var_name,opts_dict,ens_avg,me)
+        run_index,decision=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me)
+
+        # If there is failure, plot out standardized mean and compared standardized mean in box plots
+        if opts_dict['prn_std_mean'] and decision == 'FAILED':
             import seaborn as sns
-            b=list(pyEnsLib.chunk(ens_var_name,2))
+            category={"all_outside99":[],"two_outside99":[],"one_outside99":[],"all_oneside_outside1QR":[]}
+            b=list(pyEnsLib.chunk(ens_var_name,10))
             for f,alist in enumerate(b):
+                for fc,avar in enumerate(alist):
+                    dist_995=np.percentile(std_gm[avar],99.5)
+                    dist_75=np.percentile(std_gm[avar],75)
+                    dist_25=np.percentile(std_gm[avar],25)
+                    dist_05=np.percentile(std_gm[avar],0.5)
+                    c=0
+                    d=0
+                    p=0
+                    q=0
+                    for i in range(comp_std_gm[f+fc].size):
+                        if comp_std_gm[f+fc][i]>dist_995:
+                           c=c+1
+                        elif comp_std_gm[f+fc][i]<dist_05:
+                           d=d+1
+                        elif (comp_std_gm[f+fc][i]<dist_995 and comp_std_gm[f+fc][i]>dist_75):
+                           p=p+1
+                        elif (comp_std_gm[f+fc][i]>dist_05 and comp_std_gm[f+fc][i]<dist_25):
+                           q=q+1
+                    if c == 3 or d == 3:
+                       category["all_outside99"].append((avar,f+fc))
+                    elif c == 2 or d == 2:    
+                       category["two_outside99"].append((avar,f+fc))
+                    elif c == 1 or d == 1:
+                       category["one_outside99"].append((avar,f+fc))
+                    if p == 3 or q == 3:
+                       category["all_oneside_outside1QR"].append((avar,f+fc))
+            part_name=opts_dict['indir'].split('/')[-1]
+            if not part_name:
+                part_name=opts_dict['indir'].split('/')[-2]
+            for key in sorted(category):
                 list_array=[]
                 list_array2=[]
-		#print alist
-                for fc,avar in enumerate(alist):
-                    #print fc,avar
-                    list_array.append(std_gm[avar])
-                    list_array2.append(comp_std_gm[f+fc])
-                sns.boxplot(data=list_array,whis=[1.0,99.0],fliersize=0.0)
-                sns.stripplot(data=list_array2,jitter=True,color="r")
-                #sns.stripplot(data=list_array2,jitter=True,color=".3")
-                sns.plt.xticks(range(len(alist)),alist,fontsize=8,rotation=-45)
-                sns.plt.savefig(alist[0]+"_fail_019.png")
-                sns.plt.clf()
+                list_var=[]
+                value=category[key]
+                print "value len=",key,len(value)
+                for each_var in value:
+                    list_array.append(std_gm[each_var[0]])
+                    list_array2.append(comp_std_gm[each_var[1]])
+                    list_var.append(each_var[0])
+                if len(value) !=0 :
+                    ax=sns.boxplot(data=list_array,whis=[0.5,99.5],fliersize=0.0)
+                    sns.stripplot(data=list_array2,jitter=True,color="r")
+                    sns.plt.xticks(range(len(list_array)),list_var,fontsize=8,rotation=-45)
+                    if decision == 'FAILED':
+                       sns.plt.savefig(part_name+"_"+key+"_fail.png")
+                    else:
+                       sns.plt.savefig(part_name+"_"+key+"_pass.png")
+                    sns.plt.clf()
+                
             '''
             if len(run_index)>0:
                json_file=opts_dict['json_case']
-	       if (os.path.exists(json_file)):
-		  fd=open(json_file)
-		  metainfo=json.load(fd)
-		  caseindex=metainfo['CaseIndex']
-		  enspath=str(metainfo['EnsPath'][0])
-		  #print caseindex
-		  if (os.path.exists(enspath)):
+               if (os.path.exists(json_file)):
+                  fd=open(json_file)
+                  metainfo=json.load(fd)
+                  caseindex=metainfo['CaseIndex']
+                  enspath=str(metainfo['EnsPath'][0])
+                  #print caseindex
+                  if (os.path.exists(enspath)):
                      i=0
                      comp_file=[]
                      search = '\.[0-9]{3}\.'
@@ -284,30 +320,30 @@ def main(argv):
                            full_glob_str=os.path.join(enspath,wildname)
                            glob_file=glob.glob(full_glob_str)
                            comp_file.extend(glob_file)
-	             print "comp_file=",comp_file		 
-		     pyEnsLib.plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me)
+                     print "comp_file=",comp_file                
+                     pyEnsLib.plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me)
             '''
-	# Print out 
-	if opts_dict['printVarTest']:
-	    print '*********************************************** '
-	    print 'Variable-based testing (for reference only - not used to determine pass/fail)'
-	    print '*********************************************** '
-	    for fcount,fid in enumerate(ifiles):
-		print ' '
-		print 'Run '+str(fcount+1)+":"
-		print ' '
-		if not gmonly:
-		    print '***'+str(countzscore[fcount])," of "+str(len(ens_var_name))+' variables are outside of ensemble RMSZ distribution***'
-		    pyEnsLib.printsummary(results,'ens','zscore','zscoreRange',(fcount),variables,'RMSZ')
-		    print ' '
-		print '***'+str(countgm[fcount])," of "+str(len(ens_var_name))+' variables are outside of ensemble global mean distribution***'
-		pyEnsLib.printsummary(results,'gm','means','gmRange',fcount,variables,'global mean')
-		print ' '
-		print '----------------------------------------------------------------------------'
+        # Print out 
+        if opts_dict['printVarTest']:
+            print '*********************************************** '
+            print 'Variable-based testing (for reference only - not used to determine pass/fail)'
+            print '*********************************************** '
+            for fcount,fid in enumerate(ifiles):
+                print ' '
+                print 'Run '+str(fcount+1)+":"
+                print ' '
+                if not gmonly:
+                    print '***'+str(countzscore[fcount])," of "+str(len(ens_var_name))+' variables are outside of ensemble RMSZ distribution***'
+                    pyEnsLib.printsummary(results,'ens','zscore','zscoreRange',(fcount),variables,'RMSZ')
+                    print ' '
+                print '***'+str(countgm[fcount])," of "+str(len(ens_var_name))+' variables are outside of ensemble global mean distribution***'
+                pyEnsLib.printsummary(results,'gm','means','gmRange',fcount,variables,'global mean')
+                print ' '
+                print '----------------------------------------------------------------------------'
     if me.get_rank() == 0:
-	print ' '
-	print "Testing complete."
-	print ' '
+        print ' '
+        print "Testing complete."
+        print ' '
 
 if __name__ == "__main__":
     main(sys.argv[1:])
