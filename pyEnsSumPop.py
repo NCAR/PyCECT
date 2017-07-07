@@ -136,10 +136,10 @@ def main(argv):
 
     for count, this_file in enumerate(o_files):
         input_dims = this_file.dimensions     
-	if ( nlev != int(input_dims["z_t"]) or ( nlat != int(input_dims["nlat"]))\
-	      or ( nlon != int(input_dims["nlon"]))):
-	    print "Dimension mismatch between ", in_file_list[0], 'and', in_file_list[count], '!!!'
-	    sys.exit() 
+        if ( nlev != int(input_dims["z_t"]) or ( nlat != int(input_dims["nlat"]))\
+              or ( nlon != int(input_dims["nlon"]))):
+            print "Dimension mismatch between ", in_file_list[0], 'and', in_file_list[count], '!!!'
+            sys.exit() 
 
 
     # Create new summary ensemble file
@@ -158,7 +158,7 @@ def main(argv):
 
        # Set dimensions
        if (verbose == True):
-	   print "Setting dimensions ....."
+           print "Setting dimensions ....."
        nc_sumfile.create_dimension('nlat', nlat)
        nc_sumfile.create_dimension('nlon', nlon)
        nc_sumfile.create_dimension('nlev', nlev)
@@ -173,7 +173,7 @@ def main(argv):
        # Set global attributes
        now = time.strftime("%c")
        if (verbose == True):
-	   print "Setting global attributes ....."
+           print "Setting global attributes ....."
        setattr(nc_sumfile, 'creation_date',now)
        setattr(nc_sumfile, 'title', 'POP verification ensemble summary file')
        setattr(nc_sumfile, 'tag', opts_dict["tag"]) 
@@ -183,7 +183,7 @@ def main(argv):
 
        # Create variables
        if (verbose == True):
-	   print "Creating variables ....."
+           print "Creating variables ....."
        v_lev = nc_sumfile.create_variable("lev", 'f', ('nlev',))
        v_vars = nc_sumfile.create_variable("vars", 'S1', ('nvars', 'str_size'))
        v_var3d = nc_sumfile.create_variable("var3d", 'S1', ('nvars3d', 'str_size'))
@@ -201,7 +201,7 @@ def main(argv):
 
        # Assign vars, var3d and var2d
        if (verbose == True):
-	   print "Assigning vars, var3d, and var2d ....."
+           print "Assigning vars, var3d, and var2d ....."
 
        eq_all_var_names =[]
        eq_d3_var_names = []
@@ -210,30 +210,30 @@ def main(argv):
        all_var_names += Var2d
        l_eq = len(all_var_names)
        for i in range(l_eq):
-	   tt = list(all_var_names[i])
-	   l_tt = len(tt)
-	   if (l_tt < str_size):
-	       extra = list(' ')*(str_size - l_tt)
-	       tt.extend(extra)
-	   eq_all_var_names.append(tt)
+           tt = list(all_var_names[i])
+           l_tt = len(tt)
+           if (l_tt < str_size):
+               extra = list(' ')*(str_size - l_tt)
+               tt.extend(extra)
+           eq_all_var_names.append(tt)
 
        l_eq = len(Var3d)
        for i in range(l_eq):
-	   tt = list(Var3d[i])
-	   l_tt = len(tt)
-	   if (l_tt < str_size):
-	       extra = list(' ')*(str_size - l_tt)
-	       tt.extend(extra)
-	   eq_d3_var_names.append(tt)
+           tt = list(Var3d[i])
+           l_tt = len(tt)
+           if (l_tt < str_size):
+               extra = list(' ')*(str_size - l_tt)
+               tt.extend(extra)
+           eq_d3_var_names.append(tt)
 
        l_eq = len(Var2d)
        for i in range(l_eq):
-	   tt = list(Var2d[i])
-	   l_tt = len(tt)
-	   if (l_tt < str_size):
-	       extra = list(' ')*(str_size - l_tt)
-	       tt.extend(extra)
-	   eq_d2_var_names.append(tt)
+           tt = list(Var2d[i])
+           l_tt = len(tt)
+           if (l_tt < str_size):
+               extra = list(' ')*(str_size - l_tt)
+               tt.extend(extra)
+           eq_d2_var_names.append(tt)
 
        v_vars[:] = eq_all_var_names[:]
        v_var3d[:] = eq_d3_var_names[:]
@@ -241,7 +241,7 @@ def main(argv):
 
        # Time-invarient metadata
        if (verbose == True):
-	   print "Assigning time invariant metadata ....."
+           print "Assigning time invariant metadata ....."
        vars_dict = o_files[0].variables
        lev_data = vars_dict["z_t"]
        v_lev = lev_data
@@ -273,12 +273,12 @@ def main(argv):
 
     # Collect from all processors
     if opts_dict['mpi_enable'] :
-	# Gather the 3d variable results from all processors to the master processor
-	# Gather global means 3d results
+        # Gather the 3d variable results from all processors to the master processor
+        # Gather global means 3d results
         if not opts_dict['zscoreonly']:
            gmall=np.concatenate((gm3d,gm2d),axis=0)
            #print "before gather, gmall.shape=",gmall.shape
-	   gmall=pyEnsLib.gather_npArray_pop(gmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(o_files)))
+           gmall=pyEnsLib.gather_npArray_pop(gmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(o_files)))
         zmall=np.concatenate((zscore3d,zscore2d),axis=0)
         zmall=pyEnsLib.gather_npArray_pop(zmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(o_files),nbin))
         #print 'zmall=',zmall
@@ -291,14 +291,14 @@ def main(argv):
 
     # Assign to file:
     if me.get_rank() == 0 :
-	#Zscoreall=np.concatenate((zscore3d,zscore2d),axis=0)
-	v_RMSZ[:,:,:,:]=zmall[:,:,:,:]
-	v_ens_avg3d[:,:,:,:,:]=ens_avg3d[:,:,:,:,:]
-	v_ens_stddev3d[:,:,:,:,:]=ens_stddev3d[:,:,:,:,:]
-	v_ens_avg2d[:,:,:,:]=ens_avg2d[:,:,:,:]
-	v_ens_stddev2d[:,:,:,:]=ens_stddev2d[:,:,:,:]
-	if not opts_dict['zscoreonly']:
-	   v_gm[:,:,:]=gmall[:,:,:]
+        #Zscoreall=np.concatenate((zscore3d,zscore2d),axis=0)
+        v_RMSZ[:,:,:,:]=zmall[:,:,:,:]
+        v_ens_avg3d[:,:,:,:,:]=ens_avg3d[:,:,:,:,:]
+        v_ens_stddev3d[:,:,:,:,:]=ens_stddev3d[:,:,:,:,:]
+        v_ens_avg2d[:,:,:,:]=ens_avg2d[:,:,:,:]
+        v_ens_stddev2d[:,:,:,:]=ens_stddev2d[:,:,:,:]
+        if not opts_dict['zscoreonly']:
+           v_gm[:,:,:]=gmall[:,:,:]
         print "All done"
 
 if __name__ == "__main__":
