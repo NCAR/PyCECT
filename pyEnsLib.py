@@ -1101,6 +1101,11 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
            print "%d tests failed out of %d possible tests" % (failures, passes + failures)
            print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
            print ' '
+           print failures,passes
+           if float(failures)>0.1*float(passes+failures):
+              decision="FAILED"
+           else:
+              decision="PASSED"
 
    else:
        for j in range(comp_array.shape[1]):
