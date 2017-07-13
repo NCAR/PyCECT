@@ -409,9 +409,13 @@ def calc_nrmse(orig_array,comp_array):
 #
 # Calculate weighted global mean for one level of CAM output
 #
-def area_avg(data, weight, is_SE):
+def area_avg(data_orig, weight, is_SE):
 
     #TO DO: take into account missing values
+    if data_orig.dtype == np.float32:
+        data=data_orig.astype(np.float64)
+    else:
+        data=data_orig
     if (is_SE == True):
         a = np.average(data, weights=weight)
     else: #FV
@@ -1101,7 +1105,6 @@ def comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me):
            print "%d tests failed out of %d possible tests" % (failures, passes + failures)
            print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
            print ' '
-           print failures,passes
            if float(failures)>0.1*float(passes+failures):
               decision="FAILED"
            else:
