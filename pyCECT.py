@@ -144,8 +144,8 @@ def main(argv):
 
     else:
         # Random pick non pop files
-        #in_files_list=pyEnsLib.Random_pickup(in_files,opts_dict)
-        in_files_list=in_files
+        in_files_list=pyEnsLib.Random_pickup(in_files,opts_dict)
+        #in_files_list=in_files
 
     for frun_file in in_files_list:
          if frun_file.find(opts_dict['indir']) != -1:
