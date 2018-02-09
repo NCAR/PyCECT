@@ -34,6 +34,9 @@ This package includes:
                             The variable list that will be included for
                             reading and processing
 
+	exclude_empty.json
+	                   An empty exclude variable list, useful for 
+			   determining from scratch which variables to exclude
 
 Before you start to use the package, you need to load the following modules: 
 ----------------------------------------------------------------------------
@@ -64,6 +67,13 @@ Notes:
        Recommended number of cores to use is one for each 3D variable (current 
        default number of 3D variables is 42). 
 
+       If there are variables that need to be excluded (that are not in the .json file
+       already), pyEnsSum will exit early and provide a list of the variables to exclude
+       in the output.  First any variables that are constant or have nearly zero means 
+       across the ensemble are identified.  Once those are removed, linearly dependant 
+       variables can be indentified.
+
+
 Examples for generating summary files:
 --------------------------------------
 	 (A) To generate (in parallel) a summary file for 151 simulations runs, 
@@ -83,7 +93,7 @@ Examples for generating summary files:
 	    --tag cesm1_3_beta11
 
            We can exclude or include some variables from the analysis by specifying them 
-	   in a json file:
+	   in a json file (or you can use the empty template, include_empty.json):
             --jsonfile ens_excluded_varlist.json
             or --jsonfile included_varlist.json 
 
@@ -105,3 +115,5 @@ Examples for generating summary files:
 
            python  pyEnsSum.py --verbose --esize 151 --tslice 1 --indir /glade/u/tdd/asap/verification/cesm1_3_beta11/sz151-yellowstone-intel/ --tag cesm1_3_beta11 --sumfile intel_test.nc --jsonfile ens_excluded_varlist.json
 
+
+	   

@@ -37,7 +37,7 @@ def main(argv):
     opts_dict['sumfile'] = 'ens.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['sumfiledir'] = './'
-    opts_dict['jsonfile'] = ''
+    opts_dict['jsonfile'] = 'exclude_empty.json'
     opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = False
     opts_dict['maxnorm'] = False

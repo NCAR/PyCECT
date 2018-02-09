@@ -15,10 +15,11 @@ import Nio, Ngl
 import itertools
 from itertools import islice
 from EET import exhaustive_test
+from scipy import linalg as sla
 
 
 #
-# Parse header file of a netcdf to get the varaible 3d/2d/1d list
+# Parse header file of a netcdf to get the variable 3d/2d/1d list
 #
 def parse_header_file(filename):
     command ='ncdump -h ' + filename
@@ -293,32 +294,71 @@ def pre_PCA(gm_32,all_var_names,whole_list,me):
     standardized_global_mean=np.zeros(gm.shape,dtype=np.float64)
     scores_gm=np.zeros(gm.shape,dtype=np.float64)
 
+    orig_len = len(whole_list)
+    if orig_len > 0:
+        if me.get_rank() == 0:
+            print "\n"
+            print "***************************************************************************************"
+            print "Warning: these ", orig_len, " variables have ~0 means (< O(e-15)) for each ensemble member, please exclude them via the json file (--jsonfile) :"
+            print ",".join(['"{0}"'.format(item) for item in whole_list])
+            print "***************************************************************************************"
+            print "\n"
+
+    #check for constants across ensemble
     for var in range(nvar):
       for file in range(nfile):
-        #standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/np.where(sigma_gm[var]<=threshold,FillValue,sigma_gm[var])
         if np.any(sigma_gm[var]== 0.0) and all_var_names[var] not in set(whole_list):
+           #keep track of zeros standard deviations
            whole_list.append(all_var_names[var])
-           if me.get_rank() == 0:
-              print "Warning: sigma_gm has zero values, cannot be divided"
+
+    #print list       
+    new_len = len(whole_list)
+    if (new_len > orig_len):
+        sub_list = whole_list[orig_len:]
+        if me.get_rank() == 0:
               print "\n"
               print "*************************************************************************************"
-              print "Please exclude the following variable list from calculating ensemble summary file:"
-              print ",".join(['"{0}"'.format(item) for item in whole_list])
+              print "Warning: these ", new_len-orig_len, " variables are constant across ensemble members, please exclude them via the json file (--jsonfile): "
+              print "\n"
+              print ",".join(['"{0}"'.format(item) for item in sub_list])
               print "*************************************************************************************"
               print "\n"
-        standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/sigma_gm[var]
+
+    #exit if non-zero length whole_list      
+    if new_len > 0:
+        if me.get_rank() == 0:
+            print "Exiting ..."
+        sys.exit(2)
         
+    for var in range(nvar):
+      for file in range(nfile):
+        standardized_global_mean[var,file]=(gm[var,file]-mu_gm[var])/sigma_gm[var]
+
+
     standardized_rank=np.linalg.matrix_rank(standardized_global_mean)
-    print "standardized_global_mean rank = ",standardized_rank 
-    dep_var_list=get_failure_index(standardized_global_mean)
+    if me.get_rank() == 0:
+        print "standardized_global_mean rank = ",standardized_rank 
+        print "checking for dependent vars using QR..."
+    #dep_var_list=get_failure_index(standardized_global_mean)
+    dep_var_list = get_dependent_vars_index(standardized_global_mean, standardized_rank)
+    num_dep = len(dep_var_list)
+    orig_len = len(whole_list)
     for i in dep_var_list:
        whole_list.append(all_var_names[i])
-    if whole_list:
-       print "********************************************************************************************"
-       print "The following variables are dependent, please exclude them from computing ensemble summary"
-       print ",".join(['"{0}"'.format(item) for item in whole_list])
-       print "********************************************************************************************"
-    #print "standardized_global_mean rank again = ",standardized_global_mean.shape 
+    if num_dep > 0:
+        sub_list = whole_list[orig_len:]
+        if me.get_rank() == 0:
+            print "\n"
+            print "********************************************************************************************"
+            print "Warning: these ", num_dep, " variables are linearly dependent, please exclude them via the json file (--jsonfile): "
+            print "\n"
+            print ",".join(['"{0}"'.format(item) for item in sub_list])
+            print "********************************************************************************************"
+            print "\n"
+            print "Exiting..."
+        #now exit
+        sys.exit(2)
+
     loadings_gm=princomp(standardized_global_mean)
 
     #now do coord transformation on the standardized meana to get the scores
@@ -374,21 +414,32 @@ def calc_Z(val,avg,stddev,count,flag):
 # Read a json file for the excluded list of variables
 #
 def read_jsonlist(metajson,method_name):
-  fd=open(metajson)
-  metainfo = json.load(fd)
-  if method_name == 'ES':
-     exclude=False
-     #varList = metainfo['ExcludedVar']
-     if 'ExcludedVar' in metainfo:
-        exclude=True
-        varList = metainfo['ExcludedVar']
-     elif 'IncludedVar' in metainfo:
-        varList = metainfo['IncludedVar']
-     return varList,exclude
-  elif method_name == 'ESP':
-     var2d = metainfo['Var2d']
-     var3d = metainfo['Var3d']
-     return var2d, var3d
+    
+    if not os.path.exists(metajson):
+        print "\n"
+        print "*************************************************************************************"
+        print "Warning: Specified json file does not exist: ",metajson
+        print "*************************************************************************************"
+        print "\n"
+        varList = []
+        exclude = True
+        return varList,exclude
+    else:
+        fd=open(metajson)
+        metainfo = json.load(fd)
+        if method_name == 'ES':
+            exclude=False
+            #varList = metainfo['ExcludedVar']
+            if 'ExcludedVar' in metainfo:
+                exclude=True
+                varList = metainfo['ExcludedVar']
+            elif 'IncludedVar' in metainfo:
+                varList = metainfo['IncludedVar']
+            return varList,exclude
+        elif method_name == 'ESP':
+            var2d = metainfo['Var2d']
+            var3d = metainfo['Var3d']
+            return var2d, var3d
 
 
 # 
@@ -523,6 +574,8 @@ def generate_global_mean_for_summary(o_files,var_name3d,var_name2d,is_SE,pepsi_g
 
         else:
            gm3d[:,fcount],gm2d[:,fcount]=calc_global_mean_for_onefile(fname,area_wgt,var_name3d,var_name2d,output3d,output2d,tslice,is_SE,nlev,opts_dict)
+
+
   
     var_list=[] 
     for i in range(len(var_name3d)):
@@ -1176,7 +1229,7 @@ def EnsSum_usage():
     print '   --res <name>         : Resolution (used in metadata), (default = ne30_ne30)'
     print '   --tslice <num>       : the index into the time dimension, (default = 1)'
     print '   --mach <num>         : Machine name used in the metadata, (default = yellowstone)'
-    print '   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be excluded  (no default)'
+    print '   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be excluded  (default = exclude_empty.json)'
     print '   --mpi_enable         : Enable mpi mode if True'
     print '   --maxnorm            : Enable to generate max norm ensemble files'
     print '   --gmonly             : Only generate global_mean and PCA loadings (omit RMSZ information)'
@@ -1480,6 +1533,33 @@ def get_failure_index(the_array):
              break
     #print "deficit_row = ",deficit_row
     return deficit_row
+
+#
+#Alternative method to get the linearly dependent rows (using QR for faster perf)
+#
+def get_dependent_vars_index(a_mat, orig_rank):
+
+     #initialize
+     dv_index = []
+
+     #the_array is nvars x nens
+     nvars = a_mat.shape[0]
+     
+     if (orig_rank < nvars):
+          #transpose so vars are the columns
+          t_mat = a_mat.transpose()
+          #now do a rank-revealing qr (pivots for stability)
+          q_mat, r_mat, piv = sla.qr(t_mat, pivoting=True)
+          #rank = num of nonzero diag of r
+          r_mat_d = np.fabs(r_mat.diagonal())
+          e =  np.finfo(float).eps
+          tol = 100*e
+          rank_est = sum(r_mat_d > tol)
+          ind_vars_index = piv[0:rank_est]
+          dv_index = piv[rank_est:]     
+
+     return dv_index
+     
 #
 # Plot out the variable data that have largest stddev by pyNgl
 #
