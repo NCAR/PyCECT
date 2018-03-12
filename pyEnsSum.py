@@ -28,12 +28,12 @@ def main(argv):
     opts_dict={}
     
     # Defaults
-    opts_dict['tag'] = ''
-    opts_dict['compset'] = ''
-    opts_dict['mach'] = ''
-    opts_dict['esize'] = 151
-    opts_dict['tslice'] = 0
-    opts_dict['res'] = ''
+    opts_dict['tag'] = 'cesm2_0_beta08'
+    opts_dict['compset'] = 'F2000'
+    opts_dict['mach'] = 'cheyenne'
+    opts_dict['esize'] = 350
+    opts_dict['tslice'] = 1
+    opts_dict['res'] = 'f19_f19'
     opts_dict['sumfile'] = 'ens.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['sumfiledir'] = './'
@@ -41,7 +41,7 @@ def main(argv):
     opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = False
     opts_dict['maxnorm'] = False
-    opts_dict['gmonly'] = False
+    opts_dict['gmonly'] = True
     opts_dict['popens'] = False
     opts_dict['cumul'] = False
     opts_dict['regx'] = 'test'

@@ -25,9 +25,9 @@ def main(argv):
     opts_dict={}
 
     # Defaults
-    opts_dict['tag'] = 'cesm1_2_0'
-    opts_dict['compset'] = 'FC5'
-    opts_dict['mach'] = 'yellowstone'
+    opts_dict['tag'] = 'cesm1_2_2'
+    opts_dict['compset'] = 'G_NORMAL_YEAR'
+    opts_dict['mach'] = 'cheyenne'
     opts_dict['tslice'] = 0 
     opts_dict['nyear'] = 3
     opts_dict['nmonth'] = 12
@@ -35,7 +35,7 @@ def main(argv):
     opts_dict['nbin'] = 40
     opts_dict['minrange'] = 0.0
     opts_dict['maxrange'] = 4.0
-    opts_dict['res'] = 'ne30_ne30'
+    opts_dict['res'] = 'T62_t12'
     opts_dict['sumfile'] = 'ens.pop.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['jsonfile'] = ''

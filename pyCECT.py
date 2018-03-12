@@ -25,7 +25,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= printVarTest popens 
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile= 
          casejson= npick= pepsi_gm test_failure pop_tol= 
-         pop_threshold= prn_std_mean lev= eet= json_case= """
+         pop_threshold= prn_std_mean fIndex= lev= eet= json_case= """
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
