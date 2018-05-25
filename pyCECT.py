@@ -24,7 +24,7 @@ def main(argv):
     s="""verbose sumfile= indir= input_globs= tslice= nPC= sigMul= 
          minPCFail= minRunFail= numRunFile= printVarTest popens 
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile= 
-         casejson= npick= pepsi_gm test_failure pop_tol= 
+         casejson= npick= pepsi_gm test_failure pop_tol= web_enabled
          pop_threshold= prn_std_mean fIndex= lev= eet= json_case= """
     optkeys = s.split()
     try:
@@ -63,6 +63,7 @@ def main(argv):
     opts_dict['lev'] = 0
     opts_dict['eet'] = 0
     opts_dict['json_case'] = ''
+    opts_dict['web_enabled'] = False
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
     caller = 'CECT'
@@ -84,7 +85,8 @@ def main(argv):
         print ' '
         print dt.strftime("%A, %d. %B %Y %I:%M%p")
         print ' '
-        print 'Ensemble summary file = '+opts_dict['sumfile']
+        if not opts_dict['web_enabled']:
+          print 'Ensemble summary file = '+opts_dict['sumfile']
         print ' '
         print 'Testcase file directory = '+opts_dict['indir']    
         print ' '
@@ -157,7 +159,18 @@ def main(argv):
          else:
              print "COULD NOT LOCATE FILE " +frun_temp+" EXISTING"
              sys.exit()
-    
+   
+    if opts_dict['web_enabled']:
+       opts_dict['sumfile'],machineid,compiler=pyEnsLib.search_sumfile(opts_dict,ifiles) 
+       if len(machineid)!=0 and len(compiler)!=0:
+          print 'Validation file machineid = '+machineid
+          print '                compiler  =' +compiler
+          print 'Found summery file : '+opts_dict['sumfile']
+       else:
+          print 'Warning: machineid and compiler are unknown'
+
+             
+
     if popens:
         
         # Read in the included var list

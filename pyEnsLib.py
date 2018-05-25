@@ -279,6 +279,72 @@ def calculate_raw_score(k,v,npts3d,npts2d,ens_avg,ens_stddev,is_SE,opts_dict,Fil
    
   return Zscore,has_zscore
 
+# 
+# Find the corresponding ensemble summary file from directory 
+# /glade/p/cesmdata/cseg/inputdata/validation/ when three 
+# validation files are input from the web server
+# 
+def search_sumfile(opts_dict,ifiles):
+       #sumfile_dir='/glade/p/cesmdata/cseg/inputdata/validation/'
+       sumfile_dir='/glade/scratch/haiyingx/cseg/validation/'
+       global_att=ifiles[0].attributes
+       machineid=''
+       compiler=''
+       for k,v in global_att.iteritems():
+          if k=='model_version':
+             if v.find("-") != -1:
+                model_version=v[0:v.find('-')]
+             else:
+                model_version=v
+             #print model_version
+          elif k=='compset':
+             compset=v 
+          elif k=='testtype':
+             testtype=v
+             if v=='UF-ECT':
+                testtype='uf_ensembles'
+             elif v=='ECT':
+                testtype='ensembles'
+             elif v=='POP':
+                testtype=v+'_ensembles'
+          elif k=='machineid':
+             machineid=v
+          elif k=='compiler':
+             compiler=v
+          elif k=='grid':
+             grid=v
+       if 'testtype' in global_att:
+             sumfile_dir=sumfile_dir+'/'+testtype+'/'
+       else:
+           print "Error: No global attribute testtype in your validation file. EXITING"
+           sys.exit(2)
+       if 'model_version' in global_att:
+           sumfile_dir=sumfile_dir+'/'+model_version+'/'
+       else:
+           print "Error: No global attribute model_version in your validation file. EXITING"
+           sys.exit(2)
+       if (os.path.exists(sumfile_dir)):
+           thefile_id=0
+           for i in os.listdir(sumfile_dir):
+               if (os.path.isfile(sumfile_dir+i)):
+                  sumfile_id=Nio.open_file(sumfile_dir+i,'r')
+                  sumfile_gatt=sumfile_id.attributes
+                  print '      '+sumfile_dir+i
+                  if 'grid' not in sumfile_gatt and 'resolution' not in sumfile_gatt:
+                     print "Error: No global attribute grid or resolution in the summary file. EXITING"
+                     sys.exit(2)
+                  if 'compset' not in sumfile_gatt:
+                     print "Error: No global attribute compset in the summary file. EXITING"
+                     sys.exit(2)
+                  if sumfile_gatt['resolution']==grid and sumfile_gatt['compset']==compset:
+                     thefile_id=sumfile_id
+           if thefile_id==0:
+              print "Error: The validation files don't have matching ensemble summary file to compare. EXITING"
+              sys.exit(2)    
+       else:
+         print "Error:Could not locate directory "+sumfile_dir+" EXITING"
+         sys.exit(2)
+       return sumfile_dir+i,machineid,compiler
 #
 # Create some variables and call a function to calculate PCA
 #
@@ -466,7 +532,7 @@ def area_avg(data_orig, weight, is_SE):
     if data_orig.dtype == np.float32:
         data=data_orig.astype(np.float64)
     else:
-        data=data_orig
+        data=data_orig[:]
     if (is_SE == True):
         a = np.average(data, weights=weight)
     else: #FV
