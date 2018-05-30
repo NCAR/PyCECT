@@ -95,6 +95,11 @@ Notes and examples:
        --tslice 1  (For monthly files, --tslice 0.  Note that this 
        should correspond to what has been collected in the summary file.)
 
+    To enable printing out sum of standardized mean of all variables and associated box plots
+      
+       --prn_std_mean
+       requries Python seaborn package
+
     Example using the default settings:
     
     python pyCECT.py --sumfile  CAM.ens.summary.nc --indir  /glade/u/tdd/asap/verification/cesm1_3_beta11/mira 
