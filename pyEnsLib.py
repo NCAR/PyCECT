@@ -301,6 +301,7 @@ def search_sumfile(opts_dict,ifiles):
              testtype=v
              if v=='UF-ECT':
                 testtype='uf_ensembles'
+                opts_dict['eet']=len(ifiles)
              elif v=='ECT':
                 testtype='ensembles'
              elif v=='POP':
@@ -327,7 +328,6 @@ def search_sumfile(opts_dict,ifiles):
                if (os.path.isfile(sumfile_dir+i)):
                   sumfile_id=Nio.open_file(sumfile_dir+i,'r')
                   sumfile_gatt=sumfile_id.attributes
-                  print '      '+sumfile_dir+i
                   if 'grid' not in sumfile_gatt and 'resolution' not in sumfile_gatt:
                      print "Error: No global attribute grid or resolution in the summary file. EXITING"
                      sys.exit(2)

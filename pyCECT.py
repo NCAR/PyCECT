@@ -166,9 +166,10 @@ def main(argv):
           opts_dict['sumfile']='/glade/p/cesmdata/cseg/inputdata/validation/'
        opts_dict['sumfile'],machineid,compiler=pyEnsLib.search_sumfile(opts_dict,ifiles) 
        if len(machineid)!=0 and len(compiler)!=0:
-          print 'Validation file machineid = '+machineid
-          print '                compiler  =' +compiler
+          print ' '
+          print 'Validation file    : machineid = '+machineid+', compiler = '+compiler
           print 'Found summery file : '+opts_dict['sumfile']
+          print ' '
        else:
           print 'Warning: machineid and compiler are unknown'
 
