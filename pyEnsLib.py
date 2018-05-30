@@ -285,8 +285,7 @@ def calculate_raw_score(k,v,npts3d,npts2d,ens_avg,ens_stddev,is_SE,opts_dict,Fil
 # validation files are input from the web server
 # 
 def search_sumfile(opts_dict,ifiles):
-       #sumfile_dir='/glade/p/cesmdata/cseg/inputdata/validation/'
-       sumfile_dir='/glade/scratch/haiyingx/cseg/validation/'
+       sumfile_dir=opts_dict['sumfile']
        global_att=ifiles[0].attributes
        machineid=''
        compiler=''
@@ -296,7 +295,6 @@ def search_sumfile(opts_dict,ifiles):
                 model_version=v[0:v.find('-')]
              else:
                 model_version=v
-             #print model_version
           elif k=='compset':
              compset=v 
           elif k=='testtype':
@@ -345,6 +343,7 @@ def search_sumfile(opts_dict,ifiles):
          print "Error:Could not locate directory "+sumfile_dir+" EXITING"
          sys.exit(2)
        return sumfile_dir+i,machineid,compiler
+
 #
 # Create some variables and call a function to calculate PCA
 #

@@ -63,6 +63,7 @@ def main(argv):
     opts_dict['lev'] = 0
     opts_dict['eet'] = 0
     opts_dict['json_case'] = ''
+    opts_dict['sumfile'] = ''
     opts_dict['web_enabled'] = False
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -161,6 +162,8 @@ def main(argv):
              sys.exit()
    
     if opts_dict['web_enabled']:
+       if len(opts_dict['sumfile'])==0:
+          opts_dict['sumfile']='/glade/p/cesmdata/cseg/inputdata/validation/'
        opts_dict['sumfile'],machineid,compiler=pyEnsLib.search_sumfile(opts_dict,ifiles) 
        if len(machineid)!=0 and len(compiler)!=0:
           print 'Validation file machineid = '+machineid
