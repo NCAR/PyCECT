@@ -25,17 +25,17 @@ def main(argv):
     opts_dict={}
 
     # Defaults
-    opts_dict['tag'] = 'cesm1_2_2'
-    opts_dict['compset'] = 'G_NORMAL_YEAR'
+    opts_dict['tag'] = 'cesm2_0_0'
+    opts_dict['compset'] = 'G'
     opts_dict['mach'] = 'cheyenne'
     opts_dict['tslice'] = 0 
-    opts_dict['nyear'] = 3
+    opts_dict['nyear'] = 1
     opts_dict['nmonth'] = 12
     opts_dict['npert'] = 40
     opts_dict['nbin'] = 40
     opts_dict['minrange'] = 0.0
     opts_dict['maxrange'] = 4.0
-    opts_dict['res'] = 'T62_t12'
+    opts_dict['res'] = 'T62_g17'
     opts_dict['sumfile'] = 'ens.pop.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['jsonfile'] = ''
@@ -46,7 +46,7 @@ def main(argv):
     opts_dict['nrand'] = 40 
     opts_dict['rand'] = False
     opts_dict['seq'] = 0 
-    opts_dict['jsondir'] = '/glade/scratch/haiyingx/' 
+    opts_dict['jsondir'] = './' 
 
     # This creates the dictionary of input arguments 
     print "before parseconfig"
@@ -258,18 +258,23 @@ def main(argv):
 
     # Calculate global mean, average, standard deviation 
     if verbose:
-       print "Calculating global means ....."
+       if not opts_dict['zscoreonly']: 
+           print "Calculating global means ....."
     is_SE = False
     tslice=0
     if not opts_dict['zscoreonly']:
        gm3d,gm2d = pyEnsLib.generate_global_mean_for_summary(o_files,Var3d,Var2d, is_SE,False,opts_dict)
     if verbose:
-       print "Finish calculating global means ....."
+        if not opts_dict['zscoreonly']:
+            print "Finish calculating global means ....."
 
     # Calculate RMSZ scores  
     if (verbose == True):
        print "Calculating RMSZ scores ....."
     zscore3d,zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d,temp1,temp2=pyEnsLib.calc_rmsz(o_files,Var3d,Var2d,is_SE,opts_dict)    
+
+    if (verbose == True):
+        print "Finished with RMSZ scores ....."
 
     # Collect from all processors
     if opts_dict['mpi_enable'] :
