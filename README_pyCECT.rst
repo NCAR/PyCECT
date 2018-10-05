@@ -117,23 +117,25 @@ Notes and examples:
 
       Be sure to use a POP-ECT summary file:
            
-	   --sumfile /glade/u/tdd/asap/pop_verification/ens_sum/pop.40ens.openseas.nc
+	   --sumfile /glade/p/cisl/iowa/pop_verification/summary/pop.ens.summary.nc
 	    
       Directory path that contains the run(s) to be evaluated.
 	    
-	   --indir /glade/u/tdd/asap/pop_verification/testcases/
+	   --indir /glade/p/cisl/iowa/pop_verification/testcases/
 
       The above directory may contain many POP history files that following the standard 
-      CESM-POP naming convention. To specific with file or files you wish to test, you 
-      simply specifying the test case file prefix.  For  example, to compare against all 
-      months in year 3 from the input directory above:
+      CESM-POP naming convention. To specific which file or files you wish to test, you 
+      simply specifying the test case file prefix (like a wildcard expansion).  For  example, 
+      to compare against all months in year 3 from the input directory above:
 
             --input_glob cvtd100000.0.pop.h.0003
            
       To compare only against month 6 in year 3:
 
             --input_glob cvtd100000.0.pop.h.0003-06
-         
+      (Note: if input_glob is not specified, all files in --indir will be compared)
+
+
      Be sure to specify the json file that includes the variables which will be run the test on:
 
             --jsonfile pop_ensemble.json
@@ -149,11 +151,8 @@ Notes and examples:
  
             --pop_threshold 0.9
 
-    To run in parallel (recommended if you are analyzing more than one month - one core per month):
-
-            --mpi_enable
     
     Example:
          
-    python pyCECT.py --sumfile /glade/u/tdd/asap/pop_verification/ens_sum/pop.40ens.openseas.nc --indir /glade/u/tdd/asap/pop_verification/testcases/ --input_glob cvtd100000.0.pop.h.0003 --popens --jsonfile pop_ensemble.json  --pop_tol 3.0 --pop_threshold 0.9
+    python pyCECT.py --popens --sumfile /glade/p/cisl/iowa/pop_verification/summary/pop.ens.summary.nc --indir /glade/p/cisl/iowa/pop_verification/testcases/ --input_glob cvtd100000.0.pop.h.0003 --jsonfile pop_ensemble.json  --pop_tol 3.0 --pop_threshold 0.9
        	    

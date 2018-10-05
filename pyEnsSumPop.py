@@ -49,14 +49,15 @@ def main(argv):
     opts_dict['jsondir'] = './' 
 
     # This creates the dictionary of input arguments 
-    print "before parseconfig"
+    #print "before parseconfig"
     opts_dict = pyEnsLib.getopt_parseconfig(opts,optkeys,'ESP',opts_dict)
 
     verbose = opts_dict['verbose']
     nbin = opts_dict['nbin']
 
     if verbose:
-       print opts_dict
+        print "opts_dict = "
+        print opts_dict
        
     # Now find file names in indir
     input_dir = opts_dict['indir']
@@ -89,8 +90,9 @@ def main(argv):
            in_files=sorted(in_files_temp)
         # Make sure we have enough
         num_files = len(in_files)
+        print "Using num_files = " + str(num_files) + "to create summary file"
     else:
-        print 'Input directory: ',input_dir,' not found'
+        print 'ERROR: Input directory: ',input_dir,' not found'
         sys.exit(2)
 
     # Create a mpi simplecomm object
@@ -108,11 +110,11 @@ def main(argv):
         if (os.path.isfile(input_dir+'/' + onefile)):
             o_files.append(Nio.open_file(input_dir+'/' + onefile,"r"))
         else:
-            print "COULD NOT LOCATE FILE "+ input_dir + onefile + "! EXITING...."
+            print "ERROR: Could not locate file: "+ input_dir + onefile 
             sys.exit() 
 
 
-    print in_file_list
+    #print in_file_list
 
     # Store dimensions of the input fields
     if (verbose == True):
@@ -126,6 +128,8 @@ def main(argv):
     ndims = len(input_dims)
 
     # Make sure all files have the same dimensions
+    if (verbose == True):
+        print "Checking dimensions ..."
     for key in input_dims:
         if key == "z_t":
             nlev = input_dims["z_t"]

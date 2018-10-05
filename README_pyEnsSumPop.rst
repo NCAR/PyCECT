@@ -9,7 +9,6 @@ global means, and Z-scores. This summary file is required for running
 POP-ECT via pyCECT.py.
 
 :AUTHORS: Haiying Xu, Allison Baker
-:VERSION: 1.0.0
 :COPYRIGHT: See the document entitled LICENSE.txt
 
 Send questions and comments to Haiying Xu (haiyingx@ucar.edu).
@@ -38,6 +37,7 @@ Before you start to use the package, you need to load the following modules:
        - module load numpy
        - module load scipy
        - module load pynio
+       - module load mpi4py
        - module load asaptools (available on Cheyenne)
 	    - Note: if you need to install asaptools:
               git clone https://github.com/NCAR-CISL-ASAP/ASAPPyTools
