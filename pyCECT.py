@@ -24,7 +24,7 @@ def main(argv):
     s="""verbose sumfile= indir= input_globs= tslice= nPC= sigMul= 
          minPCFail= minRunFail= numRunFile= printVarTest popens 
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile= 
-         casejson= npick= pepsi_gm test_failure pop_tol= web_enabled
+         casejson= npick= pepsi_gm pop_tol= web_enabled
          pop_threshold= prn_std_mean fIndex= lev= eet= json_case= """
     optkeys = s.split()
     try:

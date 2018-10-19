@@ -61,7 +61,9 @@ Notes:
        Note that --res, --tag, --compset, and --mach only affect the metadata 
        in the summary file.
 
-       Recommended number of cores to use is one for each month. 
+       Recommended number of cores to use is one for each month.  
+       On cheyenne, we recommend:  #PBS -l select=4:ncpus=3:mpiprocs=3
+
 
 Examples for generating summary files:
 --------------------------------------
@@ -86,7 +88,7 @@ Examples for generating summary files:
 	   We also can specify the tag, resolution, machine and compset
 	   information (that will be written to the
 	   metadata of the summary file):
-	    --tag cesm2
+	    --tag cesm2_0
             --res T62_g16
             --mach cheyenne
             --compset G
@@ -95,20 +97,13 @@ Examples for generating summary files:
 	   analysis by specifying them in a json file:
             --jsonfile pop_ensemble.json
        
-           To generate only average, standard deviation and zscores 
-	   (i.e., exclude global means calculations.  This speeds up 
-	   the calculation and is useful for large ensemble sizes if 
-	   global mean info is not needed, which is currently the case
-	   for POP-ECT):
-            --zscoreonly
-
-           To enable parallel mode:
+           Note: to optionally enable parallel mode:
             --mpi_enable    
 
 
 	   This yields the following command:
 
-           python  pyEnsSumPop.py --verbose --tslice 0 --indir /glade/scratch/haiyingx/pop_ensemble_data/ --sumfile pop.ens.sum.nc --nyear 1 --nmonth 12 --npert 40 --jsonfile pop_ensemble.json --mpi_enable --zscoreonly --mach cheyenne --compset G --tag cesm2_0_beta10 --res T62_g17
+           python  pyEnsSumPop.py --verbose --tslice 0 --indir /glade/scratch/haiyingx/pop_ensemble_data/ --sumfile pop.ens.sum.nc --nyear 1 --nmonth 12 --npert 40 --jsonfile pop_ensemble.json  --mach cheyenne --compset G --tag cesm2_0 --res T62_g17
 
 
 

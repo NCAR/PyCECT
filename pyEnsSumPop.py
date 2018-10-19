@@ -8,12 +8,13 @@ import re
 from asaptools.partition import EqualStride, Duplicate
 import asaptools.simplecomm as simplecomm 
 import pyEnsLib
+#import pdb
 
 def main(argv):
     print 'Running pyEnsSumPop!'
 
     # Get command line stuff and store in a dictionary
-    s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable zscoreonly nrand= rand seq= jsondir='
+    s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable nrand= rand seq= jsondir='
     optkeys = s.split()
     try: 
         opts, args = getopt.getopt(argv, "h", optkeys)
@@ -41,7 +42,7 @@ def main(argv):
     opts_dict['jsonfile'] = ''
     opts_dict['verbose'] = True
     opts_dict['mpi_enable'] = False
-    opts_dict['zscoreonly'] = False
+    opts_dict['zscoreonly'] = True
     opts_dict['popens'] = True
     opts_dict['nrand'] = 40 
     opts_dict['rand'] = False
@@ -88,9 +89,10 @@ def main(argv):
            # Get the list of files
            in_files_temp = os.listdir(input_dir)
            in_files=sorted(in_files_temp)
-        # Make sure we have enough
         num_files = len(in_files)
-        print "Using num_files = " + str(num_files) + "to create summary file"
+#        if (verbose == True):
+#            print in_files
+
     else:
         print 'ERROR: Input directory: ',input_dir,' not found'
         sys.exit(2)
@@ -203,6 +205,7 @@ def main(argv):
           v_gm = nc_sumfile.create_variable("global_mean", 'f', ('time','nvars', 'ens_size'))
 
 
+
        # Assign vars, var3d and var2d
        if (verbose == True):
            print "Assigning vars, var3d, and var2d ....."
@@ -260,7 +263,23 @@ def main(argv):
     if me.get_rank() == 0:
        v_time[:]=time_array[:]
 
-    # Calculate global mean, average, standard deviation 
+    #Assign zero values to first time slice of RMSZ and avg and stddev for 2d & 3d 
+    #in case of a calculation problem before finishing
+    e_size = opts_dict['npert']
+    b_size =  opts_dict['nbin']
+    z_ens_avg3d=np.zeros((len(Var3d),nlev,nlat,nlon),dtype=np.float32)
+    z_ens_stddev3d=np.zeros((len(Var3d),nlev,nlat,nlon),dtype=np.float32)
+    z_ens_avg2d=np.zeros((len(Var2d),nlat,nlon),dtype=np.float32)
+    z_ens_stddev2d=np.zeros((len(Var2d),nlat,nlon),dtype=np.float32)
+    z_RMSZ = np.zeros(((len(Var3d)+len(Var2d)),e_size,b_size), dtype=np.float32)
+    if me.get_rank() == 0 :
+        v_RMSZ[0,:,:,:]=z_RMSZ[:,:,:]
+        v_ens_avg3d[0,:,:,:,:]=z_ens_avg3d[:,:,:,:]
+        v_ens_stddev3d[0,:,:,:,:]=z_ens_stddev3d[:,:,:,:]
+        v_ens_avg2d[0,:,:,:]=z_ens_avg2d[:,:,:]
+        v_ens_stddev2d[0,:,:,:]=z_ens_stddev2d[:,:,:]
+
+    # Calculate global mean, average, standard deviation and rmse 
     if verbose:
        if not opts_dict['zscoreonly']: 
            print "Calculating global means ....."
