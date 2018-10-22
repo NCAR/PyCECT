@@ -36,7 +36,7 @@ pp. 2391-2406, 2016 (doi:10.5194/gmd-9-2391-2016).
 
 
 :AUTHORS: Haiying Xu, Allison Baker
-:VERSION: 3.0.0
+:VERSION: 3
 :COPYRIGHT: See the document entitled LICENSE.txt
 
 Send questions and comments to Haiying Xu (haiyingx@ucar.edu).

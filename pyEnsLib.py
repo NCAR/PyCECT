@@ -660,6 +660,9 @@ def generate_global_mean_for_summary(o_files,var_name3d,var_name2d,is_SE,pepsi_g
 # Calculate global means for one OCN input file
 #
 def calc_global_mean_for_onefile_pop(fname, area_wgt,z_wgt,var_name3d, var_name2d,output3d,output2d, tslice, is_SE, nlev,opts_dict):
+    
+    nan_flag = False
+
     n3d = len(var_name3d)
     n2d = len(var_name2d)
 
@@ -672,6 +675,9 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt,z_wgt,var_name3d, var_name2
         #    print "calculating GM for variable ", vname
         gm_lev = np.zeros(nlev)
         data = fname.variables[vname]
+        if np.any(np.isnan(data)):
+            print "ERROR: "+vname+ " data contains NaNs - please check input."
+            nan_flag = True
         output3d[:,:,:] = data[tslice,:,:,:] 
         for k in range(nlev):
             moutput3d=np.ma.masked_values(output3d[k,:,:],data._FillValue)
@@ -684,10 +690,19 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt,z_wgt,var_name3d, var_name2
         #if (verbose == True):
         #    print "calculating GM for variable ", vname
         data = fname.variables[vname]
+        if np.any(np.isnan(data)):
+            print "ERROR: "+vname+ " data contains NaNs - please check input."
+            nan_flag = True
         output2d[:,:] = data[tslice,:,:] 
         moutput2d=np.ma.masked_values(output2d[:,:],data._FillValue)
         gm2d_mean = pop_area_avg(moutput2d, area_wgt)
         gm2d[count]=gm2d_mean
+ 
+
+    if nan_flag:
+        print "EXITING due to Nans in input data!!!"
+        sys.exit()
+
     return gm3d,gm2d        
 
 #
@@ -695,6 +710,9 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt,z_wgt,var_name3d, var_name2
 #
 def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d,output2d, tslice, is_SE, nlev,opts_dict):
     
+
+    nan_flag = False
+
     if 'cumul' in opts_dict:
        cumul = opts_dict['cumul']
     else:
@@ -710,13 +728,16 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
         #if (verbose == True):
         #    print "calculating GM for variable ", vname
         if vname not in fname.variables:
-           print 'Error: the testing file does not have the variable '+vname+' that in the ensemble summary file'
+           print 'Warning: the test file does not have the variable '+vname+' that isin the ensemble summary file ...'
            continue
         data = fname.variables[vname]
         if not data[tslice].size:
            print "ERROR: " +vname+" data is empty"
            sys.exit(2)
-
+        if np.any(np.isnan(data)):
+            print "ERROR: "+vname+ " data contains NaNs - please check input."
+            nan_flag = True
+            continue
         if (is_SE == True):
             if not cumul: 
                temp=data[tslice].shape[0]
@@ -747,9 +768,13 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
         #if (verbose == True):
         #    print "calculating GM for variable ", vname
         if vname not in fname.variables:
-           print 'Error: the testing file does not have the variable '+vname+' that in the ensemble summary file'
+           print 'Warning: the test file does not have the variable '+vname+' that is in the ensemble summary file'
            continue
         data = fname.variables[vname]
+        if np.any(np.isnan(data)):
+            print "ERROR: "+vname+ " data contains NaNs - please check input."
+            nan_flag = True
+            continue
         if (is_SE == True):
             if not cumul:
                 output2d[:] = data[tslice,:] 
@@ -759,6 +784,10 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
                 output2d[:,:] = data[tslice,:,:] 
             gm2d_mean = area_avg(output2d[:,:], area_wgt, is_SE)
         gm2d[count]=gm2d_mean
+
+    if nan_flag:
+        print "EXITING due to Nans in input data!!!"
+        sys.exit()
 
     return gm3d,gm2d        
 

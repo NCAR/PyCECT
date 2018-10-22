@@ -227,7 +227,7 @@ def main(argv):
         for k,v in ens_gm.iteritems():
             pyEnsLib.addvariables(variables,k,'gmRange',v)
 
-        # Get 3d variable name list and 2d variable name list seperately
+        # Get 3d variable name list and 2d variable name list separately
         var_name3d=[]
         var_name2d=[]
         for vcount,v in enumerate(ens_var_name):
