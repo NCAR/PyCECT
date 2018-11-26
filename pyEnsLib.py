@@ -1305,7 +1305,7 @@ def CECT_usage():
     print '   --pop_threshold <num>   : set pop threshold (default is 0.9)'
     print '   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from '
     print '                           the input directory (indir), such as core48.pop.h.0003-12 or core48.pop.h.0003 (more info in README)'
-    print 'Version 3.0.7'
+    print 'Version 3.0.8'
 
 #
 # Command options for pyEnsSum.py
