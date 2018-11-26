@@ -39,7 +39,7 @@ def main(argv):
     opts_dict['sumfiledir'] = './'
     opts_dict['jsonfile'] = 'exclude_empty.json'
     opts_dict['verbose'] = False
-    opts_dict['mpi_enable'] = False
+    opts_dict['mpi_enable'] = True
     opts_dict['maxnorm'] = False
     opts_dict['gmonly'] = True
     opts_dict['popens'] = False
@@ -58,7 +58,7 @@ def main(argv):
     esize = int(st)
 
 
-    if opts_dict['popens' == True]:
+    if opts_dict['popens'] == True:
         print "Error: Please use pyEnsSumPop.py for a POP ensemble (not --popens)."
         sys.exit()
 
@@ -248,7 +248,6 @@ def main(argv):
     #       print 'vars_dict',k,vars_dict[k].typecode()
 
     str_size = 0
-a
     d2_var_names = []
     d3_var_names = []
     num_2d = 0
@@ -496,7 +495,7 @@ a
             gmall=np.concatenate((temp1,temp2),axis=0)
             gmall=pyEnsLib.gather_npArray_pop(gmall,me,(me.get_size(),len(d3_var_names)+len(d2_var_names)))
     # Assign to file:
-    if me.get_rank() == 0] :
+    if me.get_rank() == 0 :
         if not opts_dict['cumul']:
             gmall=np.concatenate((gm3d,gm2d),axis=0)
             if not opts_dict['gmonly']:
