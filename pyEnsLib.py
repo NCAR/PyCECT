@@ -111,7 +111,7 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
          ens_stddev3d[vcount]=np.ma.std(moutput3d,axis=0,dtype=np.float32)
       else: #CAM
          ens_avg3d[vcount]=np.average(output3d,axis=0).astype(np.float32)
-         ens_stddev3d[vcount]=np.std(output3d.astype(np.float64),axis=0,dtype=np.float64).astype(np.float32)
+         ens_stddev3d[vcount]=np.std(output3d.astype(np.float64),axis=0,dtype=np.float64,ddof=1).astype(np.float32)
          if cumul:
             gm3d[vcount],temp3=calc_global_mean_for_onefile(this_file,area_wgt,[vname],[],ens_avg3d[vcount],temp2,tslice,is_SE,nlev,opts_dict)
 
@@ -123,7 +123,7 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
               new_index=np.where(indices!=fcount)
               ensemble3d = output3d[new_index] 
               avg3d=np.average(ensemble3d,axis=0)
-              stddev3d=np.std(ensemble3d,axis=0,dtype=np.float64) 
+              stddev3d=np.std(ensemble3d,axis=0,dtype=np.float64,ddof=1) 
 
               flag3d = False
               count3d = 0
@@ -164,7 +164,7 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
          ens_stddev2d[vcount]=np.ma.std(moutput2d,axis=0,dtype=np.float32)
       else:#CAM
          ens_avg2d[vcount]=np.average(output2d,axis=0).astype(np.float32)
-         ens_stddev2d[vcount]=np.std(output2d,axis=0,dtype=np.float64).astype(np.float32)
+         ens_stddev2d[vcount]=np.std(output2d,axis=0,dtype=np.float64,ddof=1).astype(np.float32)
          if cumul:
             temp3,gm2d[vcount]=calc_global_mean_for_onefile(this_file,area_wgt,[],[vname],temp1,ens_avg2d[vcount],tslice,is_SE,nlev,opts_dict)
 
@@ -177,7 +177,7 @@ def calc_rmsz(o_files,var_name3d,var_name2d,is_SE,opts_dict):
               new_index=np.where(indices!=fcount)
               ensemble2d = output2d[new_index] 
               avg2d=np.average(ensemble2d,axis=0)
-              stddev2d=np.std(ensemble2d,axis=0,dtype=np.float64) 
+              stddev2d=np.std(ensemble2d,axis=0,dtype=np.float64,ddof=1) 
 
               flag2d = False
               count2d = 0
@@ -351,14 +351,12 @@ def search_sumfile(opts_dict,ifiles):
 # Create some variables and call a function to calculate PCA
 #
 def pre_PCA(gm_32,all_var_names,whole_list,me):
-    threshold= 1.0e-12
-    FillValue= 1.0e+30
     gm_len=gm_32.shape
     nvar=gm_len[0]
     nfile=gm_len[1]
     gm=gm_32.astype(np.float64)
     mu_gm=np.average(gm,axis=1)
-    sigma_gm=np.std(gm,axis=1)
+    sigma_gm=np.std(gm,axis=1,ddof=1)
     standardized_global_mean=np.zeros(gm.shape,dtype=np.float64)
     scores_gm=np.zeros(gm.shape,dtype=np.float64)
 
@@ -431,7 +429,7 @@ def pre_PCA(gm_32,all_var_names,whole_list,me):
 
     #now do coord transformation on the standardized meana to get the scores
     scores_gm=np.dot(loadings_gm.T,standardized_global_mean)
-    sigma_scores_gm =np.std(scores_gm,axis=1)
+    sigma_scores_gm =np.std(scores_gm,axis=1,ddof=1)
     return mu_gm.astype(np.float32),sigma_gm.astype(np.float32),standardized_global_mean.astype(np.float32),loadings_gm.astype(np.float32),sigma_scores_gm.astype(np.float32)
 
 #
@@ -1047,15 +1045,13 @@ def getopt_parseconfig(opts,optkeys,caller,opts_dict):
 # Figure out the scores of the 3 new runs, standardized global means, then multiple by the loadings_gm
 #
 def standardized(gm,mu_gm,sigma_gm,loadings_gm,all_var_names,opts_dict,ens_avg,me):
-    threshold=1.0e-12
-    FillValue=1.0e+30
     nvar=gm.shape[0]
     nfile=gm.shape[1]
     sum_std_mean=np.zeros((nvar,),dtype=np.float64) 
     standardized_mean=np.zeros(gm.shape,dtype=np.float64)
     for var in range(nvar):
        for file in range(nfile):
-           standardized_mean[var,file]=(gm[var,file].astype(np.float64)-mu_gm[var].astype(np.float64))/np.where(sigma_gm[var].astype(np.float64)<=threshold, FillValue,sigma_gm[var])
+           standardized_mean[var,file]=(gm[var,file].astype(np.float64)-mu_gm[var].astype(np.float64))/sigma_gm[var].astype(np.float64)
            sum_std_mean[var]=sum_std_mean[var]+np.abs(standardized_mean[var,file])
     new_scores=np.dot(loadings_gm.T.astype(np.float64),standardized_mean)
        
