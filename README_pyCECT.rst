@@ -60,6 +60,7 @@ Before you start to use the package, you need to load the following modules:
        - module load numpy
        - module load scipy
        - module load pynio
+       - module load pyngl
 
 To see all options (and defaults):
 

@@ -45,6 +45,7 @@ Before you start to use the package, you need to load the following modules:
        - module load pynio
        - module load pyngl
        - module load asaptools
+       - module load mpi4py
        
 To see all options (and defaults):
 ----------------------------------
