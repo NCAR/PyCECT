@@ -318,12 +318,12 @@ def search_sumfile(opts_dict,ifiles):
        if 'testtype' in global_att:
              sumfile_dir=sumfile_dir+'/'+testtype+'/'
        else:
-           print "ERROR: No global attribute testtype in your validation file."
+           print "ERROR: No global attribute testtype in your validation file => EXITING...."
            sys.exit(2)
        if 'model_version' in global_att:
            sumfile_dir=sumfile_dir+'/'+model_version+'/'
        else:
-           print "ERROR: No global attribute model_version in your validation file."
+           print "ERROR: No global attribute model_version in your validation file => EXITING...."
            sys.exit(2)
        if (os.path.exists(sumfile_dir)):
            thefile_id=0
@@ -332,7 +332,7 @@ def search_sumfile(opts_dict,ifiles):
                   sumfile_id=Nio.open_file(sumfile_dir+i,'r')
                   sumfile_gatt=sumfile_id.attributes
                   if 'grid' not in sumfile_gatt and 'resolution' not in sumfile_gatt:
-                     print "ERROR: No global attribute grid or resolution in the summary file."
+                     print "ERROR: No global attribute grid or resolution in the summary file => EXITING...."
                      sys.exit(2)
                   if 'compset' not in sumfile_gatt:
                      print "ERROR: No global attribute compset in the summary file"
@@ -340,10 +340,10 @@ def search_sumfile(opts_dict,ifiles):
                   if sumfile_gatt['resolution']==grid and sumfile_gatt['compset']==compset:
                      thefile_id=sumfile_id
            if thefile_id==0:
-              print "ERROR: The validation files don't have matching ensemble summary file to compare."
+              print "ERROR: The validation files don't have a matching ensemble summary file to compare => EXITING...."
               sys.exit(2)    
        else:
-         print "ERROR: Could not locate directory "+sumfile_dir
+         print "ERROR: Could not locate directory "+sumfile_dir + " => EXITING...."
          sys.exit(2)
        return sumfile_dir+i,machineid,compiler
 
@@ -403,8 +403,8 @@ def pre_PCA(gm_32,all_var_names,whole_list,me):
 
     standardized_rank=np.linalg.matrix_rank(standardized_global_mean)
     if me.get_rank() == 0:
-        print "standardized_global_mean rank = ",standardized_rank 
-        print "checking for dependent vars using QR..."
+        print "STATUS: standardized_global_mean rank = ",standardized_rank 
+        print "STATUS: checking for dependent vars using QR..."
 
     dep_var_list = get_dependent_vars_index(standardized_global_mean, standardized_rank)
     num_dep = len(dep_var_list)
@@ -421,7 +421,7 @@ def pre_PCA(gm_32,all_var_names,whole_list,me):
             print ",".join(['"{0}"'.format(item) for item in sub_list])
             print "********************************************************************************************"
             print "\n"
-            print "Exiting..."
+            print "=> EXITING...."
         #now exit
         sys.exit(2)
 
@@ -477,7 +477,7 @@ def calc_Z(val,avg,stddev,count,flag):
   return count,return_val
 
 #
-# Read a json file for the excluded list of variables
+# Read a json file for the excluded/included list of variables
 #
 def read_jsonlist(metajson,method_name):
     
@@ -698,7 +698,7 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt,z_wgt,var_name3d, var_name2
  
 
     if nan_flag:
-        print "EXITING due to Nans in input data!!!"
+        print "ERROR: Nans in input data => EXITING...."
         sys.exit()
 
     return gm3d,gm2d        
@@ -726,14 +726,14 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
         #if (verbose == True):
         #    print "calculating GM for variable ", vname
         if vname not in fname.variables:
-           print 'Warning: the test file does not have the variable '+vname+' that isin the ensemble summary file ...'
+           print 'WARNING: the test file does not have the variable '+vname+' that isin the ensemble summary file ...'
            continue
         data = fname.variables[vname]
         if not data[tslice].size:
-           print "ERROR: " +vname+" data is empty"
+           print "ERROR: " +vname+" data is empty => EXITING...."
            sys.exit(2)
         if np.any(np.isnan(data)):
-            print "ERROR: "+vname+ " data contains NaNs - please check input."
+            print "ERROR: "+vname+ " data contains NaNs - please check input => EXITING"
             nan_flag = True
             continue
         if (is_SE == True):
@@ -766,11 +766,11 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
         #if (verbose == True):
         #    print "calculating GM for variable ", vname
         if vname not in fname.variables:
-           print 'Warning: the test file does not have the variable '+vname+' that is in the ensemble summary file'
+           print 'WARNING: the test file does not have the variable '+vname+' that is in the ensemble summary file'
            continue
         data = fname.variables[vname]
         if np.any(np.isnan(data)):
-            print "ERROR: "+vname+ " data contains NaNs - please check input."
+            print "ERROR: "+vname+ " data contains NaNs - please check input => EXITING...."
             nan_flag = True
             continue
         if (is_SE == True):
@@ -784,7 +784,7 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
         gm2d[count]=gm2d_mean
 
     if nan_flag:
-        print "EXITING due to Nans in input data!!!"
+        print "ERROR: Nans in input data => EXITING...."
         sys.exit()
 
     return gm3d,gm2d        
@@ -796,7 +796,7 @@ def read_ensemble_summary(ens_file):
   if(os.path.isfile(ens_file)):
      fens = Nio.open_file(ens_file,"r")
   else:
-     print 'ERROR: file ens summary: ',ens_file,' Not found'
+     print 'ERROR: file ens summary: ',ens_file,' not found => EXITING....'
      sys.exit(2)
 
   is_SE = False
@@ -944,7 +944,7 @@ def calculate_maxnormens(opts_dict,var_list):
     if (os.path.isfile(inputdir+frun_file)):
       ifiles.append(Nio.open_file(inputdir+frun_file,"r"))
     else:
-      print "ERROR: COULD NOT LOCATE FILE "+inputdir+frun_file
+      print "ERROR: Could not locate file= "+inputdir+frun_file + " => EXITING...."
       sys.exit() 
   comparision={}
   # loop through each variable
@@ -1301,7 +1301,7 @@ def CECT_usage():
     print '   --pop_threshold <num>   : set pop threshold (default is 0.9)'
     print '   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from '
     print '                           the input directory (indir), such as core48.pop.h.0003-12 or core48.pop.h.0003 (more info in README)'
-    print 'Version 3.0.8'
+#    print 'Version 3.0.8'
 
 #
 # Command options for pyEnsSum.py
@@ -1311,25 +1311,29 @@ def EnsSum_usage():
     print '  ------------------------' 
     print '   Args for pyEnsSum : '
     print '  ------------------------' 
-    print '   pyStats.py'
+    print '   pyEnsSum.py'
     print '   -h                   : prints out this usage message'
     print '   --verbose            : prints out in verbose mode (off by default)'
     print '   --sumfile <ofile>    : the output summary data file (default = ens.summary.nc)'
     print '   --indir <path>       : directory containing all of the ensemble runs (default = ./)'
     print '   --esize  <num>       : Number of ensemble members (default = 350)'
-    print '   --tag <name>         : Tag name used in metadata (default = cesm2_0_beta08)'
-    print '   --compset <name>     : Compset used in metadata (default = F2000)'
-    print '   --res <name>         : Resolution (used in metadata), (default = f19_f19)'
-    print '   --tslice <num>       : the index into the time dimension, (default = 1)'
+    print '   --tag <name>         : Tag name used in metadata (default = cesm2_0)'
+    print '   --compset <name>     : Compset used in metadata (default = F2000climo)'
+    print '   --res <name>         : Resolution used in metadata, (default = f19_f19)'
     print '   --mach <num>         : Machine name used in the metadata, (default = cheyenne)'
-    print '   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be excluded  (default = exclude_empty.json) or included'
-    print '   --mpi_enable         : Enable mpi mode (off by default)'
-    print '   --maxnorm            : Enable to generate max norm ensemble files (off by default)'
+    print '   --tslice <num>       : the index into the time dimension, (default = 1)'
+    print '   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will '
+    print '                          be excluded or included  (default = exclude_empty.json)'
+#    print '   --mpi_enable         : Enable mpi mode to run in parallel (off by default)'
+    print '   --mpi_disable        : Disable mpi mode to run in serial (off by default)'
+#    print '   --maxnorm            : Enable to generate max norm ensemble files (off by default - '
+#    print '                          not needed for PyCECT)'
 #    print '   --gmonly             : Only generate global_mean and PCA loadings (omit RMSZ information)'
 #    print '   --cumul              :  '
-    print '   --fIndex <num>       : Use this to start at ensemble member fIndex instead of 000 (default = 151)'
+    print '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
+    print '                          ensembles with numbers less than <num> are excluded from summary file) '
     print '   '
-    print 'Version 3.0.7'
+#    print 'Version 3.0.7'
 
 
 #
@@ -1340,21 +1344,25 @@ def EnsSumPop_usage():
     print '  ------------------------' 
     print '   Args for pyEnsSumPop : '
     print '  ------------------------' 
-    print '   pyStats.py'
+    print '   pyEnsSumPop.py'
     print '   -h                   : prints out this usage message'
     print '   --verbose            : prints out in verbose mode (off by default)'
-    print '   --sumfile    <ofile> : the output summary data file (default = ens.summary.nc)'
-    print '   --tslice <num>       : the time slice of the variable that we will use (default = 0)'
+    print '   --sumfile    <ofile> : the output summary data file (default = pop.ens.summary.nc)'
     print '   --indir      <path>  : directory containing all of the ensemble runs (default = ./)'
-    print '   --nyear  <num>       : Number of years (default = 1)'
-    print '   --nmonth  <num>      : Number of months (default = 12)'
-    print '   --npert <num>        : Number of ensemble members (default = 40)'
+#    print '   --npert <num>        : Number of ensemble members (default = 40)'
+    print '   --esize <num>        : Number of ensemble members (default = 40)'
+    print '                          (Note: backwards compatible with --npert)'
     print '   --tag <name>         : Tag name used in metadata (default = cesm2_0_0)'
     print '   --compset <name>     : Compset used in metadata (default = G)'
     print '   --res <name>         : Resolution (used in metadata), (default = T62_g17)'
     print '   --mach <num>         : Machine name used in the metadata, (default = cheyenne)'
-    print '   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be included  (no default)'
-    print '   --mpi_enable         : Enable mpi mode (off by default)'
+    print '   --tslice <num>       : the time slice of the variable that we will use (default = 0)'
+    print '   --nyear  <num>       : Number of years (default = 1)'
+    print '   --nmonth  <num>      : Number of months (default = 12)'
+    print '   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be' 
+    print '                          included  (RECOMMENDED: default = pop_ensemble.json)'
+    print '   --mpi_disable        : Disable mpi mode to run in serial (off by default)'
+#    print '   --mpi_enable         : Enable mpi mode to run in parallel (off by default)'
 #    print '   --zscoreonly         : Only generate zscores and omit global means (recommended:faster, and global means are not needed for POP-ECT)'
     print '   '
 
@@ -1386,7 +1394,7 @@ def Random_pickup(ifiles,opts_dict):
 def Random_pickup_pop(indir,opts_dict,npick):
     random_year_range=opts_dict['nyear']
     random_month_range=opts_dict['nmonth']
-    random_case_range=opts_dict['npert']
+    random_case_range=opts_dict['esize']
     #pyear=random.sample(range(1,random_year_range+1),1)[0]
     pyear=1
     pmonth=12
@@ -1508,7 +1516,7 @@ def get_files_from_glob(opts_dict):
           in_files.extend(glob_files)
           in_files.sort()
        else:
-          print 'ERROR: Input directory does not exist'
+          print 'ERROR: Input directory does not exist => EXITING....'
           sys.exit()
        n_timeslice=[]
        for fname in in_files:
@@ -1565,7 +1573,7 @@ def pop_compare_raw_score(opts_dict,ifiles,timeslice,Var3d,Var2d):
         sum_problem = True
 
     if sum_problem:
-        print 'Exiting....'
+        print '=> EXITING....'
         sys.exit()
 
     npts3d=0
@@ -1582,7 +1590,7 @@ def pop_compare_raw_score(opts_dict,ifiles,timeslice,Var3d,Var2d):
        temp_list=[]
        for i in n_timeslice:
            temp_list.append(i+1)
-       print 'Checkpoint month(s) = ',temp_list
+       print 'STATUS: Checkpoint month(s) = ',temp_list
 
     #Compare an individual file with ensemble summary file to get zscore 
     for fcount,fid in enumerate(ifiles): 
@@ -1705,9 +1713,8 @@ def plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me):
     #lev=opts_dict['lev']
     lev=me.get_rank()
     if me.get_rank() == 1:
-       print var_list
-       print len(var_list)
-    #var_list=["FSNS","CLDLIQ","FSNT","FSNTOA","FSNSC","ICIMR","AWNC"]
+       print "STATUS: var_list = " + var_list
+       print "STATUS: Length of varlist = " + len(var_list)
 
 
     if opts_dict['mpi_enable']:
@@ -1746,15 +1753,15 @@ def plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me):
            ens_arr=ensfile.variables[i][1]
            
         else:
-           print "ERROR:" + i +" is not in ensemble files"
+           print "ERROR:" + i +" is not in ensemble files => EXITING...."
            sys.exit()
         if i in runfile.variables:
            data_arr=runfile.variables[i][1]
         else:
-           print "ERROR: "+i+" is not in run files"
+           print "ERROR: "+i+" is not in run files => EXITING...."
            sys.exit()
         if ens_arr.size != data_arr.size:
-           print "ERROR: ensemble file does not have the same shape as the run file!"
+           print "ERROR: ensemble file does not have the same shape as the run file => EXITING...."
            sys.exit()
         long_name=runfile.variables[i].long_name
         the_units=runfile.variables[i].units

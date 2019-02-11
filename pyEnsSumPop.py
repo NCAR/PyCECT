@@ -11,10 +11,10 @@ import pyEnsLib
 #import pdb
 
 def main(argv):
-    print 'Running pyEnsSumPop!'
+
 
     # Get command line stuff and store in a dictionary
-    s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable nrand= rand seq= jsondir='
+    s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable mpi_disable nrand= rand seq= jsondir= esize='
     optkeys = s.split()
     try: 
         opts, args = getopt.getopt(argv, "h", optkeys)
@@ -32,16 +32,18 @@ def main(argv):
     opts_dict['tslice'] = 0 
     opts_dict['nyear'] = 1
     opts_dict['nmonth'] = 12
-    opts_dict['npert'] = 40
+    opts_dict['esize'] = 40
+    opts_dict['npert'] = 0 #for backwards compatible
     opts_dict['nbin'] = 40
     opts_dict['minrange'] = 0.0
     opts_dict['maxrange'] = 4.0
     opts_dict['res'] = 'T62_g17'
-    opts_dict['sumfile'] = 'ens.pop.summary.nc'
+    opts_dict['sumfile'] = 'pop.ens.summary.nc'
     opts_dict['indir'] = './'
-    opts_dict['jsonfile'] = ''
+    opts_dict['jsonfile'] = 'pop_ensemble.json'
     opts_dict['verbose'] = True
-    opts_dict['mpi_enable'] = False
+    opts_dict['mpi_enable'] = True
+    opts_dict['mpi_disable'] = False
     opts_dict['zscoreonly'] = True
     opts_dict['popens'] = True
     opts_dict['nrand'] = 40 
@@ -56,8 +58,22 @@ def main(argv):
     verbose = opts_dict['verbose']
     nbin = opts_dict['nbin']
 
+    if opts_dict['mpi_disable']:
+        opts_dict['mpi_enable'] = False
+
+
+    #still have npert for backwards compatibility - check if it was set
+    #and override esize 
+    if opts_dict['npert'] > 0:
+        user_size = opts_dict['npert']
+        print 'WARNING: User specified value for --npert will override --esize.  Please consider using --esize instead of --npert in the future.'
+        opts_dict['esize'] = user_size
+
+
+    print 'STATUS: Running pyEnsSumPop!'
+
     if verbose:
-        print "opts_dict = "
+        print "VERBOSE: opts_dict = "
         print opts_dict
        
     # Now find file names in indir
@@ -94,7 +110,7 @@ def main(argv):
 #            print in_files
 
     else:
-        print 'ERROR: Input directory: ',input_dir,' not found'
+        print 'ERROR: Input directory: ',input_dir,' not found => EXITING....'
         sys.exit(2)
 
     # Create a mpi simplecomm object
@@ -112,7 +128,7 @@ def main(argv):
         if (os.path.isfile(input_dir+'/' + onefile)):
             o_files.append(Nio.open_file(input_dir+'/' + onefile,"r"))
         else:
-            print "ERROR: Could not locate file: "+ input_dir + onefile 
+            print "ERROR: Could not locate file: "+ input_dir + onefile + " => EXITING...."
             sys.exit() 
 
 
@@ -120,7 +136,7 @@ def main(argv):
 
     # Store dimensions of the input fields
     if (verbose == True):
-        print "Getting spatial dimensions"
+        print "VERBOSE: Getting spatial dimensions"
     nlev = -1
     nlat = -1
     nlon = -1
@@ -131,7 +147,7 @@ def main(argv):
 
     # Make sure all files have the same dimensions
     if (verbose == True):
-        print "Checking dimensions ..."
+        print "VERBOSE: Checking dimensions ..."
     for key in input_dims:
         if key == "z_t":
             nlev = input_dims["z_t"]
@@ -144,7 +160,7 @@ def main(argv):
         input_dims = this_file.dimensions     
         if ( nlev != int(input_dims["z_t"]) or ( nlat != int(input_dims["nlat"]))\
               or ( nlon != int(input_dims["nlon"]))):
-            print "Dimension mismatch between ", in_file_list[0], 'and', in_file_list[count], '!!!'
+            print "ERROR: Dimension mismatch between ", in_file_list[0], 'and', in_file_list[count], ' => EXITING....'
             sys.exit() 
 
 
@@ -152,7 +168,7 @@ def main(argv):
     this_sumfile = opts_dict["sumfile"]
 
     if verbose:
-       print "Creating ", this_sumfile, "  ..."
+       print "VERBOSE: Creating ", this_sumfile, "  ..."
     if (me.get_rank() == 0 ):
        if os.path.exists(this_sumfile):
            os.unlink(this_sumfile)
@@ -164,12 +180,12 @@ def main(argv):
 
        # Set dimensions
        if (verbose == True):
-           print "Setting dimensions ....."
+           print "VERBOSE: Setting dimensions ....."
        nc_sumfile.create_dimension('nlat', nlat)
        nc_sumfile.create_dimension('nlon', nlon)
        nc_sumfile.create_dimension('nlev', nlev)
        nc_sumfile.create_dimension('time',None)
-       nc_sumfile.create_dimension('ens_size', opts_dict['npert'])
+       nc_sumfile.create_dimension('ens_size', opts_dict['esize'])
        nc_sumfile.create_dimension('nbin', opts_dict['nbin'])
        nc_sumfile.create_dimension('nvars', len(Var3d) + len(Var2d))
        nc_sumfile.create_dimension('nvars3d', len(Var3d))
@@ -179,7 +195,7 @@ def main(argv):
        # Set global attributes
        now = time.strftime("%c")
        if (verbose == True):
-           print "Setting global attributes ....."
+           print "VERBOSE: Setting global attributes ....."
        setattr(nc_sumfile, 'creation_date',now)
        setattr(nc_sumfile, 'title', 'POP verification ensemble summary file')
        setattr(nc_sumfile, 'tag', opts_dict["tag"]) 
@@ -189,7 +205,7 @@ def main(argv):
 
        # Create variables
        if (verbose == True):
-           print "Creating variables ....."
+           print "VERBOSE: Creating variables ....."
        v_lev = nc_sumfile.create_variable("lev", 'f', ('nlev',))
        v_vars = nc_sumfile.create_variable("vars", 'S1', ('nvars', 'str_size'))
        v_var3d = nc_sumfile.create_variable("var3d", 'S1', ('nvars3d', 'str_size'))
@@ -208,7 +224,7 @@ def main(argv):
 
        # Assign vars, var3d and var2d
        if (verbose == True):
-           print "Assigning vars, var3d, and var2d ....."
+           print "VERBOSE: Assigning vars, var3d, and var2d ....."
 
        eq_all_var_names =[]
        eq_d3_var_names = []
@@ -248,14 +264,14 @@ def main(argv):
 
        # Time-invarient metadata
        if (verbose == True):
-           print "Assigning time invariant metadata ....."
+           print "VERBOSE: Assigning time invariant metadata ....."
        vars_dict = o_files[0].variables
        lev_data = vars_dict["z_t"]
        v_lev = lev_data
        
     # Time-varient metadata
     if verbose:
-       print "Assigning time variant metadata ....."
+       print "VERBOSE: Assigning time variant metadata ....."
     vars_dict = o_files[0].variables
     time_value = vars_dict['time']
     time_array = np.array([time_value])
@@ -265,7 +281,7 @@ def main(argv):
 
     #Assign zero values to first time slice of RMSZ and avg and stddev for 2d & 3d 
     #in case of a calculation problem before finishing
-    e_size = opts_dict['npert']
+    e_size = opts_dict['esize']
     b_size =  opts_dict['nbin']
     z_ens_avg3d=np.zeros((len(Var3d),nlev,nlat,nlon),dtype=np.float32)
     z_ens_stddev3d=np.zeros((len(Var3d),nlev,nlat,nlon),dtype=np.float32)
@@ -282,22 +298,22 @@ def main(argv):
     # Calculate global mean, average, standard deviation and rmse 
     if verbose:
        if not opts_dict['zscoreonly']: 
-           print "Calculating global means ....."
+           print "VERBOSE: Calculating global means ....."
     is_SE = False
     tslice=0
     if not opts_dict['zscoreonly']:
        gm3d,gm2d = pyEnsLib.generate_global_mean_for_summary(o_files,Var3d,Var2d, is_SE,False,opts_dict)
     if verbose:
         if not opts_dict['zscoreonly']:
-            print "Finish calculating global means ....."
+            print "VERBOSE: Finish calculating global means ....."
 
     # Calculate RMSZ scores  
     if (verbose == True):
-       print "Calculating RMSZ scores ....."
+       print "VERBOSE: Calculating RMSZ scores ....."
     zscore3d,zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d,temp1,temp2=pyEnsLib.calc_rmsz(o_files,Var3d,Var2d,is_SE,opts_dict)    
 
     if (verbose == True):
-        print "Finished with RMSZ scores ....."
+        print "VERBOSE: Finished with RMSZ scores ....."
 
     # Collect from all processors
     if opts_dict['mpi_enable'] :
