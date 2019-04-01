@@ -2,7 +2,7 @@
 import ConfigParser
 import sys, getopt, os 
 import numpy as np 
-import Nio 
+import netCDF4 as nc
 import time
 import re
 from asaptools.partition import EqualStride, Duplicate,EqualLength
@@ -98,8 +98,6 @@ def main(argv):
             if exclude == False:
                inc_varlist=ex_varlist
                ex_varlist=[]
-            # Read in the included var list
-            #inc_varlist=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ES')
 
 
     # Broadcast the excluded var list to each processor
@@ -142,20 +140,24 @@ def main(argv):
         if me.get_rank()==0 and (verbose == True):
            print 'VERBOSE: in_files  = ',in_files
 
-    # Open the files in the input directory
-    o_files=[]
+    # Check full file names in input directory (don't open yet)
+    full_in_files=[]
     if me.get_rank() == 0 and opts_dict['verbose']:
        print 'VERBOSE: Input files are: '
-       print "\n".join(in_files)
-       #for i in in_files:
-       #    print "in_files =",i
+
     for onefile in in_files[0:esize]:
-        if (os.path.isfile(input_dir+'/' + onefile)):
-            o_files.append(Nio.open_file(input_dir+'/' + onefile,"r"))
+        fname = input_dir + '/' + onefile
+        if me.get_rank() == 0 and opts_dict['verbose']:
+            print fname
+        if (os.path.isfile(fname)):
+            full_in_files.append(fname)
         else:
             if me.get_rank()==0:
-               print "ERROR: Could not locate file ", input_dir+'/'+onefile , " => EXITING...."
+               print "ERROR: Could not locate file ", fname , " => EXITING...."
             sys.exit() 
+
+    #open just the first file
+    first_file = nc.Dataset(full_in_files[0],"r")
 
     # Store dimensions of the input fields
     if me.get_rank()==0 and (verbose == True):
@@ -168,21 +170,21 @@ def main(argv):
     lonkey=''
     latkey=''
     # Look at first file and get dims
-    input_dims = o_files[0].dimensions
+    input_dims = first_file.dimensions
     ndims = len(input_dims)
 
     for key in input_dims:
         if key == "lev":
-            nlev = input_dims["lev"]
+            nlev = len(input_dims["lev"])
         elif key == "ilev":
-            nilev = input_dims["ilev"]
+            nilev = len(input_dims["ilev"])
         elif key == "ncol":
-            ncol = input_dims["ncol"]
+            ncol = len(input_dims["ncol"])
         elif (key == "nlon") or (key =="lon"):
-            nlon = input_dims[key]
+            nlon = len(input_dims[key])
             lonkey=key
         elif (key == "nlat") or (key == "lat"):
-            nlat = input_dims[key]
+            nlat = len(input_dims[key])
             latkey=key
         
     if (nlev == -1) : 
@@ -201,32 +203,18 @@ def main(argv):
     else:
         is_SE = False    
 
-    # Make sure all files have the same dimensions
+    # output dimensions
     if me.get_rank()==0 and (verbose == True):
-        print "VERBOSE: Checking dimensions across files...."
         print 'lev = ', nlev
         if (is_SE == True):
-            print 'ncol = ', ncol
+            print '         ncol = ', ncol
         else:
-            print 'nlat = ', nlat
-            print 'nlon = ', nlon
-
-    for count, this_file in enumerate(o_files):
-        input_dims = this_file.dimensions     
-        if (is_SE == True):
-            if ( nlev != int(input_dims["lev"]) or ( ncol != int(input_dims["ncol"]))):
-                if me.get_rank() == 0:
-                   print "ERROR: Dimension mismatch between ", in_files[0], 'and', in_files[count], ' => EXITING....'
-                sys.exit() 
-        else:
-            if ( nlev != int(input_dims["lev"]) or ( nlat != int(input_dims[latkey]))\
-                  or ( nlon != int(input_dims[lonkey]))): 
-                if me.get_rank() == 0:
-                   print "ERROR: Dimension mismatch between ", in_files[0], 'and', in_files[count], ' => EXITING....'
-                sys.exit() 
+            print '         nlat = ', nlat
+            print '         nlon = ', nlon
 
     # Get 2d vars, 3d vars and all vars (For now include all variables) 
-    vars_dict_all = o_files[0].variables
+    vars_dict_all = first_file.variables
+
     # Remove the excluded variables (specified in json file) from variable dictionary
     if exclude:
         vars_dict=vars_dict_all
@@ -252,7 +240,7 @@ def main(argv):
     for k,v in vars_dict.iteritems():  
         var = k
         vd = v.dimensions # all the variable's dimensions (names)
-        vr = v.rank # num dimension
+        vr = len(v.dimensions) # num dimension
         vs = v.shape # dim values
         is_2d = False
         is_3d = False
@@ -301,9 +289,6 @@ def main(argv):
     all_var_names += d2_var_names
     n_all_var_names = len(all_var_names)
 
-    #if me.get_rank() == 0 and (verbose == True):
-    #    print 'num vars = ', n_all_var_names, '(3d = ', num_3d, ' and 2d = ', num_2d, ")"
-
     # Create new summary ensemble file
     this_sumfile = opts_dict["sumfile"]
 
@@ -312,64 +297,48 @@ def main(argv):
     if(me.get_rank() ==0 ):
         if os.path.exists(this_sumfile):
             os.unlink(this_sumfile)
-
-        opt = Nio.options()
-        opt.PreFill = False
-        opt.Format = 'NetCDF4Classic'
-        nc_sumfile = Nio.open_file(this_sumfile, 'w', options=opt)
+        nc_sumfile = nc.Dataset(this_sumfile, "w", format="NETCDF4_CLASSIC")
 
         # Set dimensions
         if me.get_rank() == 0 and (verbose == True):
             print "VERBOSE: Setting dimensions ....."
         if (is_SE == True):
-            nc_sumfile.create_dimension('ncol', ncol)
+            nc_sumfile.createDimension('ncol', ncol)
         else:
-            nc_sumfile.create_dimension('nlat', nlat)
-            nc_sumfile.create_dimension('nlon', nlon)
-        nc_sumfile.create_dimension('nlev', nlev)
-        nc_sumfile.create_dimension('ens_size', esize)
-        nc_sumfile.create_dimension('nvars', num_3d + num_2d)
-        nc_sumfile.create_dimension('nvars3d', num_3d)
-        nc_sumfile.create_dimension('nvars2d', num_2d)
-        nc_sumfile.create_dimension('str_size', str_size)
+            nc_sumfile.createDimension('nlat', nlat)
+            nc_sumfile.createDimension('nlon', nlon)
+        nc_sumfile.createDimension('nlev', nlev)
+        nc_sumfile.createDimension('ens_size', esize)
+        nc_sumfile.createDimension('nvars', num_3d + num_2d)
+        nc_sumfile.createDimension('nvars3d', num_3d)
+        nc_sumfile.createDimension('nvars2d', num_2d)
+        nc_sumfile.createDimension('str_size', str_size)
 
         # Set global attributes
         now = time.strftime("%c")
         if me.get_rank() == 0 and (verbose == True):
             print "VERBOSE: Setting global attributes ....."
-        setattr(nc_sumfile, 'creation_date',now)
-        setattr(nc_sumfile, 'title', 'CAM verification ensemble summary file')
-        setattr(nc_sumfile, 'tag', opts_dict["tag"]) 
-        setattr(nc_sumfile, 'compset', opts_dict["compset"]) 
-        setattr(nc_sumfile, 'resolution', opts_dict["res"]) 
-        setattr(nc_sumfile, 'machine', opts_dict["mach"]) 
+        nc_sumfile.creation_date = now
+        nc_sumfile.title = 'CAM verification ensemble summary file'
+        nc_sumfile.tag = opts_dict["tag"]
+        nc_sumfile.compset = opts_dict["compset"] 
+        nc_sumfile.resolution = opts_dict["res"]
+        nc_sumfile.machine =  opts_dict["mach"] 
 
         # Create variables
         if me.get_rank() == 0 and (verbose == True):
             print "VERBOSE: Creating variables ....."
-        v_lev = nc_sumfile.create_variable("lev", 'f', ('nlev',))
-        v_vars = nc_sumfile.create_variable("vars", 'S1', ('nvars', 'str_size'))
-        v_var3d = nc_sumfile.create_variable("var3d", 'S1', ('nvars3d', 'str_size'))
-        v_var2d = nc_sumfile.create_variable("var2d", 'S1', ('nvars2d', 'str_size'))
-        if not opts_dict['gmonly']:
-            if (is_SE == True):
-                v_ens_avg3d = nc_sumfile.create_variable("ens_avg3d", 'f', ('nvars3d', 'nlev', 'ncol'))
-                v_ens_stddev3d = nc_sumfile.create_variable("ens_stddev3d", 'f', ('nvars3d', 'nlev', 'ncol'))
-                v_ens_avg2d = nc_sumfile.create_variable("ens_avg2d", 'f', ('nvars2d', 'ncol'))
-                v_ens_stddev2d = nc_sumfile.create_variable("ens_stddev2d", 'f', ('nvars2d', 'ncol'))
-            else:
-                v_ens_avg3d = nc_sumfile.create_variable("ens_avg3d", 'f', ('nvars3d', 'nlev', 'nlat', 'nlon'))
-                v_ens_stddev3d = nc_sumfile.create_variable("ens_stddev3d", 'f', ('nvars3d', 'nlev', 'nlat', 'nlon'))
-                v_ens_avg2d = nc_sumfile.create_variable("ens_avg2d", 'f', ('nvars2d', 'nlat', 'nlon'))
-                v_ens_stddev2d = nc_sumfile.create_variable("ens_stddev2d", 'f', ('nvars2d', 'nlat', 'nlon'))
+        v_lev = nc_sumfile.createVariable("lev", 'f', ('nlev',))
+        v_vars = nc_sumfile.createVariable("vars", 'S1', ('nvars', 'str_size'))
+        v_var3d = nc_sumfile.createVariable("var3d", 'S1', ('nvars3d', 'str_size'))
+        v_var2d = nc_sumfile.createVariable("var2d", 'S1', ('nvars2d', 'str_size'))
 
-            v_RMSZ = nc_sumfile.create_variable("RMSZ", 'f', ('nvars', 'ens_size'))
-        v_gm = nc_sumfile.create_variable("global_mean", 'f', ('nvars', 'ens_size'))
-        v_standardized_gm=nc_sumfile.create_variable("standardized_gm",'f',('nvars','ens_size'))
-        v_loadings_gm = nc_sumfile.create_variable('loadings_gm','f',('nvars','nvars'))
-        v_mu_gm = nc_sumfile.create_variable('mu_gm','f',('nvars',))
-        v_sigma_gm = nc_sumfile.create_variable('sigma_gm','f',('nvars',))
-        v_sigma_scores_gm = nc_sumfile.create_variable('sigma_scores_gm','f',('nvars',))
+        v_gm = nc_sumfile.createVariable("global_mean", 'f', ('nvars', 'ens_size'))
+        v_standardized_gm=nc_sumfile.createVariable("standardized_gm",'f',('nvars','ens_size'))
+        v_loadings_gm = nc_sumfile.createVariable('loadings_gm','f',('nvars','nvars'))
+        v_mu_gm = nc_sumfile.createVariable('mu_gm','f',('nvars',))
+        v_sigma_gm = nc_sumfile.createVariable('sigma_gm','f',('nvars',))
+        v_sigma_scores_gm = nc_sumfile.createVariable('sigma_scores_gm','f',('nvars',))
 
 
         # Assign vars, var3d and var2d
@@ -417,39 +386,26 @@ def main(argv):
         lev_data = vars_dict["lev"]
         v_lev = lev_data
 
-    # Form ensembles, each missing one member; compute RMSZs and global means
-    #for each variable, we also do max norm also (currently done in pyStats)
+    # Form ensembles
     tslice = opts_dict['tslice']
-
     if not opts_dict['cumul']:
         # Partition the var list
-        
         var3_list_loc=me.partition(d3_var_names,func=EqualStride(),involved=True)
         var2_list_loc=me.partition(d2_var_names,func=EqualStride(),involved=True)
     else:
         var3_list_loc=d3_var_names
         var2_list_loc=d2_var_names
 
+    #close first_file
+    first_file.close()
+
     # Calculate global means #
     if me.get_rank() == 0 and (verbose == True):
         print "VERBOSE: Calculating global means ....."
     if not opts_dict['cumul']:
-        gm3d,gm2d,var_list = pyEnsLib.generate_global_mean_for_summary(o_files,var3_list_loc,var2_list_loc , is_SE, False,opts_dict)
+        gm3d,gm2d,var_list = pyEnsLib.generate_global_mean_for_summary(full_in_files, var3_list_loc, var2_list_loc, is_SE, False, opts_dict)
     if me.get_rank() == 0 and (verbose == True):
         print "VERBOSE: Finished calculating global means ....."
-
-    # Calculate RMSZ scores  
-    if (not opts_dict['gmonly']) | (opts_dict['cumul']):
-        if me.get_rank() == 0 and (verbose == True):
-            print "VERBOSE: Calculating RMSZ scores ....."
-        zscore3d,zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d,temp1,temp2=pyEnsLib.calc_rmsz(o_files,var3_list_loc,var2_list_loc,is_SE,opts_dict)    
-
-    # Calculate max norm ensemble
-    if opts_dict['maxnorm']:
-        if me.get_rank() == 0 and (verbose == True):
-            print "VERBOSE: Calculating max norm of ensembles ....."
-        pyEnsLib.calculate_maxnormens(opts_dict,var3_list_loc)
-        pyEnsLib.calculate_maxnormens(opts_dict,var2_list_loc)
 
     if opts_dict['mpi_enable']:
 
@@ -458,32 +414,14 @@ def main(argv):
             slice_index=get_stride_list(len(d3_var_names),me)
          
             # Gather global means 3d results
-            gm3d=gather_npArray(gm3d,me,slice_index,(len(d3_var_names),len(o_files)))
-            if not opts_dict['gmonly']:
-                # Gather zscore3d results
-                zscore3d=gather_npArray(zscore3d,me,slice_index,(len(d3_var_names),len(o_files)))
-
-                # Gather ens_avg3d and ens_stddev3d results
-                shape_tuple3d=get_shape(ens_avg3d.shape,len(d3_var_names),me.get_rank())
-                ens_avg3d=gather_npArray(ens_avg3d,me,slice_index,shape_tuple3d) 
-                ens_stddev3d=gather_npArray(ens_stddev3d,me,slice_index,shape_tuple3d) 
+            gm3d=gather_npArray(gm3d,me,slice_index,(len(d3_var_names),len(full_in_files)))
 
             # Gather 2d variable results from all processors to the master processor
             slice_index=get_stride_list(len(d2_var_names),me)
 
             # Gather global means 2d results
-            gm2d=gather_npArray(gm2d,me,slice_index,(len(d2_var_names),len(o_files)))
-
+            gm2d=gather_npArray(gm2d,me,slice_index,(len(d2_var_names),len(full_in_files)))
             var_list=gather_list(var_list,me)
-
-            if not opts_dict['gmonly']:
-                # Gather zscore2d results
-                zscore2d=gather_npArray(zscore2d,me,slice_index,(len(d2_var_names),len(o_files)))
-
-                # Gather ens_avg3d and ens_stddev2d results
-                shape_tuple2d=get_shape(ens_avg2d.shape,len(d2_var_names),me.get_rank())
-                ens_avg2d=gather_npArray(ens_avg2d,me,slice_index,shape_tuple2d) 
-                ens_stddev2d=gather_npArray(ens_stddev2d,me,slice_index,shape_tuple2d) 
 
         else:
             gmall=np.concatenate((temp1,temp2),axis=0)
@@ -492,23 +430,10 @@ def main(argv):
     if me.get_rank() == 0 :
         if not opts_dict['cumul']:
             gmall=np.concatenate((gm3d,gm2d),axis=0)
-            if not opts_dict['gmonly']:
-                Zscoreall=np.concatenate((zscore3d,zscore2d),axis=0)
-                v_RMSZ[:,:]=Zscoreall[:,:]
-            if not opts_dict['gmonly']:
-                if (is_SE == True):
-                    v_ens_avg3d[:,:,:]=ens_avg3d[:,:,:]
-                    v_ens_stddev3d[:,:,:]=ens_stddev3d[:,:,:]
-                    v_ens_avg2d[:,:]=ens_avg2d[:,:]
-                    v_ens_stddev2d[:,:]=ens_stddev2d[:,:]
-                else:
-                    v_ens_avg3d[:,:,:,:]=ens_avg3d[:,:,:,:]
-                    v_ens_stddev3d[:,:,:,:]=ens_stddev3d[:,:,:,:]
-                    v_ens_avg2d[:,:,:]=ens_avg2d[:,:,:]
-                    v_ens_stddev2d[:,:,:]=ens_stddev2d[:,:,:]
         else:
             gmall_temp=np.transpose(gmall[:,:])
             gmall=gmall_temp
+
         mu_gm,sigma_gm,standardized_global_mean,loadings_gm,scores_gm=pyEnsLib.pre_PCA(gmall,all_var_names,var_list,me)
         v_gm[:,:]=gmall[:,:]
         v_standardized_gm[:,:]=standardized_global_mean[:,:]
@@ -519,6 +444,9 @@ def main(argv):
 
         if me.get_rank() == 0:
            print "STATUS: All Done"
+
+        nc_sumfile.close()
+
 
 def get_cumul_filelist(opts_dict,indir,regx):
    if not opts_dict['indir']:
@@ -542,12 +470,11 @@ def get_cumul_filelist(opts_dict,indir,regx):
    
    
       
-   
 
 #
 # Get the shape of all variable list in tuple for all processor
 # 
-def get_shape(shape_tuple,shape1,rank):
+def get_shape(shape_tuple, shape1, rank):
     lst=list(shape_tuple)
     lst[0]=shape1
     shape_tuple=tuple(lst)
@@ -556,7 +483,7 @@ def get_shape(shape_tuple,shape1,rank):
 #
 # Get the mpi partition list for each processor
 #
-def get_stride_list(len_of_list,me):
+def get_stride_list(len_of_list, me):
     slice_index=[]
     for i in range(me.get_size()):
         index_arr=np.arange(len_of_list)
@@ -564,7 +491,7 @@ def get_stride_list(len_of_list,me):
     return slice_index
 
 
-def gather_list(var_list,me):
+def gather_list(var_list, me):
     whole_list=[]
     if me.get_rank() == 0:
        whole_list.extend(var_list)
@@ -579,7 +506,7 @@ def gather_list(var_list,me):
 # 
 # Gather arrays from each processor by the var_list to the master processor and make it an array
 #
-def gather_npArray(npArray,me,slice_index,array_shape):
+def gather_npArray(npArray, me, slice_index, array_shape):
     the_array=np.zeros(array_shape,dtype=np.float32)
     if me.get_rank()==0:
         k=0

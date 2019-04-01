@@ -2,7 +2,7 @@
 
 import sys,getopt,os
 import numpy as np
-import Nio
+import netCDF4 as nc
 import time
 import pyEnsLib
 import json
@@ -171,7 +171,7 @@ def main(argv):
          else:
             frun_temp=opts_dict['indir']+'/'+frun_file
          if (os.path.isfile(frun_temp)):
-             ifiles.append(Nio.open_file(frun_temp,"r"))
+             ifiles.append(nc.Dataset(frun_temp,"r"))
          else:
              print "ERROR: COULD NOT LOCATE FILE " +frun_temp
              sys.exit()
@@ -334,31 +334,7 @@ def main(argv):
                        sns.plt.savefig(part_name+"_"+key+"_pass.png")
                     sns.plt.clf()
                 
-            '''
-            if len(run_index)>0:
-               json_file=opts_dict['json_case']
-               if (os.path.exists(json_file)):
-                  fd=open(json_file)
-                  metainfo=json.load(fd)
-                  caseindex=metainfo['CaseIndex']
-                  enspath=str(metainfo['EnsPath'][0])
-                  #print caseindex
-                  if (os.path.exists(enspath)):
-                     i=0
-                     comp_file=[]
-                     search = '\.[0-9]{3}\.'
-                     for name in in_files_list:
-                        s=re.search(search,name)
-                        in_files_index=s.group(0)
-                        if in_files_index[1:4] in caseindex:
-                           ens_index=str(caseindex[in_files_index[1:4]])
-                           wildname='*.'+ens_index+'.*'
-                           full_glob_str=os.path.join(enspath,wildname)
-                           glob_file=glob.glob(full_glob_str)
-                           comp_file.extend(glob_file)
-                     print "comp_file=",comp_file                
-                     pyEnsLib.plot_variable(in_files_list,comp_file,opts_dict,var_list,run_index,me)
-            '''
+
         # Print out 
         if opts_dict['printVarTest']:
             print '*********************************************** '

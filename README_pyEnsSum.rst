@@ -77,8 +77,7 @@ To use pyEnsSum:
        - module load python 
        - module load numpy
        - module load scipy
-       - module load pynio
-       - module load pyngl
+       - module load netCDF4
        - module load asaptools (https://github.com/NCAR/ASAPPyTools)
        - module load mpi4py
       
