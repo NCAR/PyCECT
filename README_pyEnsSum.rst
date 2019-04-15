@@ -70,6 +70,7 @@ To use pyEnsSum:
        1) For example, on NCAR's Cheyenne machine:
 
 	  module load python/2.7.14
+	  ncar_pylib
 	  qsub test_pyEnsSum.sh
 
 
@@ -156,9 +157,10 @@ Notes:
 	  variables to exclude in the output.  These should be added to your exclude
 	  variable list  (or removed from an include list), and then pyEnsSum can
 	  be re-run.  Note that additional problematic variables may be found by 
-	  pyEnsSum as variables are detected in two stages. (First any variables that 
-	  are constant   across the ensemble are identified.  Once these are removed, 
-	  linearly dependant variables are indentified for removal.)
+	  pyEnsSum as variables are detected in three stages. (First any variables that 
+	  are constant across the ensemble are identified.  Once these are removed, 
+	  linearly dependant variables are indentified for removal. Finally, variables
+	  that are not constant but have very few unique values are identified.)
 
 
 Example for generating summary files:

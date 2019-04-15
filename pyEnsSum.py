@@ -289,24 +289,26 @@ def main(argv):
     all_var_names += d2_var_names
     n_all_var_names = len(all_var_names)
 
-    # Create new summary ensemble file
+    # Rank 0 - Create new summary ensemble file
     this_sumfile = opts_dict["sumfile"]
-
-    if me.get_rank() == 0 and (verbose == True):
-        print "VERBOSE: Creating ", this_sumfile, "  ..."
     if(me.get_rank() ==0 ):
+
+        if  (verbose == True):
+            print "VERBOSE: Creating ", this_sumfile, "  ..."
+
         if os.path.exists(this_sumfile):
             os.unlink(this_sumfile)
         nc_sumfile = nc.Dataset(this_sumfile, "w", format="NETCDF4_CLASSIC")
 
         # Set dimensions
-        if me.get_rank() == 0 and (verbose == True):
+        if (verbose == True):
             print "VERBOSE: Setting dimensions ....."
         if (is_SE == True):
             nc_sumfile.createDimension('ncol', ncol)
         else:
             nc_sumfile.createDimension('nlat', nlat)
             nc_sumfile.createDimension('nlon', nlon)
+
         nc_sumfile.createDimension('nlev', nlev)
         nc_sumfile.createDimension('ens_size', esize)
         nc_sumfile.createDimension('nvars', num_3d + num_2d)
@@ -316,7 +318,7 @@ def main(argv):
 
         # Set global attributes
         now = time.strftime("%c")
-        if me.get_rank() == 0 and (verbose == True):
+        if (verbose == True):
             print "VERBOSE: Setting global attributes ....."
         nc_sumfile.creation_date = now
         nc_sumfile.title = 'CAM verification ensemble summary file'
@@ -326,7 +328,7 @@ def main(argv):
         nc_sumfile.machine =  opts_dict["mach"] 
 
         # Create variables
-        if me.get_rank() == 0 and (verbose == True):
+        if (verbose == True):
             print "VERBOSE: Creating variables ....."
         v_lev = nc_sumfile.createVariable("lev", 'f', ('nlev',))
         v_vars = nc_sumfile.createVariable("vars", 'S1', ('nvars', 'str_size'))
@@ -340,9 +342,8 @@ def main(argv):
         v_sigma_gm = nc_sumfile.createVariable('sigma_gm','f',('nvars',))
         v_sigma_scores_gm = nc_sumfile.createVariable('sigma_scores_gm','f',('nvars',))
 
-
         # Assign vars, var3d and var2d
-        if me.get_rank() == 0 and (verbose == True):
+        if (verbose == True):
             print "VERBOSE: Assigning vars, var3d, and var2d ....."
 
         eq_all_var_names =[]
@@ -381,12 +382,13 @@ def main(argv):
         v_var2d[:] = eq_d2_var_names[:]
 
         # Time-invarient metadata
-        if me.get_rank() == 0 and (verbose == True):
+        if (verbose == True):
             print "VERBOSE: Assigning time invariant metadata ....."
         lev_data = vars_dict["lev"]
         v_lev = lev_data
+    #end of rank=0 work
 
-    # Form ensembles
+    # All: 
     tslice = opts_dict['tslice']
     if not opts_dict['cumul']:
         # Partition the var list
@@ -407,6 +409,7 @@ def main(argv):
     if me.get_rank() == 0 and (verbose == True):
         print "VERBOSE: Finished calculating global means ....."
 
+    #gather to rank = 0
     if opts_dict['mpi_enable']:
 
         if not opts_dict['cumul']:
@@ -421,12 +424,15 @@ def main(argv):
 
             # Gather global means 2d results
             gm2d=gather_npArray(gm2d,me,slice_index,(len(d2_var_names),len(full_in_files)))
+
+            #gather variables ro exclude (in pre_pca)
             var_list=gather_list(var_list,me)
 
         else:
             gmall=np.concatenate((temp1,temp2),axis=0)
             gmall=pyEnsLib.gather_npArray_pop(gmall,me,(me.get_size(),len(d3_var_names)+len(d2_var_names)))
-    # Assign to file:
+
+    # rank =0 : complete calculations for summary file
     if me.get_rank() == 0 :
         if not opts_dict['cumul']:
             gmall=np.concatenate((gm3d,gm2d),axis=0)
@@ -434,7 +440,17 @@ def main(argv):
             gmall_temp=np.transpose(gmall[:,:])
             gmall=gmall_temp
 
-        mu_gm,sigma_gm,standardized_global_mean,loadings_gm,scores_gm=pyEnsLib.pre_PCA(gmall,all_var_names,var_list,me)
+        #PCA prep and calculation    
+        mu_gm,sigma_gm,standardized_global_mean,loadings_gm,scores_gm,b_exit=pyEnsLib.pre_PCA(gmall,all_var_names,var_list,me)
+
+        #if PCA calc encounters an error, then remove the summary file and exit
+        if b_exit:
+            nc_sumfile.close()
+            os.unlink(this_sumfile)
+            print "STATUS: Summary could not be created."
+            sys.exit(2)
+
+
         v_gm[:,:]=gmall[:,:]
         v_standardized_gm[:,:]=standardized_global_mean[:,:]
         v_mu_gm[:]=mu_gm[:]
@@ -442,8 +458,7 @@ def main(argv):
         v_loadings_gm[:,:]=loadings_gm[:,:]
         v_sigma_scores_gm[:]=scores_gm[:]
 
-        if me.get_rank() == 0:
-           print "STATUS: All Done"
+        print "STATUS: Summary file is complete."
 
         nc_sumfile.close()
 

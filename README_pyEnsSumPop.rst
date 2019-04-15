@@ -62,6 +62,7 @@ To use pyEnsSum:
        1) For example, on NCAR's Cheyenne machine:
 
 	  module load python/2.7.14
+	  ncar_pylib
 	  qsub test_pyEnsSumPop.sh
 
 

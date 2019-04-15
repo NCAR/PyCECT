@@ -8,7 +8,6 @@ import re
 from asaptools.partition import EqualStride, Duplicate
 import asaptools.simplecomm as simplecomm 
 import pyEnsLib
-#import pdb
 
 def main(argv):
 
@@ -26,7 +25,7 @@ def main(argv):
     opts_dict={}
 
     # Defaults
-    opts_dict['tag'] = 'cesm2_0_0'
+    opts_dict['tag'] = 'cesm2_1_0'
     opts_dict['compset'] = 'G'
     opts_dict['mach'] = 'cheyenne'
     opts_dict['tslice'] = 0 
@@ -44,7 +43,7 @@ def main(argv):
     opts_dict['verbose'] = True
     opts_dict['mpi_enable'] = True
     opts_dict['mpi_disable'] = False
-    opts_dict['zscoreonly'] = True
+    #opts_dict['zscoreonly'] = True
     opts_dict['popens'] = True
     opts_dict['nrand'] = 40 
     opts_dict['rand'] = False
@@ -61,7 +60,6 @@ def main(argv):
     if opts_dict['mpi_disable']:
         opts_dict['mpi_enable'] = False
 
-
     #still have npert for backwards compatibility - check if it was set
     #and override esize 
     if opts_dict['npert'] > 0:
@@ -69,13 +67,6 @@ def main(argv):
         print 'WARNING: User specified value for --npert will override --esize.  Please consider using --esize instead of --npert in the future.'
         opts_dict['esize'] = user_size
 
-
-    print 'STATUS: Running pyEnsSumPop!'
-
-    if verbose:
-        print "VERBOSE: opts_dict = "
-        print opts_dict
-       
     # Now find file names in indir
     input_dir = opts_dict['indir']
 
@@ -83,7 +74,8 @@ def main(argv):
     if opts_dict['mpi_enable']:
         me=simplecomm.create_comm()
     else:
-        me=simplecomm.create_comm(not opts_dict['mpi_enable'])
+        me=simplecomm.create_comm(False)
+
     if opts_dict['jsonfile']:
         # Read in the included var list
         Var2d,Var3d=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ESP')
@@ -95,6 +87,12 @@ def main(argv):
             if str_size < len(str):
                str_size=len(str)
 
+    if me.get_rank() == 0:
+        print 'STATUS: Running pyEnsSumPop!'
+    
+        if verbose:
+            print "VERBOSE: opts_dict = "
+            print opts_dict
 
     in_files=[]
     if(os.path.exists(input_dir)):
@@ -108,16 +106,12 @@ def main(argv):
         num_files = len(in_files)
 
     else:
-        print 'ERROR: Input directory: ',input_dir,' not found => EXITING....'
+        if me.get_rank() == 0:
+            print 'ERROR: Input directory: ',input_dir,' not found => EXITING....'
         sys.exit(2)
 
-    # Create a mpi simplecomm object
-    if opts_dict['mpi_enable']:
-        me=simplecomm.create_comm()
-    else:
-        me=simplecomm.create_comm(not opts_dict['mpi_enable'])
 
-    #Partition the input file list 
+    #Partition the input file list (ideally we have one processor per month)
     in_file_list=me.partition(in_files,func=EqualStride(),involved=True)
     
     # Check the files in the input directory
@@ -127,17 +121,16 @@ def main(argv):
 
     for onefile in in_file_list:
         fname = input_dir + '/' + onefile
-        if me.get_rank() == 0 and opts_dict['verbose']:
-            print fname
+        if opts_dict['verbose']:
+            print "my_rank = ", me.get_rank(), "  ", fname
         if (os.path.isfile(fname)):
             full_in_files.append(fname)
         else:
-            if me.get_rank() == 0:
-                print "ERROR: Could not locate file: "+ input_dir + onefile + " => EXITING...."
+            print "ERROR: Could not locate file: "+ fname + " => EXITING...."
             sys.exit() 
 
             
-    #open just the first file
+    #open just the first file (all procs)
     first_file = nc.Dataset(full_in_files[0],"r")
 
     # Store dimensions of the input fields
@@ -152,7 +145,7 @@ def main(argv):
     ndims = len(input_dims)
 
     # Make sure all files have the same dimensions
-    if (verbose == True):
+    if (verbose == True) and me.get_rank() == 0:
         print "VERBOSE: Checking dimensions ..."
     for key in input_dims:
         if key == "z_t":
@@ -163,118 +156,117 @@ def main(argv):
             nlat = len(input_dims["nlat"])
 
 
-    # Create new summary ensemble file
+    # Rank 0: prepare new summary ensemble file
     this_sumfile = opts_dict["sumfile"]
-
-    if verbose:
-       print "VERBOSE: Creating ", this_sumfile, "  ..."
     if (me.get_rank() == 0 ):
-       if os.path.exists(this_sumfile):
-           os.unlink(this_sumfile)
+        if os.path.exists(this_sumfile):
+            os.unlink(this_sumfile)
 
-       nc_sumfile = nc.Dataset(this_sumfile, "w", format="NETCDF4_CLASSIC")
+        if verbose: 
+            print "VERBOSE: Creating ", this_sumfile, "  ..."
 
-       # Set dimensions
-       if (verbose == True):
-           print "VERBOSE: Setting dimensions ....."
-       nc_sumfile.createDimension('nlat', nlat)
-       nc_sumfile.createDimension('nlon', nlon)
-       nc_sumfile.createDimension('nlev', nlev)
-       nc_sumfile.createDimension('time',None)
-       nc_sumfile.createDimension('ens_size', opts_dict['esize'])
-       nc_sumfile.createDimension('nbin', opts_dict['nbin'])
-       nc_sumfile.createDimension('nvars', len(Var3d) + len(Var2d))
-       nc_sumfile.createDimension('nvars3d', len(Var3d))
-       nc_sumfile.createDimension('nvars2d', len(Var2d))
-       nc_sumfile.createDimension('str_size', str_size)
+        nc_sumfile = nc.Dataset(this_sumfile, "w", format="NETCDF4_CLASSIC")
 
-       # Set global attributes
-       now = time.strftime("%c")
-       if (verbose == True):
-           print "VERBOSE: Setting global attributes ....."
-       nc_sumfile.creation_date = now
-       nc_sumfile.title = POP verification ensemble summary file
-       nc_sumfile.tag =  opts_dict["tag"]
-       nc_sumfile.compset = opts_dict["compset"]
-       nc_sumfile.resolution = opts_dict["res"] 
-       nc_sumfile.machine =  opts_dict["mach"] 
+        # Set dimensions
+        if verbose:
+            print "VERBOSE: Setting dimensions ....."
+        nc_sumfile.createDimension('nlat', nlat)
+        nc_sumfile.createDimension('nlon', nlon)
+        nc_sumfile.createDimension('nlev', nlev)
+        nc_sumfile.createDimension('time',None)
+        nc_sumfile.createDimension('ens_size', opts_dict['esize'])
+        nc_sumfile.createDimension('nbin', opts_dict['nbin'])
+        nc_sumfile.createDimension('nvars', len(Var3d) + len(Var2d))
+        nc_sumfile.createDimension('nvars3d', len(Var3d))
+        nc_sumfile.createDimension('nvars2d', len(Var2d))
+        nc_sumfile.createDimension('str_size', str_size)
 
-       # Create variables
-       if (verbose == True):
-           print "VERBOSE: Creating variables ....."
-       v_lev = nc_sumfile.createVariable("lev", 'f', ('nlev',))
-       v_vars = nc_sumfile.createVariable("vars", 'S1', ('nvars', 'str_size'))
-       v_var3d = nc_sumfile.createVariable("var3d", 'S1', ('nvars3d', 'str_size'))
-       v_var2d = nc_sumfile.createVariable("var2d", 'S1', ('nvars2d', 'str_size'))
-       v_time = nc_sumfile.createVariable("time",'d',('time',))
-       v_ens_avg3d = nc_sumfile.createVariable("ens_avg3d", 'f', ('time','nvars3d', 'nlev', 'nlat', 'nlon'))
-       v_ens_stddev3d = nc_sumfile.createVariable("ens_stddev3d", 'f', ('time','nvars3d', 'nlev', 'nlat', 'nlon'))
-       v_ens_avg2d = nc_sumfile.createVariable("ens_avg2d", 'f', ('time','nvars2d', 'nlat', 'nlon'))
-       v_ens_stddev2d = nc_sumfile.createVariable("ens_stddev2d", 'f', ('time','nvars2d', 'nlat', 'nlon'))
+        # Set global attributes
+        now = time.strftime("%c")
+        if verbose:
+            print "VERBOSE: Setting global attributes ....."
+        nc_sumfile.creation_date = now
+        nc_sumfile.title = 'POP verification ensemble summary file'
+        nc_sumfile.tag =  opts_dict["tag"]
+        nc_sumfile.compset = opts_dict["compset"]
+        nc_sumfile.resolution = opts_dict["res"] 
+        nc_sumfile.machine =  opts_dict["mach"] 
 
-       v_RMSZ = nc_sumfile.createVariable("RMSZ", 'f', ('time','nvars', 'ens_size','nbin'))
-       if not opts_dict['zscoreonly']:
-          v_gm = nc_sumfile.createVariable("global_mean", 'f', ('time','nvars', 'ens_size'))
+        # Create variables
+        if verbose:
+            print "VERBOSE: Creating variables ....."
+        v_lev = nc_sumfile.createVariable("z_t", 'f', ('nlev',))
+        v_vars = nc_sumfile.createVariable("vars", 'S1', ('nvars', 'str_size'))
+        v_var3d = nc_sumfile.createVariable("var3d", 'S1', ('nvars3d', 'str_size'))
+        v_var2d = nc_sumfile.createVariable("var2d", 'S1', ('nvars2d', 'str_size'))
+        v_time = nc_sumfile.createVariable("time",'d',('time',))
+        v_ens_avg3d = nc_sumfile.createVariable("ens_avg3d", 'f', ('time','nvars3d', 'nlev', 'nlat', 'nlon'))
+        v_ens_stddev3d = nc_sumfile.createVariable("ens_stddev3d", 'f', ('time','nvars3d', 'nlev', 'nlat', 'nlon'))
+        v_ens_avg2d = nc_sumfile.createVariable("ens_avg2d", 'f', ('time','nvars2d', 'nlat', 'nlon'))
+        v_ens_stddev2d = nc_sumfile.createVariable("ens_stddev2d", 'f', ('time','nvars2d', 'nlat', 'nlon'))
+        v_RMSZ = nc_sumfile.createVariable("RMSZ", 'f', ('time','nvars', 'ens_size','nbin'))
 
-       # Assign vars, var3d and var2d
-       if (verbose == True):
-           if me.get_rank() == 0: 
-               print "VERBOSE: Assigning vars, var3d, and var2d ....."
 
-       eq_all_var_names =[]
-       eq_d3_var_names = []
-       eq_d2_var_names = []
-       all_var_names = list(Var3d)
-       all_var_names += Var2d
-       l_eq = len(all_var_names)
-       for i in range(l_eq):
-           tt = list(all_var_names[i])
-           l_tt = len(tt)
-           if (l_tt < str_size):
-               extra = list(' ')*(str_size - l_tt)
-               tt.extend(extra)
-           eq_all_var_names.append(tt)
+        # Assign vars, var3d and var2d
+        if verbose:
+            print "VERBOSE: Assigning vars, var3d, and var2d ....."
 
-       l_eq = len(Var3d)
-       for i in range(l_eq):
-           tt = list(Var3d[i])
-           l_tt = len(tt)
-           if (l_tt < str_size):
-               extra = list(' ')*(str_size - l_tt)
-               tt.extend(extra)
-           eq_d3_var_names.append(tt)
+        eq_all_var_names =[]
+        eq_d3_var_names = []
+        eq_d2_var_names = []
+        all_var_names = list(Var3d)
+        all_var_names += Var2d
+        l_eq = len(all_var_names)
+        for i in range(l_eq):
+            tt = list(all_var_names[i])
+            l_tt = len(tt)
+            if (l_tt < str_size):
+                extra = list(' ')*(str_size - l_tt)
+                tt.extend(extra)
+            eq_all_var_names.append(tt)
 
-       l_eq = len(Var2d)
-       for i in range(l_eq):
-           tt = list(Var2d[i])
-           l_tt = len(tt)
-           if (l_tt < str_size):
-               extra = list(' ')*(str_size - l_tt)
-               tt.extend(extra)
-           eq_d2_var_names.append(tt)
+        l_eq = len(Var3d)
+        for i in range(l_eq):
+            tt = list(Var3d[i])
+            l_tt = len(tt)
+            if (l_tt < str_size):
+                extra = list(' ')*(str_size - l_tt)
+                tt.extend(extra)
+            eq_d3_var_names.append(tt)
 
-       v_vars[:] = eq_all_var_names[:]
-       v_var3d[:] = eq_d3_var_names[:]
-       v_var2d[:] = eq_d2_var_names[:]
+        l_eq = len(Var2d)
+        for i in range(l_eq):
+            tt = list(Var2d[i])
+            l_tt = len(tt)
+            if (l_tt < str_size):
+                extra = list(' ')*(str_size - l_tt)
+                tt.extend(extra)
+            eq_d2_var_names.append(tt)
 
-       # Time-invarient metadata
-       if (verbose == True):
-           if me.get_rank() == 0: 
-               print "VERBOSE: Assigning time invariant metadata ....."
-       vars_dict = first_files.variables
-       lev_data = vars_dict["z_t"]
-       v_lev = lev_data
-       
+        v_vars[:] = eq_all_var_names[:]
+        v_var3d[:] = eq_d3_var_names[:]
+        v_var2d[:] = eq_d2_var_names[:]
+
+        # Time-invarient metadata
+        if verbose:
+            print "VERBOSE: Assigning time invariant metadata ....."
+        vars_dict = first_file.variables
+        lev_data = vars_dict["z_t"]
+        v_lev[:] = lev_data[:]
+    
+        #end of rank 0
+
+    #All:
     # Time-varient metadata
     if verbose:
-       if me.get_rank() == 0: 
-           print "VERBOSE: Assigning time variant metadata ....."
+        if me.get_rank() == 0: 
+            print "VERBOSE: Assigning time variant metadata ....."
     vars_dict = first_file.variables
     time_value = vars_dict['time']
     time_array = np.array([time_value])
     time_array = pyEnsLib.gather_npArray_pop(time_array,me,(me.get_size(),))
     if me.get_rank() == 0:
-       v_time[:]=time_array[:]
+        v_time[:]=time_array[:]
 
     #Assign zero values to first time slice of RMSZ and avg and stddev for 2d & 3d 
     #in case of a calculation problem before finishing
@@ -285,6 +277,8 @@ def main(argv):
     z_ens_avg2d=np.zeros((len(Var2d),nlat,nlon),dtype=np.float32)
     z_ens_stddev2d=np.zeros((len(Var2d),nlat,nlon),dtype=np.float32)
     z_RMSZ = np.zeros(((len(Var3d)+len(Var2d)),e_size,b_size), dtype=np.float32)
+
+    #rank 0 (put zero values in summary file)
     if me.get_rank() == 0 :
         v_RMSZ[0,:,:,:]=z_RMSZ[:,:,:]
         v_ens_avg3d[0,:,:,:,:]=z_ens_avg3d[:,:,:,:]
@@ -292,26 +286,14 @@ def main(argv):
         v_ens_avg2d[0,:,:,:]=z_ens_avg2d[:,:,:]
         v_ens_stddev2d[0,:,:,:]=z_ens_stddev2d[:,:,:]
 
-
     #close file[0]
     first_file.close()
 
-    # Calculate global mean, average, standard deviation and rmse 
-    if verbose and me.get_rank() == 0:
-       if not opts_dict['zscoreonly']: 
-           print "VERBOSE: Calculating global means ....."
-    is_SE = False
-    tslice=0
-    if not opts_dict['zscoreonly']:
-       gm3d,gm2d = pyEnsLib.generate_global_mean_for_summary(full_in_files,Var3d,Var2d, is_SE,False,opts_dict)
-    if verbose and me.get_rank() == 0:
-        if not opts_dict['zscoreonly']:
-            print "VERBOSE: Finish calculating global means ....."
-
     # Calculate RMSZ scores  
     if (verbose == True and me.get_rank() == 0):
-       print "VERBOSE: Calculating RMSZ scores ....."
-    zscore3d,zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d,temp1,temp2=pyEnsLib.calc_rmsz(full_in_files,Var3d,Var2d,is_SE,opts_dict)    
+        print "VERBOSE: Calculating RMSZ scores ....."
+
+    zscore3d,zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d=pyEnsLib.calc_rmsz(full_in_files,Var3d,Var2d,opts_dict)    
 
     if (verbose == True and me.get_rank() == 0):
         print "VERBOSE: Finished with RMSZ scores ....."
@@ -319,32 +301,25 @@ def main(argv):
     # Collect from all processors
     if opts_dict['mpi_enable'] :
         # Gather the 3d variable results from all processors to the master processor
-        # Gather global means 3d results
-        if not opts_dict['zscoreonly']:
-           gmall=np.concatenate((gm3d,gm2d),axis=0)
-           #print "before gather, gmall.shape=",gmall.shape
-           gmall=pyEnsLib.gather_npArray_pop(gmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(o_files)))
+
         zmall=np.concatenate((zscore3d,zscore2d),axis=0)
-        zmall=pyEnsLib.gather_npArray_pop(zmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(o_files),nbin))
-        #print 'zmall=',zmall
-        
-        #print "after gather, gmall.shape=",gmall.shape
+        zmall=pyEnsLib.gather_npArray_pop(zmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(full_in_files),nbin))
+
         ens_avg3d=pyEnsLib.gather_npArray_pop(ens_avg3d,me,(me.get_size(),len(Var3d),nlev,(nlat),nlon))
         ens_avg2d=pyEnsLib.gather_npArray_pop(ens_avg2d,me,(me.get_size(),len(Var2d),(nlat),nlon))
         ens_stddev3d=pyEnsLib.gather_npArray_pop(ens_stddev3d,me,(me.get_size(),len(Var3d),nlev,(nlat),nlon))
         ens_stddev2d=pyEnsLib.gather_npArray_pop(ens_stddev2d,me,(me.get_size(),len(Var2d),(nlat),nlon))
 
-    # Assign to file:
+    # Assign to summary file:
     if me.get_rank() == 0 :
-        #Zscoreall=np.concatenate((zscore3d,zscore2d),axis=0)
+
         v_RMSZ[:,:,:,:]=zmall[:,:,:,:]
         v_ens_avg3d[:,:,:,:,:]=ens_avg3d[:,:,:,:,:]
         v_ens_stddev3d[:,:,:,:,:]=ens_stddev3d[:,:,:,:,:]
         v_ens_avg2d[:,:,:,:]=ens_avg2d[:,:,:,:]
         v_ens_stddev2d[:,:,:,:]=ens_stddev2d[:,:,:,:]
-        if not opts_dict['zscoreonly']:
-           v_gm[:,:,:]=gmall[:,:,:]
-        print "All done"
+
+        print "STATUS: PyEnsSumPop has completed."
 
         nc_sumfile.close()
 
