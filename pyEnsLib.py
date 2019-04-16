@@ -1053,15 +1053,17 @@ def standardized(gm, mu_gm, sigma_gm, loadings_gm, all_var_names, opts_dict, ens
        
     var_list=[]
     sorted_sum_std_mean=np.argsort(sum_std_mean)[::-1]
-    if (opts_dict['prn_std_mean']) :
+    if (opts_dict['printStdMean']) :
        if me.get_rank() == 0:
+           print ' ' 
            print '************************************************************************'
-           print ' Sum of standardized mean of all variables in increasing order'
+           print ' Sum of standardized mean of all variables in decreasing order'
            print '************************************************************************'
        for var in range(nvar):
            var_list.append(all_var_names[sorted_sum_std_mean[var]])
            if me.get_rank() == 0:
                print '{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]])
+               print ' '
     return new_scores,var_list,standardized_mean
 
 #
@@ -1189,7 +1191,7 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
         totalcount=totalcount+1
         sum_index.append(i+1)
 
-   false_positive=check_falsepositive(opts_dict,sum_index)
+   #false_positive=check_falsepositive(opts_dict,sum_index)
    
    #If the length of sum_index is larger than min_PC_fail, the three runs failed.
    #This doesn't apply for UF-ECT.
@@ -1203,10 +1205,10 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
        print "Summary: "+str(totalcount)+" PC scores failed at least "+str(opts_dict['minRunFail'])+" runs: ",sum_index 
        print ' '
        print 'These runs '+decision+' according to our testing criterion.'
-       if decision == 'FAILED' and false_positive != 1.0:
-         print 'The probability of this test failing although everything functions correctly (false positive) is '+'{0:5.2f}'.format(false_positive*100)+'%.'
-       print ' '
-       print ' '
+       #if decision == 'FAILED' and false_positive != 1.0:
+       #  print 'The probability of this test failing although everything functions correctly (false positive) is '+'{0:5.2f}'.format(false_positive*100)+'%.'
+       #print ' '
+       #print ' '
      elif me.get_rank() == 0:
        print ' '
        print 'The number of run files is less than minRunFail (=2), so we cannot determin an overall pass or fail.'
@@ -1284,8 +1286,9 @@ def CECT_usage():
     print '   --minPCFail <num>       : minimum number of PCs that must fail the specified number of runs for a FAILURE (default = 3)'
     print '   --minRunFail <num>      : minimum number of runs that <minPCfail> PCs must fail for a FAILURE (default = 2)'
     print '   --numRunFile <num>      : total number of runs to include in test (default = 3)'
-    print '   --printVarTest          : print out variable comparisons to global means (off by default)'
-    print '   --prn_std_mean          : enable printing out sum of standardized mean of all variables in decreasing order and associated box plots (off by default) - requires Python seaborn package'
+    print '   --printVars             : print out variables that fall outsie of the global mean ensemble distribution (off by default)'
+    print '   --printStdMean          : print out sum of standardized mean of all variables in decreasing order.  If test returns a FAIL, '
+    print '                             then output associated box plots (off by default) - requires Python seaborn package'
     print '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (greater than or equal to numRunFile)'
     print '  ----------------------------'
     print '   Args for POP-CECT :'

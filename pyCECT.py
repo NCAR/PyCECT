@@ -23,10 +23,10 @@ def main(argv):
 
     # Get command line stuff and store in a dictionary
     s="""verbose sumfile= indir= input_globs= tslice= nPC= sigMul= 
-         minPCFail= minRunFail= numRunFile= printVarTest popens 
+         minPCFail= minRunFail= numRunFile= printVars popens 
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile= 
          casejson= npick= pepsi_gm pop_tol= web_enabled
-         pop_threshold= prn_std_mean fIndex= lev= eet= json_case= """
+         pop_threshold= printStdMean fIndex= lev= eet= json_case= """
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -46,7 +46,7 @@ def main(argv):
     opts_dict['minPCFail'] = 3
     opts_dict['minRunFail'] = 2
     opts_dict['numRunFile'] = 3
-    opts_dict['printVarTest'] = False
+    opts_dict['printVars'] = False
     opts_dict['popens'] = False
     opts_dict['jsonfile'] = ''
     opts_dict['mpi_enable'] = False
@@ -60,7 +60,7 @@ def main(argv):
     opts_dict['test_failure'] = True
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
-    opts_dict['prn_std_mean'] = False
+    opts_dict['printStdMean'] = False
     opts_dict['lev'] = 0
     opts_dict['eet'] = 0
     opts_dict['json_case'] = ''
@@ -91,6 +91,7 @@ def main(argv):
     dt=datetime.now()
     verbose = opts_dict['verbose']
     if me.get_rank()==0:
+        print ' ' 
         print '--------pyCECT--------'
         print ' '
         print dt.strftime("%A, %d. %B %Y %I:%M%p")
@@ -188,7 +189,6 @@ def main(argv):
        else:
           print 'Warning: machine and compiler are unknown'
              
-
     if popens:
         
         # Read in the included var list
@@ -260,8 +260,16 @@ def main(argv):
         run_index,decision=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me)
 
         # If there is failure, plot out standardized mean and compared standardized mean in box plots
-        if opts_dict['prn_std_mean'] and decision == 'FAILED':
+        if opts_dict['printStdMean'] and decision == 'FAILED':
             import seaborn as sns
+            import matplotlib.pyplot as plt
+
+            print " "
+            print '***************************************************************************** '
+            print 'Test run variable standardized means (for reference only - not used to determine pass/fail)'
+            print '***************************************************************************** '
+            print " "
+
             category={"all_outside99":[],"two_outside99":[],"one_outside99":[],"all_oneside_outside1QR":[]}
             b=list(pyEnsLib.chunk(ens_var_name,10))
             for f,alist in enumerate(b):
@@ -299,27 +307,45 @@ def main(argv):
                 list_array2=[]
                 list_var=[]
                 value=category[key]
-                print "value len=",key,len(value)
+
+                if key=="all_outside99":
+                    print "*** ", len(value), " variables have 3 test run global means outside of the 99th percentile."
+                elif key == "two_outside99":
+                    print "*** ", len(value), " variables have 2 test run global means outside of the 99th percentile."
+                elif key == "one_outside99":
+                    print "*** ", len(value), " variables have 1 test run global mean outside of the 99th percentile."
+                elif key == "all_oneside_outside1QR":
+                    print "*** ", len(value), " variables have all test run global means outside of the first quartile (but not outside the 99th percentile)."
+
+                if len(value) > 0:
+                    print " => generating plot ..."
+                    if len(value) > 20:
+                        print "    NOTE: truncating to only plot the first 20 variables."
+                        value = value[0:20]
+
                 for each_var in value:
                     list_array.append(std_gm[each_var[0]])
                     list_array2.append(comp_std_gm[each_var[1]])
                     list_var.append(each_var[0])
+
                 if len(value) !=0 :
                     ax=sns.boxplot(data=list_array,whis=[0.5,99.5],fliersize=0.0)
                     sns.stripplot(data=list_array2,jitter=True,color="r")
-                    sns.plt.xticks(range(len(list_array)),list_var,fontsize=8,rotation=-45)
+                    plt.xticks(range(len(list_array)),list_var,fontsize=8,rotation=-45)
+                    
                     if decision == 'FAILED':
-                       sns.plt.savefig(part_name+"_"+key+"_fail.png")
+                       plt.savefig(part_name+"_"+key+"_fail.png")
                     else:
-                       sns.plt.savefig(part_name+"_"+key+"_pass.png")
-                    sns.plt.clf()
+                       plt.savefig(part_name+"_"+key+"_pass.png")
+                    plt.clf()
                 
 
-        # Print out 
-        if opts_dict['printVarTest']:
-            print '*********************************************** '
-            print 'Variable-based testing (for reference only - not used to determine pass/fail)'
-            print '*********************************************** '
+        # Print variables (optional)
+        if opts_dict['printVars']:
+            print " "
+            print '***************************************************************************** '
+            print 'Variable global mean information (for reference only - not used to determine pass/fail)'
+            print '***************************************************************************** '
             for fcount,fid in enumerate(ifiles):
                 print ' '
                 print 'Run '+str(fcount+1)+":"
@@ -329,10 +355,6 @@ def main(argv):
                 print ' '
                 print '----------------------------------------------------------------------------'
 
-
-
-#    for f in ifiles:
-#        f.close()
 
     if me.get_rank() == 0:
         print ' '
