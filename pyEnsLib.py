@@ -1245,8 +1245,8 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
        passes, failures = eet.test_combinations(faildict, runsPerTest=opts_dict['numRunFile'], nRunFails=opts_dict['minRunFail'])
        if me.get_rank() == 0:
            print ' '
-           print "%d tests failed out of %d possible tests" % (failures, passes + failures)
-           print "This represents a failure percent of %.2f" % (100.*failures/float(failures + passes))
+           print "%d tests failed out of %d possible tests." % (failures, passes + failures)
+           print "This represents a failure percent of %.2f." % (100.*failures/float(failures + passes))
            print ' '
            if float(failures)>0.1*float(passes+failures):
               decision="FAILED"

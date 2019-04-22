@@ -103,6 +103,14 @@ def main(argv):
         print ' '
         print ' '
 
+    #make sure these are valid
+    if os.path.isfile(opts_dict['sumfile']) == False:
+        print "ERROR: Summary file name is not valid."
+        sys.exit()
+    if os.path.exists(opts_dict['indir']) == False:
+        print "ERROR: --indir path is not valid."
+        sys.exit()
+
     # Ensure sensible EET value
     if opts_dict['eet'] and opts_dict['numRunFile'] > opts_dict['eet']:
         pyEnsLib.CECT_usage()
@@ -172,7 +180,6 @@ def main(argv):
             frun_temp=opts_dict['indir']+'/'+frun_file
          if (os.path.isfile(frun_temp)):
              ifiles.append(frun_temp)
-#             ifiles.append(nc.Dataset(frun_temp,"r"))
          else:
              print "ERROR: COULD NOT LOCATE FILE " +frun_temp
              sys.exit()

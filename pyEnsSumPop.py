@@ -121,8 +121,8 @@ def main(argv):
 
     for onefile in in_file_list:
         fname = input_dir + '/' + onefile
-        if opts_dict['verbose']:
-            print "my_rank = ", me.get_rank(), "  ", fname
+#        if opts_dict['verbose']:
+#            print "my_rank = ", me.get_rank(), "  ", fname
         if (os.path.isfile(fname)):
             full_in_files.append(fname)
         else:
