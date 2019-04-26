@@ -104,7 +104,7 @@ def main(argv):
         print ' '
 
     #make sure these are valid
-    if os.path.isfile(opts_dict['sumfile']) == False:
+    if opts_dict['web_enabled'] == False and os.path.isfile(opts_dict['sumfile']) == False:
         print "ERROR: Summary file name is not valid."
         sys.exit()
     if os.path.exists(opts_dict['indir']) == False:
@@ -187,6 +187,9 @@ def main(argv):
     if opts_dict['web_enabled']:
        if len(opts_dict['sumfile'])==0:
           opts_dict['sumfile']='/glade/p/cesmdata/cseg/inputdata/validation/'
+       #need to open ifiles   
+        
+
        opts_dict['sumfile'],machineid,compiler=pyEnsLib.search_sumfile(opts_dict,ifiles) 
        if len(machineid)!=0 and len(compiler)!=0:
           print ' '

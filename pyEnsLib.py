@@ -229,67 +229,78 @@ def calculate_raw_score(k, v, npts3d, npts2d, ens_avg, ens_stddev, is_SE, opts_d
 # /glade/p/cesmdata/cseg/inputdata/validation/ when three 
 # validation files are input from the web server
 # 
-#AB - needs testing without Nio
-#     this is assuming that ifiles are already open and we may not want that
+# ifiles are not open
 def search_sumfile(opts_dict,ifiles):
-       sumfile_dir=opts_dict['sumfile']
-       global_att=ifiles[0].ncattrs()
-       machineid=''
-       compiler=''
-       for k,v in global_att.iteritems():
-          if k=='model_version':
-             if v.find("-") != -1:
-                model_version=v[0:v.find('-')]
-             else:
-                model_version=v
-          elif k=='compset':
-             compset=v 
-          elif k=='testtype':
-             testtype=v
-             if v=='UF-ECT':
-                testtype='uf_ensembles'
+
+    sumfile_dir=opts_dict['sumfile']
+    first_file = nc.Dataset(ifiles[0],"r")   
+    machineid=''
+    compiler=''
+
+    global_att=first_file.ncattrs()
+    for attr_name in global_att:
+        val = getattr(first_file, attr_name)  
+        if attr_name == 'model_version':
+            if val.find("-") != -1:
+                model_version=val[0:val.find('-')]
+            else:
+                model_version=val
+        elif attr_name == 'compset':
+            compset=val
+        elif attr_name == 'testtype':
+            testtype=val
+            if val == 'UF-ECT':
+                testtype = 'uf_ensembles'
                 opts_dict['eet']=len(ifiles)
-             elif v=='ECT':
+            elif val=='ECT':
                 testtype='ensembles'
-             elif v=='POP':
-                testtype=v+'_ensembles'
-          elif k=='machineid':
-             machineid=v
-          elif k=='compiler':
-             compiler=v
-          elif k=='grid':
-             grid=v
-       if 'testtype' in global_att:
-             sumfile_dir=sumfile_dir+'/'+testtype+'/'
-       else:
-           print "ERROR: No global attribute testtype in your validation file => EXITING...."
-           sys.exit(2)
-       if 'model_version' in global_att:
-           sumfile_dir=sumfile_dir+'/'+model_version+'/'
-       else:
-           print "ERROR: No global attribute model_version in your validation file => EXITING...."
-           sys.exit(2)
-       if (os.path.exists(sumfile_dir)):
-           thefile_id=0
-           for i in os.listdir(sumfile_dir):
-               if (os.path.isfile(sumfile_dir+i)):
-                  sumfile_id=nc.Dataset(sumfile_dir+i,'r')
-                  sumfile_gatt=sumfile_id.ncattrs()
-                  if 'grid' not in sumfile_gatt and 'resolution' not in sumfile_gatt:
-                     print "ERROR: No global attribute grid or resolution in the summary file => EXITING...."
-                     sys.exit(2)
-                  if 'compset' not in sumfile_gatt:
-                     print "ERROR: No global attribute compset in the summary file"
-                     sys.exit(2)
-                  if sumfile_gatt['resolution']==grid and sumfile_gatt['compset']==compset:
-                     thefile_id=sumfile_id
-           if thefile_id==0:
-              print "ERROR: The validation files don't have a matching ensemble summary file to compare => EXITING...."
-              sys.exit(2)    
-       else:
-         print "ERROR: Could not locate directory "+sumfile_dir + " => EXITING...."
-         sys.exit(2)
-       return sumfile_dir+i,machineid,compiler
+            elif v=='POP':
+                testtype=val+'_ensembles'
+        elif attr_name == 'machineid':
+            machineid=val
+        elif attr_name == 'compiler':
+            compiler=val
+        elif attr_name == 'grid':
+            grid=val
+
+    if 'testtype' in global_att:
+        sumfile_dir=sumfile_dir+'/'+testtype+'/'
+    else:
+        print "ERROR: No global attribute testtype in your validation file => EXITING...."
+        sys.exit(2)
+
+    if 'model_version' in global_att:
+        sumfile_dir=sumfile_dir+'/'+model_version+'/'
+    else:
+        print "ERROR: No global attribute model_version in your validation file => EXITING...."
+        sys.exit(2)
+
+    first_file.close()
+
+    if (os.path.exists(sumfile_dir)):
+        thefile_id=0
+        for i in os.listdir(sumfile_dir):
+            if (os.path.isfile(sumfile_dir+i)):
+                sumfile_id=nc.Dataset(sumfile_dir+i,'r')
+                sumfile_gatt=sumfile_id.ncattrs()
+                if 'grid' not in sumfile_gatt and 'resolution' not in sumfile_gatt:
+                    print "ERROR: No global attribute grid or resolution in the summary file => EXITING...."
+                    sys.exit(2)
+                if 'compset' not in sumfile_gatt:
+                    print "ERROR: No global attribute compset in the summary file"
+                    sys.exit(2)
+                if getattr(sumfile_id, 'resolution') == grid and getsttr(sumfile_id, 'compset') == compset:
+                    thefile_id=sumfile_id
+                sumfile_id.close() 
+        if thefile_id==0:
+            print "ERROR: The verification files don't have a matching ensemble summary file to compare => EXITING...."
+            sys.exit(2)    
+    else:
+        print "ERROR: Could not locate directory "+sumfile_dir + " => EXITING...."
+        sys.exit(2)
+
+
+    return sumfile_dir+i,machineid,compiler
 
 #
 # Create some variables and call a function to calculate PCA
