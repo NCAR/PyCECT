@@ -304,17 +304,20 @@ def search_sumfile(opts_dict,ifiles):
 
 #
 # Create some variables and call a function to calculate PCA
-# 
+# now gm comes in at 64 bits...
 
-def pre_PCA(gm_32, all_var_names, whole_list, me):
+def pre_PCA(gm_orig, all_var_names, whole_list, me):
 
     #initialize
     b_exit=False
-    gm_len=gm_32.shape
+    gm_len=gm_orig.shape
     nvar=gm_len[0]
     nfile=gm_len[1]
-    gm=gm_32.astype(np.float64)
-
+    if gm_orig.dtype  == np.float32:
+        gm=gm_orig.astype(np.float64)
+    else:
+        gm=gm_orig[:]
+       
     mu_gm=np.average(gm,axis=1)
     sigma_gm=np.std(gm,axis=1,ddof=1)
 
@@ -401,6 +404,7 @@ def pre_PCA(gm_32, all_var_names, whole_list, me):
         print "STATUS: checking for unique values across ensemble"
 
         cts = np.count_nonzero(np.diff(np.sort(standardized_global_mean)), axis=1)+1
+#        thresh = .02* standardized_global_mean.shape[1]
         thresh = .03* standardized_global_mean.shape[1]
         result = np.where(cts < thresh)
         indices = result[0]
@@ -431,9 +435,9 @@ def pre_PCA(gm_32, all_var_names, whole_list, me):
         loadings_gm = np.zeros(gm.shape,dtype=np.float64)
         sigma_scores_gm =np.zeros(gm.shape,dtype=np.float64)
 
+#    return mu_gm.astype(np.float32),sigma_gm.astype(np.float32),standardized_global_mean.astype(np.float32),loadings_gm.astype(np.float32),sigma_scores_gm.astype(np.float32),b_exit
 
-
-    return mu_gm.astype(np.float32),sigma_gm.astype(np.float32),standardized_global_mean.astype(np.float32),loadings_gm.astype(np.float32),sigma_scores_gm.astype(np.float32),b_exit
+    return mu_gm, sigma_gm, standardized_global_mean, loadings_gm, sigma_scores_gm, b_exit
 
 #
 # Performs principal components analysis  (PCA) on the p-by-n data matrix A
@@ -528,7 +532,7 @@ def calc_nrmse(orig_array, comp_array):
 
 #
 # Calculate weighted global mean for one level of CAM output
-#
+# works in dp
 def area_avg(data_orig, weight, is_SE):
 
     #TO DO: take into account missing values
@@ -536,6 +540,7 @@ def area_avg(data_orig, weight, is_SE):
         data=data_orig.astype(np.float64)
     else:
         data=data_orig[:]
+
     if (is_SE == True):
         a = np.average(data, weights=weight)
     else: #FV
@@ -548,10 +553,15 @@ def area_avg(data_orig, weight, is_SE):
 #
 # Calculate weighted global mean for one level of OCN output
 #
-def pop_area_avg(data, weight):
+def pop_area_avg(data_orig, weight):
 
     #Take into account missing values
     #weights are for lat 
+    if data_orig.dtype == np.float32:
+        data=data_orig.astype(np.float64)
+    else:
+        data=data_orig[:]
+
     a = np.ma.average(data, weights=weight)
     return a
 
@@ -586,9 +596,9 @@ def get_area_wgt(o_files ,is_SE, nlev, popens):
 
     if (is_SE == True):
         ncol = len(input_dims["ncol"])
-        output3d = np.zeros((nlev, ncol))
-        output2d = np.zeros(ncol)
-        area_wgt = np.zeros(ncol)
+        output3d = np.zeros((nlev, ncol), dtype=np.float64)
+        output2d = np.zeros(ncol, dtype=np.float64)
+        area_wgt = np.zeros(ncol, dtype=np.float64)
         area = first_file.variables["area"]
         area_wgt[:] = area[:]
         total = np.sum(area_wgt)
@@ -607,9 +617,9 @@ def get_area_wgt(o_files ,is_SE, nlev, popens):
               nlat = len(input_dims['lat']) 
            gw = first_file.variables["TAREA"]
            z_wgt = first_file.variables["dz"]  
-        output3d = np.zeros((nlev, nlat, nlon))
-        output2d = np.zeros((nlat, nlon))
-        area_wgt = np.zeros(nlat) #note gauss weights are length nlat
+        output3d = np.zeros((nlev, nlat, nlon),dtype=np.float64)
+        output2d = np.zeros((nlat, nlon),dtype=np.float64)
+        area_wgt = np.zeros(nlat,dtype=np.float64) #note gauss weights are length nlat
         area_wgt[:] = gw[:]
 
         first_file.close()
@@ -618,6 +628,7 @@ def get_area_wgt(o_files ,is_SE, nlev, popens):
 #
 # compute area_wgts, and then loop through all files to call calc_global_means_for_onefile
 # o_files are not open for CAM
+# 12/19 - summary file will now be double precision
 def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pepsi_gm, opts_dict):
 
     tslice=opts_dict['tslice']
@@ -627,8 +638,10 @@ def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pep
     n2d = len(var_name2d)
     tot = n3d + n2d
 
-    gm3d = np.zeros((n3d,len(o_files)), dtype=np.float32)
-    gm2d = np.zeros((n2d,len(o_files)), dtype=np.float32)
+#    gm3d = np.zeros((n3d,len(o_files)), dtype=np.float32)
+#    gm2d = np.zeros((n2d,len(o_files)), dtype=np.float32)
+    gm3d = np.zeros((n3d,len(o_files)), dtype=np.float64)
+    gm2d = np.zeros((n2d,len(o_files)), dtype=np.float64)
 
     nlev = get_nlev(o_files, popens)
 
@@ -676,19 +689,23 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt, z_wgt, var_name3d, var_nam
     n3d = len(var_name3d)
     n2d = len(var_name2d)
 
-    gm3d = np.zeros((n3d),dtype=np.float32)
-    gm2d = np.zeros((n2d),dtype=np.float32)
+#    gm3d = np.zeros((n3d),dtype=np.float32)
+#    gm2d = np.zeros((n2d),dtype=np.float32)
+    gm3d = np.zeros((n3d),dtype=np.float64)
+    gm2d = np.zeros((n2d),dtype=np.float64)
+
 
     #calculate global mean for each 3D variable 
     for count, vname in enumerate(var_name3d):
-        gm_lev = np.zeros(nlev)
+        gm_lev = np.zeros(nlev, dtype=np.float64)
         data = fname.variables[vname]
         if np.any(np.isnan(data)):
             print "ERROR: "+vname+ " data contains NaNs - please check input."
             nan_flag = True
         output3d[:,:,:] = data[tslice,:,:,:] 
+        dbl_output3d = output3d.astype(dtype = np.float64)
         for k in range(nlev):
-            moutput3d=np.ma.masked_values(output3d[k,:,:],data._FillValue)
+            moutput3d=np.ma.masked_values(dbl_output3d[k,:,:],data._FillValue)
             gm_lev[k] = pop_area_avg(moutput3d, area_wgt)
         #note: averaging over levels - in future, consider pressure-weighted (?)        
         gm3d[count] = np.average(gm_lev,weights=z_wgt)         
@@ -700,7 +717,8 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt, z_wgt, var_name3d, var_nam
             print "ERROR: "+vname+ " data contains NaNs - please check input."
             nan_flag = True
         output2d[:,:] = data[tslice,:,:] 
-        moutput2d=np.ma.masked_values(output2d[:,:],data._FillValue)
+        dbl_output2d= output2d.astype(dtype = np.float64)
+        moutput2d=np.ma.masked_values(dbl_output2d[:,:],data._FillValue)
         gm2d_mean = pop_area_avg(moutput2d, area_wgt)
         gm2d[count]=gm2d_mean
  
@@ -725,10 +743,13 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
     n3d = len(var_name3d)
     n2d = len(var_name2d)
 
-    gm3d = np.zeros((n3d),dtype=np.float32)
-    gm2d = np.zeros((n2d),dtype=np.float32)
+    #gm3d = np.zeros((n3d),dtype=np.float32)
+    #gm2d = np.zeros((n2d),dtype=np.float32)
+    gm3d = np.zeros((n3d),dtype=np.float64)
+    gm2d = np.zeros((n2d),dtype=np.float64)
 
-    #calculate global mean for each 3D variable 
+
+    #calculate global mean for each 3D variable (note: area_avg casts into dp before computation)
     for count, vname in enumerate(var_name3d):
         if vname not in fname.variables:
            print 'WARNING: the test file does not have the variable '+vname+' that isin the ensemble summary file ...'
@@ -744,17 +765,17 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
         if (is_SE == True):
             if not cumul: 
                temp=data[tslice].shape[0]
-               gm_lev = np.zeros(temp)
+               gm_lev = np.zeros(temp, dtype = np.float64)
                for k in range(temp):
                    gm_lev[k] = area_avg(data[tslice,k,:], area_wgt, is_SE)
             else:
-               gm_lev = np.zeros(nlev)
+               gm_lev = np.zeros(nlev, dtype = np.float64)
                for k in range(nlev):
                    gm_lev[k] = area_avg(output3d[k,:], area_wgt, is_SE)
         else:
             if not cumul:
                temp=data[tslice].shape[0]
-               gm_lev = np.zeros(temp)
+               gm_lev = np.zeros(temp, dtype = np.float64)
                for k in range(temp):
                    gm_lev[k] = area_avg(data[tslice,k,:,:], area_wgt, is_SE)
             else:
@@ -763,7 +784,8 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
                    gm_lev[k] = area_avg(output3d[k,:,:], area_wgt, is_SE)
         #note: averaging over levels could be pressure-weighted (?)        
         gm3d[count] = np.mean(gm_lev)         
-        
+   
+     
     #calculate global mean for each 2D variable 
     for count, vname in enumerate(var_name2d):
         #if (verbose == True):
@@ -806,6 +828,9 @@ def read_ensemble_summary(ens_file):
   dims=fens.dimensions
   if 'ncol' in dims:
      is_SE = True
+
+  esize = len(dims['ens_size'])   
+  str_size =  len(dims['str_size']) 
 
   ens_avg={}
   ens_stddev={}
@@ -871,23 +896,26 @@ def read_ensemble_summary(ens_file):
         temp_name=ens_var_name[m]
         std_gm[temp_name]=i
         m=m+1 
+      #also get as array (not just dictionary)
+      std_gm_array = np.zeros((num_var3d+num_var2d,esize),dtype=np.float64)
+      std_gm_array[:] = v[:,:]
     elif k == 'mu_gm':
-      mu_gm=np.zeros((num_var3d+num_var2d),dtype=np.float32)
+      mu_gm=np.zeros((num_var3d+num_var2d),dtype=np.float64)
       mu_gm[:]=v[:]
     elif k == 'sigma_gm':
-      sigma_gm=np.zeros((num_var3d+num_var2d),dtype=np.float32)
+      sigma_gm=np.zeros((num_var3d+num_var2d),dtype=np.float64)
       sigma_gm[:]=v[:]
     elif k == 'loadings_gm':
-      loadings_gm=np.zeros((num_var3d+num_var2d,num_var3d+num_var2d),dtype=np.float32)
+      loadings_gm=np.zeros((num_var3d+num_var2d,num_var3d+num_var2d),dtype=np.float64)
       loadings_gm[:,:]=v[:,:]
     elif k == 'sigma_scores_gm':
-      sigma_scores_gm=np.zeros((num_var3d+num_var2d),dtype=np.float32)
+      sigma_scores_gm=np.zeros((num_var3d+num_var2d),dtype=np.float64)
       sigma_scores_gm[:]=v[:]
   
 
   fens.close()
 
-  return ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_var3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE,std_gm
+  return ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_var3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE,std_gm, std_gm_array, str_size
 
 
 #
@@ -1105,6 +1133,7 @@ def addresults(results, key, value, var, thefile):
           
     return results
 
+
 #
 # Print out rmsz score failure, global mean failure summary
 #
@@ -1182,7 +1211,6 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
        print '*********************************************** '
   
    #Test to check if new_scores out of range of sigMul*sigma_scores_gm
-   #for i in range(new_scores.shape[0]):
    for i in range(opts_dict['nPC']):
       for j in range(new_scores.shape[1]):
          if abs(new_scores[i][j]) > opts_dict['sigMul'] * (sigma_scores_gm[i]):
@@ -1216,10 +1244,6 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
        print "Summary: "+str(totalcount)+" PC scores failed at least "+str(opts_dict['minRunFail'])+" runs: ",sum_index 
        print ' '
        print 'These runs '+decision+' according to our testing criterion.'
-       #if decision == 'FAILED' and false_positive != 1.0:
-       #  print 'The probability of this test failing although everything functions correctly (false positive) is '+'{0:5.2f}'.format(false_positive*100)+'%.'
-       #print ' '
-       #print ' '
      elif me.get_rank() == 0:
        print ' '
        print 'The number of run files is less than minRunFail (=2), so we cannot determin an overall pass or fail.'
@@ -1300,6 +1324,7 @@ def CECT_usage():
     print '   --printVars             : print out variables that fall outsie of the global mean ensemble distribution (off by default)'
     print '   --printStdMean          : print out sum of standardized mean of all variables in decreasing order.  If test returns a FAIL, '
     print '                             then output associated box plots (off by default) - requires Python seaborn package'
+    print '   --saveResults           : save a netcdf file with scores and std global means from the test runs (savefile.nc). '
     print '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (greater than or equal to numRunFile)'
     print '  ----------------------------'
     print '   Args for POP-CECT :'

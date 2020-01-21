@@ -330,17 +330,17 @@ def main(argv):
         # Create variables
         if (verbose == True):
             print "VERBOSE: Creating variables ....."
-        v_lev = nc_sumfile.createVariable("lev", 'f', ('nlev',))
+        v_lev = nc_sumfile.createVariable("lev", 'f8', ('nlev',))
         v_vars = nc_sumfile.createVariable("vars", 'S1', ('nvars', 'str_size'))
         v_var3d = nc_sumfile.createVariable("var3d", 'S1', ('nvars3d', 'str_size'))
         v_var2d = nc_sumfile.createVariable("var2d", 'S1', ('nvars2d', 'str_size'))
 
-        v_gm = nc_sumfile.createVariable("global_mean", 'f', ('nvars', 'ens_size'))
-        v_standardized_gm=nc_sumfile.createVariable("standardized_gm",'f',('nvars','ens_size'))
-        v_loadings_gm = nc_sumfile.createVariable('loadings_gm','f',('nvars','nvars'))
-        v_mu_gm = nc_sumfile.createVariable('mu_gm','f',('nvars',))
-        v_sigma_gm = nc_sumfile.createVariable('sigma_gm','f',('nvars',))
-        v_sigma_scores_gm = nc_sumfile.createVariable('sigma_scores_gm','f',('nvars',))
+        v_gm = nc_sumfile.createVariable("global_mean", 'f8', ('nvars', 'ens_size'))
+        v_standardized_gm=nc_sumfile.createVariable("standardized_gm",'f8',('nvars','ens_size'))
+        v_loadings_gm = nc_sumfile.createVariable('loadings_gm','f8',('nvars','nvars'))
+        v_mu_gm = nc_sumfile.createVariable('mu_gm','f8',('nvars',))
+        v_sigma_gm = nc_sumfile.createVariable('sigma_gm','f8',('nvars',))
+        v_sigma_scores_gm = nc_sumfile.createVariable('sigma_scores_gm','f8',('nvars',))
 
         # Assign vars, var3d and var2d
         if (verbose == True):
@@ -384,8 +384,9 @@ def main(argv):
         # Time-invarient metadata
         if (verbose == True):
             print "VERBOSE: Assigning time invariant metadata ....."
-        lev_data = vars_dict["lev"]
-        v_lev = lev_data
+#        lev_data = np.zeros(num_lev,dtype=np.float64)     
+        lev_data = first_file.variables["lev"]
+        v_lev[:] = lev_data[:]
     #end of rank=0 work
 
     # All: 
@@ -454,7 +455,7 @@ def main(argv):
         v_gm[:,:]=gmall[:,:]
         v_standardized_gm[:,:]=standardized_global_mean[:,:]
         v_mu_gm[:]=mu_gm[:]
-        v_sigma_gm[:]=sigma_gm[:].astype(np.float32)
+        v_sigma_gm[:]=sigma_gm[:]
         v_loadings_gm[:,:]=loadings_gm[:,:]
         v_sigma_scores_gm[:]=scores_gm[:]
 
@@ -522,7 +523,8 @@ def gather_list(var_list, me):
 # Gather arrays from each processor by the var_list to the master processor and make it an array
 #
 def gather_npArray(npArray, me, slice_index, array_shape):
-    the_array=np.zeros(array_shape,dtype=np.float32)
+#    the_array=np.zeros(array_shape,dtype=np.float32)
+    the_array=np.zeros(array_shape,dtype=np.float64)     
     if me.get_rank()==0:
         k=0
         for j in slice_index[me.get_rank()]:

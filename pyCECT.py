@@ -26,7 +26,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= printVars popens 
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile= 
          casejson= npick= pepsi_gm pop_tol= web_enabled
-         pop_threshold= printStdMean fIndex= lev= eet= json_case= """
+         pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= """
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -66,6 +66,7 @@ def main(argv):
     opts_dict['json_case'] = ''
     opts_dict['sumfile'] = ''
     opts_dict['web_enabled'] = False
+    opts_dict['saveResults']= False
 
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -223,7 +224,7 @@ def main(argv):
     #cam
     else:
         # Read all variables from the ensemble summary file
-        ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE_sum,std_gm=pyEnsLib.read_ensemble_summary(opts_dict['sumfile']) 
+        ens_var_name,ens_avg,ens_stddev,ens_rmsz,ens_gm,num_3d,mu_gm,sigma_gm,loadings_gm,sigma_scores_gm,is_SE_sum,std_gm, std_gm_array, str_size=pyEnsLib.read_ensemble_summary(opts_dict['sumfile']) 
 
         #Only doing gm
 
@@ -270,7 +271,9 @@ def main(argv):
         run_index,decision=pyEnsLib.comparePCAscores(ifiles,new_scores,sigma_scores_gm,opts_dict,me)
 
         # If there is failure, plot out standardized mean and compared standardized mean in box plots
-        if opts_dict['printStdMean'] and decision == 'FAILED':
+#        if opts_dict['printStdMean'] and decision == 'FAILED':
+        if opts_dict['printStdMean']:
+
             import seaborn as sns
             import matplotlib.pyplot as plt
 
@@ -348,7 +351,50 @@ def main(argv):
                     else:
                        plt.savefig(part_name+"_"+key+"_pass.png")
                     plt.clf()
-                
+   
+##
+# Print file with info about new test runs....to a netcdf file
+##             
+        if opts_dict['saveResults']:
+
+            num_vars = comp_std_gm.shape[0]
+            tsize = comp_std_gm.shape[1]
+            esize = std_gm_array.shape[1]
+            this_savefile ='savefile.nc'
+            if  (verbose == True):
+                print "VERBOSE: Creating ", this_savefile, "  ..."
+
+            if os.path.exists(this_savefile):
+                os.unlink(this_savefile)
+            nc_savefile = nc.Dataset(this_savefile, "w", format="NETCDF4_CLASSIC")
+            nc_savefile.createDimension('ens_size', esize)
+            nc_savefile.createDimension('test_size', tsize)
+            nc_savefile.createDimension('nvars', num_vars)
+            nc_savefile.createDimension('str_size', str_size)
+
+            # Set global attributes
+            now = time.strftime("%c")
+            nc_savefile.creation_date = now
+            nc_savefile.title = 'PyCECT compare results file'
+            nc_savefile.summaryfile = opts_dict['sumfile']
+            nc_savefile.testfiles = in_files
+            #variables
+            v_vars = nc_savefile.createVariable("vars", 'S1', ('nvars', 'str_size'))
+            v_std_gm=nc_savefile.createVariable("std_gm",'f8',('nvars','test_size'))
+            v_scores=nc_savefile.createVariable("scores",'f8',('nvars','test_size'))
+            v_ens_sigma_scores = nc_savefile.createVariable('ens_sigma_scores','f8',('nvars',))
+            v_ens_std_gm=nc_savefile.createVariable("ens_std_gm",'f8',('nvars','ens_size'))
+
+            #hard-coded size
+            str_out = nc.stringtochar(np.array(ens_var_name, 'S10'))
+
+            v_vars[:] = str_out
+            v_std_gm[:,:] = comp_std_gm[:,:]
+            v_scores[:,:] = new_scores[:,:]
+            v_ens_sigma_scores[:] = sigma_scores_gm[:]
+            v_ens_std_gm[:,:] = std_gm_array[:,:]
+        
+            nc_savefile.close()
 
         # Print variables (optional)
         if opts_dict['printVars']:
