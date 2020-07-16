@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+from __future__ import print_function
 import sys,getopt,os
 import numpy as np
 import netCDF4 as nc
@@ -92,24 +92,24 @@ def main(argv):
     dt=datetime.now()
     verbose = opts_dict['verbose']
     if me.get_rank()==0:
-        print ' ' 
-        print '--------pyCECT--------'
-        print ' '
-        print dt.strftime("%A, %d. %B %Y %I:%M%p")
-        print ' '
+        print(' ') 
+        print('--------pyCECT--------')
+        print(' ')
+        print(dt.strftime("%A, %d. %B %Y %I:%M%p"))
+        print(' ')
         if not opts_dict['web_enabled']:
-            print 'Ensemble summary file = '+opts_dict['sumfile']
-        print ' '
-        print 'Testcase file directory = '+opts_dict['indir']    
-        print ' '
-        print ' '
+            print('Ensemble summary file = '+opts_dict['sumfile'])
+        print(' ')
+        print('Testcase file directory = '+opts_dict['indir']) 
+        print(' ')
+        print(' ')
 
     #make sure these are valid
     if opts_dict['web_enabled'] == False and os.path.isfile(opts_dict['sumfile']) == False:
-        print "ERROR: Summary file name is not valid."
+        print("ERROR: Summary file name is not valid.")
         sys.exit()
     if os.path.exists(opts_dict['indir']) == False:
-        print "ERROR: --indir path is not valid."
+        print("ERROR: --indir path is not valid.")
         sys.exit()
 
     # Ensure sensible EET value
@@ -126,8 +126,8 @@ def main(argv):
             result=json.load(fin)
             in_files_first=result['not_pick_files']
             in_files=random.sample(in_files_first,opts_dict['npick'])
-            print 'Testcase files:'
-            print '\n'.join(in_files)
+            print('Testcase files:')
+            print('\n'.join(in_files))
            
     elif opts_dict['json_case']: 
        json_file=opts_dict['json_case']
@@ -143,9 +143,9 @@ def main(argv):
                      glob_file=glob.glob(full_glob_str)
                      in_files.extend(glob_file)
        else:
-          print "ERROR: "+opts_dict['json_case']+" does not exist."
+          print("ERROR: "+opts_dict['json_case']+" does not exist.")
           sys.exit()
-       print "in_files=",in_files
+       print("in_files=",in_files)
     else: 
        wildname='*'+str(opts_dict['input_globs'])+'*'
        # Open all input files
@@ -155,12 +155,12 @@ def main(argv):
           in_files.extend(glob_files)
           num_file=len(in_files)
           if num_file == 0:
-              print "ERROR: no matching files for wildcard=" + wildname+ " found in specified --indir"
+              print("ERROR: no matching files for wildcard=" + wildname+ " found in specified --indir")
               sys.exit()
           else:
-              print  "Found " + str(num_file) + " matching files in specified --indir"
+              print("Found " + str(num_file) + " matching files in specified --indir")
           if opts_dict['numRunFile'] > num_file:
-             print "ERROR: more files needed (" + str(opts_dict['numRunFile']) +") than available in the indir (" + str(num_file) +")."
+             print("ERROR: more files needed (" + str(opts_dict['numRunFile']) +") than available in the indir (" + str(num_file) +").")
              sys.exit()
 
     in_files.sort()
@@ -182,7 +182,7 @@ def main(argv):
          if (os.path.isfile(frun_temp)):
              ifiles.append(frun_temp)
          else:
-             print "ERROR: COULD NOT LOCATE FILE " +frun_temp
+             print("ERROR: COULD NOT LOCATE FILE " +frun_temp)
              sys.exit()
    
     if opts_dict['web_enabled']:
@@ -193,23 +193,23 @@ def main(argv):
 
        opts_dict['sumfile'],machineid,compiler=pyEnsLib.search_sumfile(opts_dict,ifiles) 
        if len(machineid)!=0 and len(compiler)!=0:
-          print ' '
-          print 'Validation file    : machineid = '+machineid+', compiler = '+compiler
-          print 'Found summary file : '+opts_dict['sumfile']
-          print ' '
+          print(' ')
+          print('Validation file    : machineid = '+machineid+', compiler = '+compiler)
+          print('Found summary file : '+opts_dict['sumfile'])
+          print(' ')
        else:
-          print 'Warning: machine and compiler are unknown'
+          print('Warning: machine and compiler are unknown')
              
     if popens:
         
         # Read in the included var list
         if not os.path.exists(opts_dict['jsonfile']):
-            print "ERROR: POP-ECT requires the specification of a valid json file via --jsonfile."
+            print("ERROR: POP-ECT requires the specification of a valid json file via --jsonfile.")
             sys.exit()
         Var2d,Var3d=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ESP')
-        print ' '
-        print 'Z-score tolerance = '+'{:3.2f}'.format(opts_dict['pop_tol'])
-        print 'ZPR = '+'{:.2%}'.format(opts_dict['pop_threshold'])
+        print(' ')
+        print('Z-score tolerance = '+'{:3.2f}'.format(opts_dict['pop_tol']))
+        print('ZPR = '+'{:.2%}'.format(opts_dict['pop_threshold']))
         zmall,n_timeslice=pyEnsLib.pop_compare_raw_score(opts_dict,ifiles,me.get_rank(),Var3d,Var2d )  
 
         np.set_printoptions(threshold=np.nan)
@@ -231,7 +231,7 @@ def main(argv):
         # Add ensemble rmsz and global mean to the dictionary "variables"
         variables={}
 
-        for k,v in ens_gm.iteritems():
+        for k,v in ens_gm.items():
             pyEnsLib.addvariables(variables,k,'gmRange',v)
 
         # Get 3d variable name list and 2d variable name list separately
@@ -247,7 +247,7 @@ def main(argv):
         npts3d,npts2d,is_SE=pyEnsLib.get_ncol_nlev(ifiles[0])
  
         if (is_SE ^ is_SE_sum):
-           print 'Warning: please note the ensemble summary file is different from the testing files: they use different grids'
+           print('Warning: please note the ensemble summary file is different from the testing files: they use different grids')
                 
         # Compare the new run and the ensemble summary file 
         results={}
@@ -277,11 +277,11 @@ def main(argv):
             import seaborn as sns
             import matplotlib.pyplot as plt
 
-            print " "
-            print '***************************************************************************** '
-            print 'Test run variable standardized means (for reference only - not used to determine pass/fail)'
-            print '***************************************************************************** '
-            print " "
+            print(" ")
+            print('***************************************************************************** ')
+            print('Test run variable standardized means (for reference only - not used to determine pass/fail)')
+            print('***************************************************************************** ')
+            print(" ")
 
             category={"all_outside99":[],"two_outside99":[],"one_outside99":[],"all_oneside_outside1QR":[]}
             b=list(pyEnsLib.chunk(ens_var_name,10))
@@ -322,18 +322,18 @@ def main(argv):
                 value=category[key]
 
                 if key=="all_outside99":
-                    print "*** ", len(value), " variables have 3 test run global means outside of the 99th percentile."
+                    print("*** ", len(value), " variables have 3 test run global means outside of the 99th percentile.")
                 elif key == "two_outside99":
-                    print "*** ", len(value), " variables have 2 test run global means outside of the 99th percentile."
+                    print("*** ", len(value), " variables have 2 test run global means outside of the 99th percentile.")
                 elif key == "one_outside99":
-                    print "*** ", len(value), " variables have 1 test run global mean outside of the 99th percentile."
+                    print("*** ", len(value), " variables have 1 test run global mean outside of the 99th percentile.")
                 elif key == "all_oneside_outside1QR":
-                    print "*** ", len(value), " variables have all test run global means outside of the first quartile (but not outside the 99th percentile)."
+                    print("*** ", len(value), " variables have all test run global means outside of the first quartile (but not outside the 99th percentile).")
 
                 if len(value) > 0:
-                    print " => generating plot ..."
+                    print(" => generating plot ...")
                     if len(value) > 20:
-                        print "    NOTE: truncating to only plot the first 20 variables."
+                        print("    NOTE: truncating to only plot the first 20 variables.")
                         value = value[0:20]
 
                 for each_var in value:
@@ -344,7 +344,7 @@ def main(argv):
                 if len(value) !=0 :
                     ax=sns.boxplot(data=list_array,whis=[0.5,99.5],fliersize=0.0)
                     sns.stripplot(data=list_array2,jitter=True,color="r")
-                    plt.xticks(range(len(list_array)),list_var,fontsize=8,rotation=-45)
+                    plt.xticks(list(range(len(list_array))),list_var,fontsize=8,rotation=-45)
                     
                     if decision == 'FAILED':
                        plt.savefig(part_name+"_"+key+"_fail.png")
@@ -362,7 +362,7 @@ def main(argv):
             esize = std_gm_array.shape[1]
             this_savefile ='savefile.nc'
             if  (verbose == True):
-                print "VERBOSE: Creating ", this_savefile, "  ..."
+                print("VERBOSE: Creating ", this_savefile, "  ...")
 
             if os.path.exists(this_savefile):
                 os.unlink(this_savefile)
@@ -398,24 +398,24 @@ def main(argv):
 
         # Print variables (optional)
         if opts_dict['printVars']:
-            print " "
-            print '***************************************************************************** '
-            print 'Variable global mean information (for reference only - not used to determine pass/fail)'
-            print '***************************************************************************** '
+            print(" ")
+            print('***************************************************************************** ')
+            print('Variable global mean information (for reference only - not used to determine pass/fail)')
+            print('***************************************************************************** ')
             for fcount,fid in enumerate(ifiles):
-                print ' '
-                print 'Run '+str(fcount+1)+":"
-                print ' '
-                print '***'+str(countgm[fcount])," of "+str(len(ens_var_name))+' variables are outside of ensemble global mean distribution***'
+                print(' ')
+                print('Run '+str(fcount+1)+":")
+                print(' ')
+                print('***'+str(countgm[fcount])," of "+str(len(ens_var_name))+' variables are outside of ensemble global mean distribution***')
                 pyEnsLib.printsummary(results,'gm','means','gmRange',fcount,variables,'global mean')
-                print ' '
-                print '----------------------------------------------------------------------------'
+                print(' ')
+                print('----------------------------------------------------------------------------')
 
 
     if me.get_rank() == 0:
-        print ' '
-        print "Testing complete."
-        print ' '
+        print(' ')
+        print("Testing complete.")
+        print(' ')
 
 if __name__ == "__main__":
     main(sys.argv[1:])
