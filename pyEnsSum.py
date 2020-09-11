@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import ConfigParser
+from __future__ import print_function
+import configparser
 import sys, getopt, os 
 import numpy as np 
 import netCDF4 as nc
@@ -60,11 +61,11 @@ def main(argv):
 
 
     if opts_dict['popens'] == True:
-        print "ERROR: Please use pyEnsSumPop.py for a POP ensemble (not --popens)  => EXITING...."
+        print("ERROR: Please use pyEnsSumPop.py for a POP ensemble (not --popens)  => EXITING....")
         sys.exit()
 
     if not (opts_dict['tag'] and opts_dict['compset'] and opts_dict['mach'] or opts_dict['res']):
-       print 'ERROR: Please specify --tag, --compset, --mach and --res options  => EXITING....'
+       print('ERROR: Please specify --tag, --compset, --mach and --res options  => EXITING....')
        sys.exit()
        
     if opts_dict['mpi_disable'] == True:
@@ -83,11 +84,11 @@ def main(argv):
         me=simplecomm.create_comm(not opts_dict['mpi_enable'])
     
     if me.get_rank() == 0:
-       print 'STATUS: Running pyEnsSum.py'
+       print('STATUS: Running pyEnsSum.py')
 
     if me.get_rank() ==0 and (verbose == True):
-        print opts_dict
-        print 'STATUS: Ensemble size for summary = ', esize
+        print(opts_dict)
+        print('STATUS: Ensemble size for summary = ', esize)
 
     exclude=False
     if me.get_rank() == 0:
@@ -117,20 +118,20 @@ def main(argv):
         # Make sure we have enough
         num_files = len(in_files)
         if me.get_rank()==0 and (verbose == True):
-            print 'VERBOSE: Number of files in input directory = ', num_files
+            print('VERBOSE: Number of files in input directory = ', num_files)
         if (num_files < esize):
             if me.get_rank()==0 and (verbose == True):
-               print 'VERBOSE: Number of files in input directory (',num_files,\
-                ') is less than specified ensemble size of ', esize
+               print('VERBOSE: Number of files in input directory (',num_files,\
+                ') is less than specified ensemble size of ', esize)
             sys.exit(2)
         if (num_files > esize):
             if me.get_rank()==0 and (verbose == True):
-               print 'VERBOSE: Note that the number of files in ', input_dir, \
+               print('VERBOSE: Note that the number of files in ', input_dir, \
                 'is greater than specified ensemble size of ', esize ,\
-                '\nwill just use the first ',  esize, 'files'
+                '\nwill just use the first ',  esize, 'files')
     else:
         if me.get_rank()==0:
-           print 'ERROR: Input directory: ',input_dir,' not found'
+           print('ERROR: Input directory: ',input_dir,' not found')
         sys.exit(2)
 
     if opts_dict['cumul']:
@@ -138,22 +139,22 @@ def main(argv):
            in_files_list=get_cumul_filelist(opts_dict,opts_dict['indir'],opts_dict['regx'])
         in_files=me.partition(in_files_list,func=EqualLength(),involved=True)
         if me.get_rank()==0 and (verbose == True):
-           print 'VERBOSE: in_files  = ',in_files
+           print('VERBOSE: in_files  = ',in_files)
 
     # Check full file names in input directory (don't open yet)
     full_in_files=[]
     if me.get_rank() == 0 and opts_dict['verbose']:
-       print 'VERBOSE: Input files are: '
+       print('VERBOSE: Input files are: ')
 
     for onefile in in_files[0:esize]:
         fname = input_dir + '/' + onefile
         if me.get_rank() == 0 and opts_dict['verbose']:
-            print fname
+            print(fname)
         if (os.path.isfile(fname)):
             full_in_files.append(fname)
         else:
             if me.get_rank()==0:
-               print "ERROR: Could not locate file ", fname , " => EXITING...."
+               print("ERROR: Could not locate file ", fname , " => EXITING....")
             sys.exit() 
 
     #open just the first file
@@ -161,7 +162,7 @@ def main(argv):
 
     # Store dimensions of the input fields
     if me.get_rank()==0 and (verbose == True):
-        print "VERBOSE: Getting spatial dimensions"
+        print("VERBOSE: Getting spatial dimensions")
     nlev = -1
     nilev = -1
     ncol = -1
@@ -189,12 +190,12 @@ def main(argv):
         
     if (nlev == -1) : 
         if me.get_rank()==0: 
-           print "ERROR: could not locate a valid dimension (lev) => EXITING...."
+           print("ERROR: could not locate a valid dimension (lev) => EXITING....")
         sys.exit() 
 
     if (( ncol == -1) and ((nlat == -1) or (nlon == -1))):
         if me.get_rank()==0: 
-           print "ERROR: Need either lat/lon or ncol  => EXITING...."
+           print("ERROR: Need either lat/lon or ncol  => EXITING....")
         sys.exit()            
 
     # Check if this is SE or FV data
@@ -205,12 +206,12 @@ def main(argv):
 
     # output dimensions
     if me.get_rank()==0 and (verbose == True):
-        print 'lev = ', nlev
+        print('lev = ', nlev)
         if (is_SE == True):
-            print '         ncol = ', ncol
+            print('         ncol = ', ncol)
         else:
-            print '         nlat = ', nlat
-            print '         nlon = ', nlon
+            print('         nlat = ', nlat)
+            print('         nlon = ', nlon)
 
     # Get 2d vars, 3d vars and all vars (For now include all variables) 
     vars_dict_all = first_file.variables
@@ -224,7 +225,7 @@ def main(argv):
     #Given an included var list, remove all the variables that are not on the list
     else:
         vars_dict=vars_dict_all.copy()
-        for k,v in vars_dict_all.iteritems():
+        for k,v in vars_dict_all.items():
            if (k not in inc_varlist) and (vars_dict_all[k].typecode()=='f'):
             del vars_dict[k]
  
@@ -237,7 +238,7 @@ def main(argv):
     num_3d = 0
 
     # Which are 2d, which are 3d and max str_size 
-    for k,v in vars_dict.iteritems():  
+    for k,v in vars_dict.items():  
         var = k
         vd = v.dimensions # all the variable's dimensions (names)
         vr = len(v.dimensions) # num dimension
@@ -268,8 +269,8 @@ def main(argv):
 
 
     if me.get_rank() == 0 and (verbose == True):
-        print 'VERBOSE: Number of variables found:  ', num_3d+num_2d
-        print 'VERBOSE: 3D variables: '+str(num_3d)+', 2D variables: '+str(num_2d)
+        print('VERBOSE: Number of variables found:  ', num_3d+num_2d)
+        print('VERBOSE: 3D variables: '+str(num_3d)+', 2D variables: '+str(num_2d))
 
     # Now sort these and combine (this sorts caps first, then lower case - 
     # which is what we want)
@@ -278,11 +279,11 @@ def main(argv):
 
     if esize<num_2d+num_3d:
        if me.get_rank()==0:
-          print "************************************************************************************************************************************"
-          print "  ERROR: the total number of 3D and 2D variables "+str(num_2d+num_3d)+" is larger than the number of ensemble files "+str(esize)
-          print "  Cannot generate ensemble summary file, please remove more variables from your included variable list,"
-          print "  or add more variables in your excluded variable list  => EXITING...."
-          print "************************************************************************************************************************************"
+          print("************************************************************************************************************************************")
+          print("  ERROR: the total number of 3D and 2D variables "+str(num_2d+num_3d)+" is larger than the number of ensemble files "+str(esize))
+          print("  Cannot generate ensemble summary file, please remove more variables from your included variable list,")
+          print("  or add more variables in your excluded variable list  => EXITING....")
+          print("************************************************************************************************************************************")
        sys.exit()
     # All vars is 3d vars first (sorted), the 2d vars
     all_var_names = list(d3_var_names)
@@ -294,7 +295,7 @@ def main(argv):
     if(me.get_rank() ==0 ):
 
         if  (verbose == True):
-            print "VERBOSE: Creating ", this_sumfile, "  ..."
+            print("VERBOSE: Creating ", this_sumfile, "  ...")
 
         if os.path.exists(this_sumfile):
             os.unlink(this_sumfile)
@@ -302,7 +303,7 @@ def main(argv):
 
         # Set dimensions
         if (verbose == True):
-            print "VERBOSE: Setting dimensions ....."
+            print("VERBOSE: Setting dimensions .....")
         if (is_SE == True):
             nc_sumfile.createDimension('ncol', ncol)
         else:
@@ -319,7 +320,7 @@ def main(argv):
         # Set global attributes
         now = time.strftime("%c")
         if (verbose == True):
-            print "VERBOSE: Setting global attributes ....."
+            print("VERBOSE: Setting global attributes .....")
         nc_sumfile.creation_date = now
         nc_sumfile.title = 'CAM verification ensemble summary file'
         nc_sumfile.tag = opts_dict["tag"]
@@ -329,7 +330,7 @@ def main(argv):
 
         # Create variables
         if (verbose == True):
-            print "VERBOSE: Creating variables ....."
+            print("VERBOSE: Creating variables .....")
         v_lev = nc_sumfile.createVariable("lev", 'f8', ('nlev',))
         v_vars = nc_sumfile.createVariable("vars", 'S1', ('nvars', 'str_size'))
         v_var3d = nc_sumfile.createVariable("var3d", 'S1', ('nvars3d', 'str_size'))
@@ -344,7 +345,7 @@ def main(argv):
 
         # Assign vars, var3d and var2d
         if (verbose == True):
-            print "VERBOSE: Assigning vars, var3d, and var2d ....."
+            print("VERBOSE: Assigning vars, var3d, and var2d .....")
 
         eq_all_var_names =[]
         eq_d3_var_names = []
@@ -383,7 +384,7 @@ def main(argv):
 
         # Time-invarient metadata
         if (verbose == True):
-            print "VERBOSE: Assigning time invariant metadata ....."
+            print("VERBOSE: Assigning time invariant metadata .....")
 #        lev_data = np.zeros(num_lev,dtype=np.float64)     
         lev_data = first_file.variables["lev"]
         v_lev[:] = lev_data[:]
@@ -404,11 +405,11 @@ def main(argv):
 
     # Calculate global means #
     if me.get_rank() == 0 and (verbose == True):
-        print "VERBOSE: Calculating global means ....."
+        print("VERBOSE: Calculating global means .....")
     if not opts_dict['cumul']:
         gm3d,gm2d,var_list = pyEnsLib.generate_global_mean_for_summary(full_in_files, var3_list_loc, var2_list_loc, is_SE, False, opts_dict)
     if me.get_rank() == 0 and (verbose == True):
-        print "VERBOSE: Finished calculating global means ....."
+        print("VERBOSE: Finished calculating global means .....")
 
     #gather to rank = 0
     if opts_dict['mpi_enable']:
@@ -448,7 +449,7 @@ def main(argv):
         if b_exit:
             nc_sumfile.close()
             os.unlink(this_sumfile)
-            print "STATUS: Summary could not be created."
+            print("STATUS: Summary could not be created.")
             sys.exit(2)
 
 
@@ -459,14 +460,14 @@ def main(argv):
         v_loadings_gm[:,:]=loadings_gm[:,:]
         v_sigma_scores_gm[:]=scores_gm[:]
 
-        print "STATUS: Summary file is complete."
+        print("STATUS: Summary file is complete.")
 
         nc_sumfile.close()
 
 
 def get_cumul_filelist(opts_dict,indir,regx):
    if not opts_dict['indir']:
-      print 'input dir is not specified'
+      print('input dir is not specified')
       sys.exit(2)
    #regx='(pgi(.)*-(01|02))'
    regx_list=["mon","gnu","pgi"]

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import ConfigParser
+from __future__ import print_function
+import configparser
 import sys, getopt, os 
 import numpy as np 
 import netCDF4 as nc
@@ -64,7 +65,7 @@ def main(argv):
     #and override esize 
     if opts_dict['npert'] > 0:
         user_size = opts_dict['npert']
-        print 'WARNING: User specified value for --npert will override --esize.  Please consider using --esize instead of --npert in the future.'
+        print('WARNING: User specified value for --npert will override --esize.  Please consider using --esize instead of --npert in the future.')
         opts_dict['esize'] = user_size
 
     # Now find file names in indir
@@ -88,11 +89,11 @@ def main(argv):
                str_size=len(str)
 
     if me.get_rank() == 0:
-        print 'STATUS: Running pyEnsSumPop!'
+        print('STATUS: Running pyEnsSumPop!')
     
         if verbose:
-            print "VERBOSE: opts_dict = "
-            print opts_dict
+            print("VERBOSE: opts_dict = ")
+            print(opts_dict)
 
     in_files=[]
     if(os.path.exists(input_dir)):
@@ -107,7 +108,7 @@ def main(argv):
 
     else:
         if me.get_rank() == 0:
-            print 'ERROR: Input directory: ',input_dir,' not found => EXITING....'
+            print('ERROR: Input directory: ',input_dir,' not found => EXITING....')
         sys.exit(2)
 
 
@@ -117,7 +118,7 @@ def main(argv):
     # Check the files in the input directory
     full_in_files=[]
     if me.get_rank() == 0 and opts_dict['verbose']:
-        print 'VERBOSE: Input files are:'
+        print('VERBOSE: Input files are:')
 
     for onefile in in_file_list:
         fname = input_dir + '/' + onefile
@@ -126,7 +127,7 @@ def main(argv):
         if (os.path.isfile(fname)):
             full_in_files.append(fname)
         else:
-            print "ERROR: Could not locate file: "+ fname + " => EXITING...."
+            print("ERROR: Could not locate file: "+ fname + " => EXITING....")
             sys.exit() 
 
             
@@ -135,7 +136,7 @@ def main(argv):
 
     # Store dimensions of the input fields
     if (verbose == True) and me.get_rank() == 0:
-        print "VERBOSE: Getting spatial dimensions"
+        print("VERBOSE: Getting spatial dimensions")
     nlev = -1
     nlat = -1
     nlon = -1
@@ -146,7 +147,7 @@ def main(argv):
 
     # Make sure all files have the same dimensions
     if (verbose == True) and me.get_rank() == 0:
-        print "VERBOSE: Checking dimensions ..."
+        print("VERBOSE: Checking dimensions ...")
     for key in input_dims:
         if key == "z_t":
             nlev = len(input_dims["z_t"])
@@ -163,13 +164,13 @@ def main(argv):
             os.unlink(this_sumfile)
 
         if verbose: 
-            print "VERBOSE: Creating ", this_sumfile, "  ..."
+            print("VERBOSE: Creating ", this_sumfile, "  ...")
 
         nc_sumfile = nc.Dataset(this_sumfile, "w", format="NETCDF4_CLASSIC")
 
         # Set dimensions
         if verbose:
-            print "VERBOSE: Setting dimensions ....."
+            print("VERBOSE: Setting dimensions .....")
         nc_sumfile.createDimension('nlat', nlat)
         nc_sumfile.createDimension('nlon', nlon)
         nc_sumfile.createDimension('nlev', nlev)
@@ -184,7 +185,7 @@ def main(argv):
         # Set global attributes
         now = time.strftime("%c")
         if verbose:
-            print "VERBOSE: Setting global attributes ....."
+            print("VERBOSE: Setting global attributes .....")
         nc_sumfile.creation_date = now
         nc_sumfile.title = 'POP verification ensemble summary file'
         nc_sumfile.tag =  opts_dict["tag"]
@@ -194,7 +195,7 @@ def main(argv):
 
         # Create variables
         if verbose:
-            print "VERBOSE: Creating variables ....."
+            print("VERBOSE: Creating variables .....")
         v_lev = nc_sumfile.createVariable("z_t", 'f', ('nlev',))
         v_vars = nc_sumfile.createVariable("vars", 'S1', ('nvars', 'str_size'))
         v_var3d = nc_sumfile.createVariable("var3d", 'S1', ('nvars3d', 'str_size'))
@@ -209,7 +210,7 @@ def main(argv):
 
         # Assign vars, var3d and var2d
         if verbose:
-            print "VERBOSE: Assigning vars, var3d, and var2d ....."
+            print("VERBOSE: Assigning vars, var3d, and var2d .....")
 
         eq_all_var_names =[]
         eq_d3_var_names = []
@@ -249,7 +250,7 @@ def main(argv):
 
         # Time-invarient metadata
         if verbose:
-            print "VERBOSE: Assigning time invariant metadata ....."
+            print("VERBOSE: Assigning time invariant metadata .....")
         vars_dict = first_file.variables
         lev_data = vars_dict["z_t"]
         v_lev[:] = lev_data[:]
@@ -260,7 +261,7 @@ def main(argv):
     # Time-varient metadata
     if verbose:
         if me.get_rank() == 0: 
-            print "VERBOSE: Assigning time variant metadata ....."
+            print("VERBOSE: Assigning time variant metadata .....")
     vars_dict = first_file.variables
     time_value = vars_dict['time']
     time_array = np.array([time_value])
@@ -291,12 +292,12 @@ def main(argv):
 
     # Calculate RMSZ scores  
     if (verbose == True and me.get_rank() == 0):
-        print "VERBOSE: Calculating RMSZ scores ....."
+        print("VERBOSE: Calculating RMSZ scores .....")
 
     zscore3d,zscore2d,ens_avg3d,ens_stddev3d,ens_avg2d,ens_stddev2d=pyEnsLib.calc_rmsz(full_in_files,Var3d,Var2d,opts_dict)    
 
     if (verbose == True and me.get_rank() == 0):
-        print "VERBOSE: Finished with RMSZ scores ....."
+        print("VERBOSE: Finished with RMSZ scores .....")
 
     # Collect from all processors
     if opts_dict['mpi_enable'] :
@@ -319,7 +320,7 @@ def main(argv):
         v_ens_avg2d[:,:,:,:]=ens_avg2d[:,:,:,:]
         v_ens_stddev2d[:,:,:,:]=ens_stddev2d[:,:,:,:]
 
-        print "STATUS: PyEnsSumPop has completed."
+        print("STATUS: PyEnsSumPop has completed.")
 
         nc_sumfile.close()
 
