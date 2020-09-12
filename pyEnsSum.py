@@ -208,10 +208,10 @@ def main(argv):
     if me.get_rank()==0 and (verbose == True):
         print('lev = ', nlev)
         if (is_SE == True):
-            print('         ncol = ', ncol)
+            print('ncol = ', ncol)
         else:
-            print('         nlat = ', nlat)
-            print('         nlon = ', nlon)
+            print('nlat = ', nlat)
+            print('nlon = ', nlon)
 
     # Get 2d vars, 3d vars and all vars (For now include all variables) 
     vars_dict_all = first_file.variables
@@ -292,6 +292,15 @@ def main(argv):
 
     # Rank 0 - Create new summary ensemble file
     this_sumfile = opts_dict["sumfile"]
+
+    #check if directory is valid
+    sum_dir = os.path.dirname(this_sumfile)
+    if (os.path.exists(sum_dir) == False):
+        if me.get_rank() == 0:
+            print('ERROR: Summary file directory: ',sum_dir,' not found')
+        sys.exit(2)
+
+
     if(me.get_rank() ==0 ):
 
         if  (verbose == True):
