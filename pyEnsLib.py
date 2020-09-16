@@ -73,11 +73,6 @@ def calc_rmsz(o_files, var_name3d, var_name2d, opts_dict):
     Zscore3d = np.zeros((len(var_name3d),len(o_files),(nbin)),dtype=np.float32) 
     Zscore2d = np.zeros((len(var_name2d),len(o_files),(nbin)),dtype=np.float32) 
     
-#    avg3d={}
-#    stddev3d={}
-#    avg2d={}
-#    stddev2d={}
-    #indices = np.arange(0,len(o_files),1)
         
     first_file.close()
 
@@ -701,7 +696,7 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt, z_wgt, var_name3d, var_nam
         gm_lev = np.zeros(nlev, dtype=np.float64)
         data = fname.variables[vname]
         if np.any(np.isnan(data)):
-            print("ERROR: "+vname+ " data contains NaNs - please check input.")
+            print("ERROR: ", vname,  " data contains NaNs - please check input.")
             nan_flag = True
         output3d[:,:,:] = data[tslice,:,:,:] 
         dbl_output3d = output3d.astype(dtype = np.float64)
@@ -715,7 +710,7 @@ def calc_global_mean_for_onefile_pop(fname, area_wgt, z_wgt, var_name3d, var_nam
     for count, vname in enumerate(var_name2d):
         data = fname.variables[vname]
         if np.any(np.isnan(data)):
-            print("ERROR: "+vname+ " data contains NaNs - please check input.")
+            print("ERROR: ", vname, " data contains NaNs - please check input.")
             nan_flag = True
         output2d[:,:] = data[tslice,:,:] 
         dbl_output2d= output2d.astype(dtype = np.float64)
@@ -752,15 +747,18 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
 
     #calculate global mean for each 3D variable (note: area_avg casts into dp before computation)
     for count, vname in enumerate(var_name3d):
-        if vname not in fname.variables:
-           print('WARNING: the test file does not have the variable '+vname+' that isin the ensemble summary file ...')
+
+        vname_d = vname.decode("utf-8")
+
+        if vname_d not in fname.variables:
+           print('WARNING 1: the test file does not have the variable ', vname_d, ' that is in the ensemble summary file ...')
            continue
-        data = fname.variables[vname]
+        data = fname.variables[vname_d]
         if not data[tslice].size:
-           print("ERROR: " +vname+" data is empty => EXITING....")
+           print("ERROR: " , vname_d, " data is empty => EXITING....")
            sys.exit(2)
         if np.any(np.isnan(data)):
-            print("ERROR: "+vname+ " data contains NaNs - please check input => EXITING")
+            print("ERROR: ", vname_d, " data contains NaNs - please check input => EXITING")
             nan_flag = True
             continue
         if (is_SE == True):
@@ -791,12 +789,14 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
     for count, vname in enumerate(var_name2d):
         #if (verbose == True):
         #    print "calculating GM for variable ", vname
-        if vname not in fname.variables:
-           print('WARNING: the test file does not have the variable '+vname+' that is in the ensemble summary file')
+        vname_d = vname.decode("utf-8")
+
+        if vname_d not in fname.variables:
+           print('WARNING 2: the test file does not have the variable ', vname_d, ' that is in the ensemble summary file')
            continue
-        data = fname.variables[vname]
+        data = fname.variables[vname_d]
         if np.any(np.isnan(data)):
-            print("ERROR: "+vname+ " data contains NaNs - please check input => EXITING....")
+            print("ERROR: ", vname_d, " data contains NaNs - please check input => EXITING....")
             nan_flag = True
             continue
         if (is_SE == True):
@@ -1354,9 +1354,9 @@ def EnsSum_usage():
     print('   --esize  <num>       : Number of ensemble members (default = 350)')
     print('   --tag <name>         : Tag name used in metadata (default = cesm2_0)')
     print('   --compset <name>     : Compset used in metadata (default = F2000climo)')
-    print('   --res <name>         : Resolution used in metadata, (default = f19_f19)')
-    print('   --mach <num>         : Machine name used in the metadata, (default = cheyenne)')
-    print('   --tslice <num>       : the index into the time dimension, (default = 1)')
+    print('   --res <name>         : Resolution used in metadata (default = f19_f19)')
+    print('   --mach <num>         : Machine name used in the metadata (default = cheyenne)')
+    print('   --tslice <num>       : the index into the time dimension (default = 1)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded or included  (default = exclude_empty.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
@@ -1385,8 +1385,8 @@ def EnsSumPop_usage():
     print('                          (Note: backwards compatible with --npert)')
     print('   --tag <name>         : Tag name used in metadata (default = cesm2_0_0)')
     print('   --compset <name>     : Compset used in metadata (default = G)')
-    print('   --res <name>         : Resolution (used in metadata), (default = T62_g17)')
-    print('   --mach <num>         : Machine name used in the metadata, (default = cheyenne)')
+    print('   --res <name>         : Resolution (used in metadata) (default = T62_g17)')
+    print('   --mach <num>         : Machine name used in the metadata (default = cheyenne)')
     print('   --tslice <num>       : the time slice of the variable that we will use (default = 0)')
     print('   --nyear  <num>       : Number of years (default = 1)')
     print('   --nmonth  <num>      : Number of months (default = 12)')

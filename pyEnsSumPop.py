@@ -111,6 +111,14 @@ def main(argv):
             print('ERROR: Input directory: ',input_dir,' not found => EXITING....')
         sys.exit(2)
 
+    #make sure we have enough files
+    files_needed = opts_dict['nmonth'] * opts_dict['esize'] * opts_dict['nyear']
+    if (num_files < files_needed):
+        if me.get_rank() == 0:
+            print('ERROR: Input directory does not contain enough files (must be esize*nyear*nmonth = ', files_needed, ' ) and it has only ', num_files, ' files).')
+        sys.exit(2)
+        
+
 
     #Partition the input file list (ideally we have one processor per month)
     in_file_list=me.partition(in_files,func=EqualStride(),involved=True)
@@ -122,8 +130,8 @@ def main(argv):
 
     for onefile in in_file_list:
         fname = input_dir + '/' + onefile
-#        if opts_dict['verbose']:
-#            print "my_rank = ", me.get_rank(), "  ", fname
+        if opts_dict['verbose']:
+            print( "my_rank = ", me.get_rank(), "  ", fname)
         if (os.path.isfile(fname)):
             full_in_files.append(fname)
         else:

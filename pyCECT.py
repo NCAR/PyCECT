@@ -212,7 +212,7 @@ def main(argv):
         print('ZPR = '+'{:.2%}'.format(opts_dict['pop_threshold']))
         zmall,n_timeslice=pyEnsLib.pop_compare_raw_score(opts_dict,ifiles,me.get_rank(),Var3d,Var2d )  
 
-        np.set_printoptions(threshold=np.nan)
+        np.set_printoptions(threshold=sys.maxsize)
 
         if opts_dict['mpi_enable']:
             zmall = pyEnsLib.gather_npArray_pop(zmall,me,(me.get_size(),len(Var3d)+len(Var2d),len(ifiles),opts_dict['nbin'])) 
