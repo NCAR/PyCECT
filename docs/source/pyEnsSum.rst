@@ -68,7 +68,23 @@ ___________________________________________
 
       2) Otherwise you need these packages:
 
-      
+         numpy
+	 scipy
+	 future
+	 configparser
+	 sys
+	 getopt
+	 os
+	 netCDF4
+	 time
+	 re
+	 json
+	 random
+	 asaptools
+	 fnmatch
+	 glob
+	 itertools
+	 datetime
  
 To see all options (and defaults):
 ______________________________________

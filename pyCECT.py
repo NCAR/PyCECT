@@ -383,13 +383,7 @@ def main(argv):
             nc_savefile.creation_date = now
             nc_savefile.title = 'PyCECT compare results file'
             nc_savefile.summaryfile = opts_dict['sumfile']
-            str_files = [];
-            for name in in_files:
-                if isinstance(name,str) == True:
-                    str_files.append(name)
-                else:
-                    str_files.append(name.decode('utf-8'))
-            nc_savefile.testfiles = str_files
+            #nc_savefile.testfiles = in_files
 
             #variables
             v_vars = nc_savefile.createVariable("vars", 'S1', ('nvars', 'str_size'))
