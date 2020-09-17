@@ -295,6 +295,8 @@ def main(argv):
 
     #check if directory is valid
     sum_dir = os.path.dirname(this_sumfile)
+    if len(sum_dir) == 0:
+        sum_dir = '.'
     if (os.path.exists(sum_dir) == False):
         if me.get_rank() == 0:
             print('ERROR: Summary file directory: ',sum_dir,' not found')

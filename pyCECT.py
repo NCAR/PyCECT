@@ -275,6 +275,8 @@ def main(argv):
         if opts_dict['printStdMean']:
 
             import seaborn as sns
+            import matplotlib
+            matplotlib.use('Agg') #don't display figures
             import matplotlib.pyplot as plt
 
             print(" ")
@@ -339,7 +341,11 @@ def main(argv):
                 for each_var in value:
                     list_array.append(std_gm[each_var[0]])
                     list_array2.append(comp_std_gm[each_var[1]])
-                    list_var.append(each_var[0])
+                    name = each_var[0]
+                    if isinstance(name, str) == False:
+                        name = name.decode("utf-8")
+
+                    list_var.append(name)
 
                 if len(value) !=0 :
                     ax=sns.boxplot(data=list_array,whis=[0.5,99.5],fliersize=0.0)
@@ -350,8 +356,8 @@ def main(argv):
                        plt.savefig(part_name+"_"+key+"_fail.png")
                     else:
                        plt.savefig(part_name+"_"+key+"_pass.png")
-                    plt.clf()
-   
+                    plt.close()
+                
 ##
 # Print file with info about new test runs....to a netcdf file
 ##             
@@ -377,7 +383,14 @@ def main(argv):
             nc_savefile.creation_date = now
             nc_savefile.title = 'PyCECT compare results file'
             nc_savefile.summaryfile = opts_dict['sumfile']
-            nc_savefile.testfiles = in_files
+            str_files = [];
+            for name in in_files:
+                if isinstance(name,str) == True:
+                    str_files.append(name)
+                else:
+                    str_files.append(name.decode('utf-8'))
+            nc_savefile.testfiles = str_files
+
             #variables
             v_vars = nc_savefile.createVariable("vars", 'S1', ('nvars', 'str_size'))
             v_std_gm=nc_savefile.createVariable("std_gm",'f8',('nvars','test_size'))
