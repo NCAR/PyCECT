@@ -27,19 +27,11 @@ given the location of appropriate ensemble history files (which should
 be generated in CIME via $CIME/tools/statistical_ensemble_test/ensemble.py).
 
 (Note: to generate a summary file for UF-CAM-ECT or CAM-ECT, you must use 
-pyEnsSum.py, which has its own corresponding README file.)
-
-:AUTHORS: Haiying Xu, Allison Baker
-:COPYRIGHT: See the document entitled LICENSE.txt
-
-Send questions and comments to Haiying Xu (haiyingx@ucar.edu) or Allison 
-Baker (abaker@ucar.edu).
-
-Github location:  https://github.com/NCAR/PyCECT/releases
+pyEnsSum.py, which has its own corresponding instructions.)
 
 
-This package includes:  
-----------------------
+pyEnsSumPop.py uses the following:  
+_______________________________________
      	pyEnsSumPop.py             
                             A script that generates an ensemble summary file 
      		            from a collection of files.
@@ -54,30 +46,40 @@ This package includes:
                             An example variable list that will be included for
                             reading and processing.
 
+To use pyEnsSumPop: 
+___________________________________________
+       Note: compatible with python 3
 
-To use pyEnsSum: 
-----------------------------------------------------------------------------
-       Note: compatible with python 2.7 or greater (same as CESM) - NOT python 3
+       1) On NCAR's Cheyenne machine:
 
-       1) For example, on NCAR's Cheyenne machine:
-
-	  module load python/2.7.14
-	  ncar_pylib
-	  qsub test_pyEnsSumPop.sh
+          module load python
+          ncar_pylib
+          qsub test_pyEnsSumPop.sh
 
 
       2) Otherwise you need these packages:
-       - module load python 
-       - module load numpy
-       - module load scipy
-       - module load pynio
-       - module load pyngl
-       - module load asaptools (https://github.com/NCAR/ASAPPyTools)
-       - module load mpi4py
+
+         numpy
+         scipy
+         future
+         configparser
+         sys
+         getopt
+         os
+         netCDF4
+         time
+         re
+         json
+         random
+         asaptools
+         fnmatch
+         glob
+         itertools
+         datetime
 
 
 To see all options (and defaults):
-----------------------------------
+_________________________________________
        python pyEnsSumPop.py -h
 
        PyCECT> python pyEnsSumPop.py -h
@@ -97,8 +99,8 @@ To see all options (and defaults):
                               (Note: backwards compatible with --npert)
        --tag <name>         : Tag name used in metadata (default = cesm2_0_0)
        --compset <name>     : Compset used in metadata (default = G)
-       --res <name>         : Resolution (used in metadata), (default = T62_g17)
-       --mach <num>         : Machine name used in the metadata, (default = cheyenne)
+       --res <name>         : Resolution (used in metadata) (default = T62_g17)
+       --mach <num>         : Machine name used in the metadata (default = cheyenne)
        --tslice <num>       : the time slice of the variable that we will use (default = 0)
        --nyear  <num>       : Number of years (default = 1)
        --nmonth  <num>      : Number of months (default = 12)
@@ -117,7 +119,6 @@ Notes:
        2) Note that --res, --tag, --compset, and --mach only affect the metadata 
 	  in the summary file.
 
-
        3) The sample script test_pyEnsSumPop.sh gives a recommended parallel
 	  configuration for Cheyenne.  We recommend one core per month (and make
 	  sure each core has sufficient memory. 
@@ -129,7 +130,9 @@ Notes:
 
 
 Example for generating summary files:
---------------------------------------
+__________________________________________
+
+      (Note: this example is in test_pyEnsSumPop.sh)
 
       To generate a summary file for 40 POP-ECT simulations runs (1 year of monthly output): 
        	 
@@ -151,7 +154,7 @@ Example for generating summary files:
 	   We also can specify the tag, resolution, machine and compset
 	   information (that will be written to the
 	   metadata of the summary file):
-	    --tag cesm2.0
+	    --tag cesm2.0_beta10
             --res T62_g16
             --mach cheyenne
             --compset G
@@ -163,8 +166,6 @@ Example for generating summary files:
 
 	   This yields the following command for your job submission script:
 
-
-	   python pyEnsSumPop.py  --indir  /glade/p/cisl/iowa/pop_verification/cesm2_0_beta10/ensembles --sumfile pop.ens.sum.cesm2. 0.nc --tslice 0 --nyear 1 --nmonth 12 --esize 40 --jsonfile pop_ensemble.json  --mpi_enable --mach cheyenne --compset G --tag cesm2.0 --res T62_g17
-
-
-
+	   python pyEnsSumPop.py  --indir  /glade/p/cisl/asap/pycect_sample_data/pop_c2.0.b10/pop_ens_files 
+	   --sumfile pop.cesm2.0.b10.nc --tslice 0 --nyear 1 --nmonth 12 --esize 40 --jsonfile pop_ensemble.json  
+	   --mach cheyenne --compset G --tag cesm2_0_beta10 --res T62_g17

@@ -748,7 +748,10 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
     #calculate global mean for each 3D variable (note: area_avg casts into dp before computation)
     for count, vname in enumerate(var_name3d):
 
-        vname_d = vname.decode("utf-8")
+        if isinstance(vname, str) == True:
+            vname_d = vname
+        else:
+            vname_d = vname.decode("utf-8")
 
         if vname_d not in fname.variables:
            print('WARNING 1: the test file does not have the variable ', vname_d, ' that is in the ensemble summary file ...')
@@ -787,9 +790,13 @@ def calc_global_mean_for_onefile(fname, area_wgt,var_name3d, var_name2d,output3d
      
     #calculate global mean for each 2D variable 
     for count, vname in enumerate(var_name2d):
-        #if (verbose == True):
-        #    print "calculating GM for variable ", vname
-        vname_d = vname.decode("utf-8")
+
+        if isinstance(vname, str) == True:
+            vname_d = vname
+        else:
+            vname_d = vname.decode("utf-8")
+
+
 
         if vname_d not in fname.variables:
            print('WARNING 2: the test file does not have the variable ', vname_d, ' that is in the ensemble summary file')
@@ -1101,8 +1108,15 @@ def standardized(gm, mu_gm, sigma_gm, loadings_gm, all_var_names, opts_dict, ens
            print('************************************************************************')
        for var in range(nvar):
            var_list.append(all_var_names[sorted_sum_std_mean[var]])
+           vname = all_var_names[sorted_sum_std_mean[var]]
            if me.get_rank() == 0:
-               print('{:>15}'.format(all_var_names[sorted_sum_std_mean[var]]),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]]))
+
+               if isinstance(vname, str) == True:
+                   vname_d = vname
+               else:
+                   vname_d = vname.decode("utf-8")
+
+               print('{:>15}'.format(vname_d),'{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]]))
                print(' ')
     return new_scores,var_list,standardized_mean
 
@@ -1355,7 +1369,7 @@ def EnsSum_usage():
     print('   --tag <name>         : Tag name used in metadata (default = cesm2_0)')
     print('   --compset <name>     : Compset used in metadata (default = F2000climo)')
     print('   --res <name>         : Resolution used in metadata (default = f19_f19)')
-    print('   --mach <num>         : Machine name used in the metadata (default = cheyenne)')
+    print('   --mach <name>         : Machine name used in the metadata (default = cheyenne)')
     print('   --tslice <num>       : the index into the time dimension (default = 1)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded or included  (default = exclude_empty.json)')
@@ -1386,7 +1400,7 @@ def EnsSumPop_usage():
     print('   --tag <name>         : Tag name used in metadata (default = cesm2_0_0)')
     print('   --compset <name>     : Compset used in metadata (default = G)')
     print('   --res <name>         : Resolution (used in metadata) (default = T62_g17)')
-    print('   --mach <num>         : Machine name used in the metadata (default = cheyenne)')
+    print('   --mach <name>         : Machine name used in the metadata (default = cheyenne)')
     print('   --tslice <num>       : the time slice of the variable that we will use (default = 0)')
     print('   --nyear  <num>       : Number of years (default = 1)')
     print('   --nmonth  <num>      : Number of months (default = 12)')

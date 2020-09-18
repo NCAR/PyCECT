@@ -15,31 +15,23 @@ All of the above tools require an ensemble summary file (which contains
 statistics describing the ensemble distribution). 
 
 Ensemble summary files for existing CESM tags for CAM-ECT, UF-CAM-ECT, 
-and POP-ECT that were created by CSEG are located (respectively) in the 
-CESM input data directories:
+and POP-ECT that were created by CSEG (CESM SOftware ENgineering Group)
+are located (respectively) in the CESM input data directories:
 
 $CESMDATAROOT/inputdata/validation/ensembles
 $CESMDATAROOT/inputdata/validation/uf_ensembles
 $CESMDATAROOT/inputdata/validation/pop_ensembles
 
-Alternatively, *this package* can be used to create a summary file for CAM-ECT or
+Alternatively, pyEnsSum.py be used to create a summary file for CAM-ECT or
 UF-CAM-ECT, given the location of appropriate ensemble history files (which should 
 be generated in CIME via $CIME/tools/statistical_ensemble_test/ensemble.py).
 
 (Note: to generate a summary file for POP-ECT, you must use pyEnsSumPop.py,
-which has its own corresponding README file.)
-
-:AUTHORS: Haiying Xu, Allison Baker
-:COPYRIGHT: See the document entitled LICENSE.txt
-
-Send questions and comments to Haiying Xu (haiyingx@ucar.edu) or Allison 
-Baker (abaker@ucar.edu).
-
-Github location:  https://github.com/NCAR/PyCECT/releases
+which has its own corresponding instructions]
 
 
-This package includes:  
-----------------------
+The pyEnsSum.py uses the following:
+__________________________
      	pyEnsSum.py             
                             A script that generates an ensemble summary file 
      		            from a collection of CESM output files.
@@ -64,27 +56,38 @@ This package includes:
 
 
 To use pyEnsSum: 
-----------------------------------------------------------------------------
-       Note: compatible with python 2.7 or greater (same as CESM) - NOT python 3
+___________________________________________
+       Note: compatible with python 3
 
-       1) For example, on NCAR's Cheyenne machine:
+       1) On NCAR's Cheyenne machine:
 
-	  module load python/2.7.14
+	  module load python
 	  ncar_pylib
 	  qsub test_pyEnsSum.sh
 
 
       2) Otherwise you need these packages:
-       - module load python 
-       - module load numpy
-       - module load scipy
-       - module load netCDF4
-       - module load asaptools (https://github.com/NCAR/ASAPPyTools)
-       - module load mpi4py
-      
+
+         numpy
+	 scipy
+	 future
+	 configparser
+	 sys
+	 getopt
+	 os
+	 netCDF4
+	 time
+	 re
+	 json
+	 random
+	 asaptools
+	 fnmatch
+	 glob
+	 itertools
+	 datetime
  
 To see all options (and defaults):
-----------------------------------
+______________________________________
        python pyEnsSum.py -h
 
        PyCECT> python pyEnsSum.py -h
@@ -102,9 +105,9 @@ To see all options (and defaults):
        --esize  <num>       : Number of ensemble members (default = 350)
        --tag <name>         : Tag name used in metadata (default = cesm2_0)
        --compset <name>     : Compset used in metadata (default = F2000climo)
-       --res <name>         : Resolution used in metadata, (default = f19_f19)
-       --tslice <num>       : the index into the time dimension, (default = 1)
-       --mach <num>         : Machine name used in the metadata, (default = cheyenne)
+       --res <name>         : Resolution used in metadata (default = f19_f19)
+       --tslice <num>       : the index into the time dimension (default = 1)
+       --mach <name>         : Machine name used in the metadata (default = cheyenne)
        --jsonfile <fname>   : Jsonfile to provide that a list of variables that will 
                               be excluded or included  (default = exclude_empty.json)
        --mpi_disable        : Disable mpi mode to run in serial (off by default)
@@ -164,24 +167,27 @@ Notes:
 
 
 Example for generating summary files:
---------------------------------------
+______________________________________
+        (Note: This example is in test_pyEnsSum.sh)
+
 	To generate a summary file for 350 UF-CAM-ECT simulations runs (time step nine), 
        	 
            we specify the size (this is optional since 350 is the default) and data location:
 	    --esize 350
-	    --indir /glade/p/cisl/iowa/verification/cesm2.1.0-rc.01/uf/
+	    --indir /glade/p/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files -
 
            We also specify the name of file to create for the summary:
- 	    --sumfile ens.sum.cesm2.1.nc 
+	   --sumfile uf.ens.c1.2.2.1_fc5.ne30.nc 	    
+
 
 	   Since the ensemble files contain the intial conditions  as well
 	   as the values at time step 9 (this is optional as 1 is the 
 	   default), we set
 	    --tslice 1 
 	   
-	   We also specify the CESM tag, compset and resolution of our ensemble data so 
-	   that it can be written to the metadata of the summary file (ens.sum.cesm2.1.nc):
-	    --tag cesm2.1.0 --compset F2000climo --res f19_f19 
+	   We also specify the CESM tag, compset and resolution and machine of our ensemble data so 
+	   that it can be written to the metadata of the summary file:
+	   --tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --mach cheyenne 
 
            We can exclude or include some variables from the analysis by specifying them 
 	   in a json file:
@@ -190,7 +196,6 @@ Example for generating summary files:
 	   This yields the following command for your job submission script:
 
 
-	   python pyEnsSum.py  --esize 350 --indir /glade/p/cisl/iowa/verification/cesm2.1.0-rc.01/uf/ --tslice 1 --sumfile ens.sum.cesm2.1.0.nc --tag cesm2.1.0 --compset F2000climo --res f19_f19 --jsonfile excluded_varlist.json
-
-
-	   
+	   python pyCECT.py --esize 350 --indir /glade/p/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files 
+	   --sumfile uf.ens.c1.2.2.1_fc5.ne30.nc  --tslice 1 --tag cesm1.2.2.1 --compset FC5 --res ne30_ne3 
+	   --jsonfile excluded_varlist.json
