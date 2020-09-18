@@ -12,9 +12,10 @@ Welcome to pyCECT's documentation!
 
    source/readme.rst
    source/installation.rst
+   source/pyCECT.rst
    source/pyEnsSum.rst
    source/pyEnsSumPop.rst
-   source/pyCECT.rst
+
 
 
 Indices and tables
