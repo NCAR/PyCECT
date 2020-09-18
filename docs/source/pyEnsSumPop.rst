@@ -86,17 +86,15 @@ _________________________________________
 
        Creates the summary file for an ensemble of POP data. 
 
-       ------------------------
+
        Args for pyEnsSumPop : 
 
-       ------------------------
        pyEnsSumPop.py
        -h                   : prints out this usage message
        --verbose            : prints out in verbose mode (off by default)
        --sumfile  <ofile>   : the output summary data file (default = pop.ens.summary.nc)
        --indir    <path>    : directory containing all of the ensemble runs (default = ./)
        --esize <num>        : Number of ensemble members (default = 40)
-                              (Note: backwards compatible with --npert)
        --tag <name>         : Tag name used in metadata (default = cesm2_0_0)
        --compset <name>     : Compset used in metadata (default = G)
        --res <name>         : Resolution (used in metadata) (default = T62_g17)
@@ -104,8 +102,7 @@ _________________________________________
        --tslice <num>       : the time slice of the variable that we will use (default = 0)
        --nyear  <num>       : Number of years (default = 1)
        --nmonth  <num>      : Number of months (default = 12)
-       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be
-                              included  (RECOMMENDED: default = pop_ensemble.json)
+       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be included  (RECOMMENDED: default = pop_ensemble.json)
        --mpi_disable        : Disable mpi mode to run in serial (off by default)
    
 
@@ -146,22 +143,17 @@ __________________________________________
 	   Since these are monthly average files, we set (optional as 0 is the default):
 	    --tslice 0
 
-           We also specify the number of years, the number of months (optional, 
-	   as 1 and 12 are the defaults):
+           We also specify the number of years, the number of months (optional, as 1 and 12 are the defaults):
             --nyear 1
             --nmonth 12
 	   
-	   We also can specify the tag, resolution, machine and compset
-	   information (that will be written to the
-	   metadata of the summary file):
+	   We also can specify the tag, resolution, machine and compset information (that will be written to the metadata of the summary file):
 	    --tag cesm2.0_beta10
             --res T62_g16
             --mach cheyenne
             --compset G
 
-           We include a recommended subset of variables (5) for the 
-	   analysis by specifying them in a json file (optional, as this is
-	   the defaut):
+           We include a recommended subset of variables (5) for the analysis by specifying them in a json file (optional, as this is the defaut):
             --jsonfile pop_ensemble.json
 
 	   This yields the following command for your job submission script:

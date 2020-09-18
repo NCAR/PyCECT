@@ -15,7 +15,7 @@ All of the above tools require an ensemble summary file (which contains
 statistics describing the ensemble distribution). 
 
 Ensemble summary files for existing CESM tags for CAM-ECT, UF-CAM-ECT, 
-and POP-ECT that were created by CSEG (CESM SOftware ENgineering Group)
+and POP-ECT that were created by CSEG (CESM Software Engineering Group)
 are located (respectively) in the CESM input data directories:
 
 $CESMDATAROOT/inputdata/validation/ensembles
@@ -31,7 +31,7 @@ which has its own corresponding instructions]
 
 
 The pyEnsSum.py uses the following:
-__________________________
+__________________________________________
      	pyEnsSum.py             
                             A script that generates an ensemble summary file 
      		            from a collection of CESM output files.
@@ -94,9 +94,8 @@ ______________________________________
 
        Creates the summary file for an ensemble of CAM data. 
 
-       ------------------------
        Args for pyEnsSum : 
-       ------------------------
+
        pyEnsSum.py
        -h                   : prints out this usage message
        --verbose            : prints out in verbose mode (off by default)
@@ -108,11 +107,9 @@ ______________________________________
        --res <name>         : Resolution used in metadata (default = f19_f19)
        --tslice <num>       : the index into the time dimension (default = 1)
        --mach <name>         : Machine name used in the metadata (default = cheyenne)
-       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will 
-                              be excluded or included  (default = exclude_empty.json)
+       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be excluded or included  (default = exclude_empty.json)
        --mpi_disable        : Disable mpi mode to run in serial (off by default)
-       --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so 
-                              ensembles with numbers less than <num> are excluded from summary file) 
+       --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so ensembles with numbers less than <num> are excluded from summary file) 
    
 
 
@@ -180,17 +177,13 @@ ______________________________________
 	   --sumfile uf.ens.c1.2.2.1_fc5.ne30.nc 	    
 
 
-	   Since the ensemble files contain the intial conditions  as well
-	   as the values at time step 9 (this is optional as 1 is the 
-	   default), we set
+	   Since the ensemble files contain the intial conditions  as well as the values at time step 9 (this is optional as 1 is the default), we set
 	    --tslice 1 
 	   
-	   We also specify the CESM tag, compset and resolution and machine of our ensemble data so 
-	   that it can be written to the metadata of the summary file:
+	   We also specify the CESM tag, compset and resolution and machine of our ensemble data so that it can be written to the metadata of the summary file:
 	   --tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --mach cheyenne 
 
-           We can exclude or include some variables from the analysis by specifying them 
-	   in a json file:
+           We can exclude or include some variables from the analysis by specifying them in a json file:
             --jsonfile excluded_varlist.json
 
 	   This yields the following command for your job submission script:

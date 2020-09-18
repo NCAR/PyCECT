@@ -151,6 +151,7 @@ Notes and examples:
       Be sure to use a POP-ECT summary file:
            
 	   --sumfile /glade/p/cisl/asap//pycect_sample_data/pop_c2.0.b10/summary_files/pop.cesm2.0.b10.nc 
+      
       Directory path that contains the run(s) to be evaluated.
 	    
            --indir /glade/p/cisl/asap//pycect_sample_data/pop_c2.0.b10/pop_test_files/C96 
