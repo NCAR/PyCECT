@@ -29,23 +29,6 @@ be generated in CIME via $CIME/tools/statistical_ensemble_test/ensemble.py).
 (Note: to generate a summary file for POP-ECT, you must use pyEnsSumPop.py,
 which has its own corresponding instructions)
 
-
-*pyEnsSum.py uses the following:*
-
- * pyEnsSum.py: A script that generates an ensemble summary file 
-     		from a collection of CESM output files.
-
- * pyEnsLib.py: A Library python script used by pyEnsSum.py
-
- * excluded_varlist.json: An example of a variable list that will be excluded from
-                            reading and processing
-
- * included_varlist.json: An example of a variable list that will be included for
-                            reading and processing
- * empty_excluded.json: An empty exclude variable list, useful as a template
-			   for listing variables to exclude
-
-
 To use pyEnsSum: 
 --------------------
 *Note: compatible with python 3*
