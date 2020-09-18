@@ -1,5 +1,5 @@
 
-pyCECT: Tools to support and run the CESM ENsemble Consistency Test
+pyCECT: Tools to support and run the CESM Ensemble Consistency Test
 =============================================================================
 
 Overview
