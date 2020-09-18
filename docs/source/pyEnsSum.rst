@@ -79,10 +79,12 @@ To see all options (and defaults):
        --compset <name>     : Compset used in metadata (default = F2000climo)
        --res <name>         : Resolution used in metadata (default = f19_f19)
        --tslice <num>       : the index into the time dimension (default = 1)
-       --mach <name>         : Machine name used in the metadata (default = cheyenne)
-       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be excluded or included  (default = exclude_empty.json)
+       --mach <name>        : Machine name used in the metadata (default = cheyenne)
+       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be excluded
+                               or included  (default = exclude_empty.json)
        --mpi_disable        : Disable mpi mode to run in serial (off by default)
-       --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so ensembles with numbers less than <num> are excluded from summary file) 
+       --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so 
+                              ensembles with numbers less than <num> are excluded from summary file) 
    
 
 Notes:
@@ -137,7 +139,7 @@ Example for generating summary files:
 --------------------------------------
 (Note: This example is in test_pyEnsSum.sh)
 
-To generate a summary file for 350 UF-CAM-ECT simulations runs (time step nine): 
+*To generate a summary file for 350 UF-CAM-ECT simulations runs (time step nine):* 
        	 
 * we specify the size (this is optional since 350 is the default) and data location:
     | --esize 350

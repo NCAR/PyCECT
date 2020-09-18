@@ -30,57 +30,41 @@ be generated in CIME via $CIME/tools/statistical_ensemble_test/ensemble.py).
 pyEnsSum.py, which has its own corresponding instructions.)
 
 
-pyEnsSumPop.py uses the following:  
-_______________________________________
-     	pyEnsSumPop.py             
-                            A script that generates an ensemble summary file 
-     		            from a collection of files.
-
-        pyEnsLib.py     
-                            Library python script used by pyEnsSum.py.
-
-        pyEnsSumPop_test.sh        
-                            An example script to submit pyEnsSum.py to cheyenne.
-
-        pop_ensemble.json
-                            An example variable list that will be included for
-                            reading and processing.
 
 To use pyEnsSumPop: 
-___________________________________________
-       Note: compatible with python 3
+--------------------------
+ 
+*Note: compatible with python 3*
 
-       1) On NCAR's Cheyenne machine:
+1. On NCAR's Cheyenne machine:
 
-          module load python
-          ncar_pylib
-          qsub test_pyEnsSumPop.sh
+	  * module load python
+	  * ncar_pylib
+	  * qsub test_pyEnsSum.sh
 
+2.  Otherwise you need these packages:
 
-      2) Otherwise you need these packages:
-
-         numpy
-         scipy
-         future
-         configparser
-         sys
-         getopt
-         os
-         netCDF4
-         time
-         re
-         json
-         random
-         asaptools
-         fnmatch
-         glob
-         itertools
-         datetime
-
-
+         * numpy
+	 * scipy
+	 * future
+	 * configparser
+	 * sys
+	 * getopt
+	 * os
+	 * netCDF4
+	 * time
+	 * re
+	 * json
+	 * random
+	 * asaptools
+	 * fnmatch
+	 * glob
+	 * itertools
+	 * datetime
+ 
 To see all options (and defaults):
-_________________________________________
-       python pyEnsSumPop.py -h
+-----------------------------------
+*python pyEnsSumPop.py -h*::
 
        PyCECT> python pyEnsSumPop.py -h
 
@@ -102,7 +86,8 @@ _________________________________________
        --tslice <num>       : the time slice of the variable that we will use (default = 0)
        --nyear  <num>       : Number of years (default = 1)
        --nmonth  <num>      : Number of months (default = 12)
-       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be included  (RECOMMENDED: default = pop_ensemble.json)
+       --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be included
+                              (RECOMMENDED: default = pop_ensemble.json)
        --mpi_disable        : Disable mpi mode to run in serial (off by default)
    
 
@@ -110,28 +95,27 @@ _________________________________________
 Notes:
 ------
 
-       1) POP-ECT uses monthly average files. Therefore, one typically needs 
+1. POP-ECT uses monthly average files. Therefore, one typically needs 
 	  tslice=0 (which is the default).
 
-       2) Note that --res, --tag, --compset, and --mach only affect the metadata 
+2.  Note that --res, --tag, --compset, and --mach only affect the metadata 
 	  in the summary file.
 
-       3) The sample script test_pyEnsSumPop.sh gives a recommended parallel
+3.  The sample script test_pyEnsSumPop.sh gives a recommended parallel
 	  configuration for Cheyenne.  We recommend one core per month (and make
 	  sure each core has sufficient memory. 
 
-       4) The json file indicates variables from the output files that you want 
+4.  The json file indicates variables from the output files that you want 
 	  to include in the summary files statistics. We RECOMMEND using the 
 	  default pop_ensemble.json, which contains only 5 variables.
 
 
 
 Example for generating summary files:
-__________________________________________
+----------------------------------------
+(Note: this example is in test_pyEnsSumPop.sh)
 
-      (Note: this example is in test_pyEnsSumPop.sh)
-
-      To generate a summary file for 40 POP-ECT simulations runs (1 year of monthly output): 
+*To generate a summary file for 40 POP-ECT simulations runs (1 year of monthly output):* 
        	 
            we specify the size (this is optional since 40 is the default) and data location:
 	    --esize 40
