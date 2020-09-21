@@ -1,5 +1,5 @@
 ==================
-README.pyEnsSumPop
+pyEnsSumPop
 ==================
 
 CESM-ECT (CESM Ensemble Consistency Test) is a suite of tests to 
