@@ -67,7 +67,7 @@ VERSION 3.0.1
 VERSION 3.0.0
 --------------
 
--"Ultra-fast", UF-CAM-ECT, tool released.
+- "Ultra-fast", UF-CAM-ECT, tool released.
 
 
 VERSIONS 2.0.1 - 2.0.3
@@ -75,17 +75,17 @@ VERSIONS 2.0.1 - 2.0.3
 
 - Bug fixes.
 
-  VERSION 2.0.0
+VERSION 2.0.0
 -------------
 
- - Tools for POP (Ocean component) are released.
+- Tools for POP (Ocean component) are released.
 
 
 VERSION 1.0.0
 -------------
 
- - Initial release.
+- Initial release.
 
- - Includes CAM (atmosphere compnent) tools: CECT and PyEnsSum.
+- Includes CAM (atmosphere compnent) tools: CECT and PyEnsSum.
    
    
