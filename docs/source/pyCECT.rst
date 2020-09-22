@@ -1,4 +1,3 @@
-===============================================
 pyCECT tests
 ==============================================
 
@@ -7,8 +6,8 @@ CESM-ECT suite contains multiple tests is to compare the results of a set of new
 CESM simulations against the accepted ensemble. An overall pass or fail is designated.
 Current functionality in the CESM-ECT suite includes:
 
-Atmosphere component (CAM):
-----------------------------
+*Atmosphere component (CAM):*
+
 * CAM-ECT: examines yearly-average files from CAM 
 * UF-CAM-ECT: examine history files from CAM 
 
@@ -24,8 +23,8 @@ https://gmd.copernicus.org/articles/11/697/2018/
 
 
 
- Ocean Component (POP):
- ------------------------
+*Ocean Component (POP):*
+
  * POP-ECT: examines monthly-average files from POP 
 
 
