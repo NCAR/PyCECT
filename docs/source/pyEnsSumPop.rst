@@ -1,28 +1,19 @@
-==================
+
 pyEnsSumPop
 ==================
 
-CESM-ECT (CESM Ensemble Consistency Test) is a suite of tests to 
-determine whether a new simulation run(s) (e.g., from a new machine, 
-compiler, etc.) is statistically distinguishable from an accepted 
-ensemble.  The verification tools in the CESM-ECT suite are:
+The verification tools in the CESM-ECT suite all require an *ensemble
+summary file*, which contains statistics describing the ensemble distribution. 
+pyEnsSumPop can be used to create a POP (ocean component) ensemble summary file. 
 
-CAM-ECT - detects issues in CAM and CLM (12 month runs)
-UF-CAM-ECT - detects issues in CAM and CLM (9 time step runs)
-POP-ECT - detects issues in POP and CICE (12 month runs)
 
-All of the above tools require an ensemble summary file (which contains
-statistics describing the ensemble distribution). 
+Note that an ensemble summary files for existing CESM tags for POP-ECT 
+that were created by CSEG (CESM Software Engineering Group)
+are located in the CESM input data directory:
 
-Ensemble summary files for existing CESM tags for CAM-ECT, UF-CAM-ECT, 
-and POP-ECT that were created by CSEG are located (respectively) in the 
-CESM input data directories:
-
-$CESMDATAROOT/inputdata/validation/ensembles
-$CESMDATAROOT/inputdata/validation/uf_ensembles
 $CESMDATAROOT/inputdata/validation/pop_ensembles
 
-Alternatively, *this package* can be used to create a summary file for POP-ECT
+Alternatively, pyEnsSumPop can be used to create a summary file for POP-ECT
 given the location of appropriate ensemble history files (which should 
 be generated in CIME via $CIME/tools/statistical_ensemble_test/ensemble.py).
 
@@ -30,17 +21,19 @@ be generated in CIME via $CIME/tools/statistical_ensemble_test/ensemble.py).
 pyEnsSum.py, which has its own corresponding instructions.)
 
 
-
 To use pyEnsSumPop: 
 --------------------------
  
-*Note: compatible with python 3*
+*Note: compatible with Python 3*
 
 1. On NCAR's Cheyenne machine:
 
-	  * module load python
-	  * ncar_pylib
-	  * qsub test_pyEnsSum.sh
+   ``module load python``
+
+   ``ncar_pylib``
+
+   ``qsub test_pyEnsSumPop.sh``
+
 
 2.  Otherwise you need these packages:
 
@@ -62,11 +55,9 @@ To use pyEnsSumPop:
 	 * itertools
 	 * datetime
  
-To see all options (and defaults):
------------------------------------
-*python pyEnsSumPop.py -h*::
+3. To see all options (and defaults):
 
-       PyCECT> python pyEnsSumPop.py -h
+   ``python pyEnsSumPop.py -h``::
 
        Creates the summary file for an ensemble of POP data. 
 
@@ -93,55 +84,67 @@ To see all options (and defaults):
 
 
 Notes:
-------
+----------------
 
 1. POP-ECT uses monthly average files. Therefore, one typically needs 
-	  tslice=0 (which is the default).
+    to set ``--tslice 0`` (which is the default).
 
-2.  Note that --res, --tag, --compset, and --mach only affect the metadata 
-	  in the summary file.
+2.  Note that ``--res``, ``--tag``, ``--compset``, and --mach only affect the
+    metadata in the summary file.
 
 3.  The sample script test_pyEnsSumPop.sh gives a recommended parallel
-	  configuration for Cheyenne.  We recommend one core per month (and make
-	  sure each core has sufficient memory. 
+    configuration for Cheyenne.  We recommend one core per month (and make
+    sure each core has sufficient memory). 
 
 4.  The json file indicates variables from the output files that you want 
-	  to include in the summary files statistics. We RECOMMEND using the 
-	  default pop_ensemble.json, which contains only 5 variables.
+    to include in the summary files statistics.  We recommend using the 
+    default pop_ensemble.json, which contains only 5 variables.
 
 
 
-Example for generating summary files:
+Example:
 ----------------------------------------
 (Note: this example is in test_pyEnsSumPop.sh)
 
 *To generate a summary file for 40 POP-ECT simulations runs (1 year of monthly output):* 
        	 
-           we specify the size (this is optional since 40 is the default) and data location:
-	    --esize 40
-	    --indir /glade/p/cisl/iowa/pop_verification/cesm2_0_beta10/ensembles 
+* We specify the size (this is optional since 40 is the default) and data location:
 
-           We also specify the name of file to create for the summary:
- 	    --sumfile pop.ens.sum.cesm2.0.nc
+  ``--esize 40``
+    
+  ``--indir /glade/p/cisl/iowa/pop_verification/cesm2_0_beta10/ensembles``
 
-	   Since these are monthly average files, we set (optional as 0 is the default):
-	    --tslice 0
+*  We also specify the name of file to create for the summary:
 
-           We also specify the number of years, the number of months (optional, as 1 and 12 are the defaults):
-            --nyear 1
-            --nmonth 12
+   ``--sumfile pop.ens.sum.cesm2.0.nc``
+
+* Since these are monthly average files, we set (optional as 0 is the default):
+
+  ``--tslice 0``
+
+* We also specify the number of years, the number of months (optional, as 1 and 12 are the defaults):
+
+   ``--nyear 1``
+
+   ``--nmonth 12``
 	   
-	   We also can specify the tag, resolution, machine and compset information (that will be written to the metadata of the summary file):
-	    --tag cesm2.0_beta10
-            --res T62_g16
-            --mach cheyenne
-            --compset G
+*  We also can specify the tag, resolution, machine and compset
+   information (that will be written to the  metadata of the summary file):
 
-           We include a recommended subset of variables (5) for the analysis by specifying them in a json file (optional, as this is the defaut):
-            --jsonfile pop_ensemble.json
+   ``--tag cesm2.0_beta10``
 
-	   This yields the following command for your job submission script:
+   ``--res T62_g16``
 
-	   python pyEnsSumPop.py  --indir  /glade/p/cisl/asap/pycect_sample_data/pop_c2.0.b10/pop_ens_files 
-	   --sumfile pop.cesm2.0.b10.nc --tslice 0 --nyear 1 --nmonth 12 --esize 40 --jsonfile pop_ensemble.json  
-	   --mach cheyenne --compset G --tag cesm2_0_beta10 --res T62_g17
+   ``--mach cheyenne``
+
+   ``--compset G``
+
+* We include a recommended subset of variables (5) for the
+  analysis by specifying them in a json file (optional, as
+  this is the defaut):
+	   
+  ``--jsonfile pop_ensemble.json``
+
+ * This yields the following command for your job submission script:
+
+ ``python pyEnsSumPop.py  --indir  /glade/p/cisl/asap/pycect_sample_data/pop_c2.0.b10/pop_ens_files  --sumfile pop.cesm2.0.b10.nc --tslice 0 --nyear 1 --nmonth 12 --esize 40 --jsonfile pop_ensemble.json   --mach cheyenne --compset G --tag cesm2_0_beta10 --res T62_g17``
