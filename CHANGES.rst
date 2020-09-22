@@ -1,4 +1,4 @@
-PyReshaper Change Log
+PyCECT Change Log
 =====================
 
 Copyright 2020 University Corporation for Atmospheric Research
