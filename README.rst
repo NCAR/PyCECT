@@ -14,7 +14,7 @@ by small initial temperature perturbations and a test set of
 CESM simulations.
 
 
-:AUTHORS: Haiying Xu, Allison Baker, Daniel Milroy
+:AUTHORS: Haiying Xu, Allison Baker, Daniel Milroy, Dorit Hammerling
 :COPYRIGHT: 2015-2020 University Corporation for Atmospheric Research
 :LICENSE: Apache 2.0
 
@@ -30,7 +30,7 @@ You may then check out the most recent stable tag. The source is available in re
 
 
 Other resources:
-----------
+----------------
 
 See full documentation_ for more information.
 
