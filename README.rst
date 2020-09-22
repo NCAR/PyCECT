@@ -19,4 +19,11 @@ See full documentation_ for more information.
 .. _documentation: https://pycect.readthedocs.io/en/latest/
 
 
+See CESM information on _PyCECT.
 
+.. _PyCECT: http://www.cesm.ucar.edu/models/cesm2/python-tools/
+
+
+The CESM web-based interface to this tool is available _here.
+
+.. _here:    http://www.cesm.ucar.edu/models/cesm2/verification/

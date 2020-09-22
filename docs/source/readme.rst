@@ -16,8 +16,8 @@ CESM simulations against the accepted ensemble (pyCECT) as well as the tools to
 create the ensemble summary files (pyEnsSum and pyEnsSumPop). These
 three modules will be explained in more detail.
 
-Notes:
-~~~~~~~~~~~~
+CESM/CIME notes:
+---------------------
 1. The pyCECT package is also included in CIME (Common Infrastructure for
     Modeling the Earth).  See:
 
@@ -34,7 +34,7 @@ Notes:
     
 
 Relevant publications:
-~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 Daniel J. Milroy, Allison H. Baker, Dorit M. Hammerling, and Elizabeth R. Jessup, “Nine time steps: ultra-fast statistical consistency testing of the Community Earth System Model (pyCECT v3.0)”, Geoscientific Model Development, 11, pp. 697-711, 2018.
 https://gmd.copernicus.org/articles/11/697/2018/
