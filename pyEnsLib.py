@@ -1565,6 +1565,8 @@ def get_files_from_glob(opts_dict):
        n_timeslice=[]
        for fname in in_files:
            istr=fname.find('.nc')
+#           print(istr)
+#           print(fname)
            temp=(int(fname[istr-7:istr-3])-1)*12+int(fname[istr-2:istr])-1
            n_timeslice.append(temp)
        return n_timeslice, in_files
@@ -1631,7 +1633,6 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
     in_file_names = []
     if not opts_dict['mpi_enable']:
        n_timeslice, in_file_names=get_files_from_glob(opts_dict)
-       #print in_file_names
        temp_list=[]
        for i in n_timeslice:
            temp_list.append(i+1)
