@@ -1,0 +1,12 @@
+name: pycect
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7.*
+  - numpy
+  - scipy
+  - netcdf4
+  - mpi4py
+  - pip
+  - pip:
+    - asaptools

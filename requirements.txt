@@ -1,0 +1,7 @@
+netcdf4
+numpy
+scipy
+future
+mpi4py
+pip
+asaptools
