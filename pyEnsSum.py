@@ -6,15 +6,14 @@ import numpy as np
 import netCDF4 as nc
 import time
 import re
-from asaptools.partition import EqualStride, Duplicate,EqualLength
-import asaptools.simplecomm as simplecomm 
 import pyEnsLib
+import pyTools
+from pyTools import EqualStride, Duplicate, EqualLength
 
 #This routine creates a summary file from an ensemble of CAM
 #output files
 
 def main(argv):
-
 
     # Get command line stuff and store in a dictionary
     s = 'tag= compset= esize= tslice= res= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm gmonly popens cumul regx= startMon= endMon= fIndex= mpi_disable'
@@ -77,11 +76,12 @@ def main(argv):
     ex_varlist=[]
     inc_varlist=[]
 
+
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:
-        me=simplecomm.create_comm()
+        me = pyTools.create_comm()
     else:
-        me=simplecomm.create_comm(not opts_dict['mpi_enable'])
+        me = pyTools.create_comm(not opts_dict['mpi_enable'])
     
     if me.get_rank() == 0:
        print('STATUS: Running pyEnsSum.py')
@@ -302,14 +302,18 @@ def main(argv):
             print('ERROR: Summary file directory: ',sum_dir,' not found')
         sys.exit(2)
 
+    this_sumfile = sum_dir + "/" + this_sumfile
+
+
 
     if(me.get_rank() ==0 ):
 
         if  (verbose == True):
             print("VERBOSE: Creating ", this_sumfile, "  ...")
 
-        if os.path.exists(this_sumfile):
+        if os.path.isfile(this_sumfile):
             os.unlink(this_sumfile)
+
         nc_sumfile = nc.Dataset(this_sumfile, "w", format="NETCDF4_CLASSIC")
 
         # Set dimensions
@@ -396,7 +400,6 @@ def main(argv):
         # Time-invarient metadata
         if (verbose == True):
             print("VERBOSE: Assigning time invariant metadata .....")
-#        lev_data = np.zeros(num_lev,dtype=np.float64)     
         lev_data = first_file.variables["lev"]
         v_lev[:] = lev_data[:]
     #end of rank=0 work
@@ -480,7 +483,6 @@ def get_cumul_filelist(opts_dict,indir,regx):
    if not opts_dict['indir']:
       print('input dir is not specified')
       sys.exit(2)
-   #regx='(pgi(.)*-(01|02))'
    regx_list=["mon","gnu","pgi"]
    all_files=[]
    for prefix in regx_list: 

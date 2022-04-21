@@ -8,8 +8,6 @@ import time
 import re
 import json
 import random
-import asaptools.simplecomm as simplecomm 
-from asaptools.partition import  Duplicate
 import fnmatch
 import glob
 import itertools

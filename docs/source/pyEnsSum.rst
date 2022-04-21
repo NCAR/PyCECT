@@ -26,32 +26,21 @@ To use pyEnsSum:
 
 1. On NCAR's Cheyenne machine:
 
-   ``module load python``
-
-   ``ncar_pylib``
+   An example script is given in ``test_pyEnsSum.sh``.  Modify as needed and do:
 
    ``qsub test_pyEnsSum.sh``
 
+   Note that the python environment is loaded in the script:
+   ``module load conda``
+   ``conda activate npl``
 
-2.  Otherwise you need these packages:
+2.  Otherwise you need these packages (see ``requirements.txt`):
 
          * numpy
 	 * scipy
 	 * future
-	 * configparser
-	 * sys
-	 * getopt
-	 * os
-	 * netCDF4
-	 * time
-	 * re
-	 * json
-	 * random
-	 * asaptools
-	 * fnmatch
-	 * glob
-	 * itertools
-	 * datetime
+	 * netcdf4
+	 * mpi4py
  
 3. To see all options (and defaults):
 

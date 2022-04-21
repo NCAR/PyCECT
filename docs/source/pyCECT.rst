@@ -48,35 +48,25 @@ To use pyCECT:
 ---------------
 *Note: compatible with python 3*
 
+
 1. On NCAR's Cheyenne machine:
 
-   ``module load python``
+   An example scripts are given in ``test_uf_cam_ect.sh`` and ``test_pop_CECT``.  
+   Modify as needed and do:
 
-   ``ncar_pylib``
+   ``qsub test_pyEnsSum.sh`` or ``qsub test_pop_CECT.sh``
 
-   ``qsub test_pyEnsSum.sh``
+   Note that the python environment is loaded in the script:
+   ``module load conda``
+   ``conda activate npl``
 
-
-2. Otherwise you need these packages:
+2.  Otherwise you need these packages (see ``requirements.txt`):
 
          * numpy
-	 * scipy
-	 * future
-	 * configparser
-	 * sys
-	 * getopt
-	 * os
-	 * netCDF4
-	 * time
-	 * re
-	 * json
-	 * random
-	 * asaptools
-	 * fnmatch
-	 * glob
-	 * itertools
-	 * datetime
-
+         * scipy
+         * future
+         * netcdf4
+         * mpi4py
 
 
 3. To see all options (and defaults):

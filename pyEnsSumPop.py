@@ -6,8 +6,8 @@ import numpy as np
 import netCDF4 as nc
 import time
 import re
-from asaptools.partition import EqualStride, Duplicate
-import asaptools.simplecomm as simplecomm 
+from pyTools import EqualStride, Duplicate
+import pyTools 
 import pyEnsLib
 
 def main(argv):
@@ -73,9 +73,9 @@ def main(argv):
 
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:
-        me=simplecomm.create_comm()
+        me = pyTools.create_comm()
     else:
-        me=simplecomm.create_comm(False)
+        me = pyTools.create_comm(False)
 
     if opts_dict['jsonfile']:
         # Read in the included var list
