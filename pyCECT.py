@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-from __future__ import print_function
 import sys,getopt,os
 import numpy as np
 import netCDF4 as nc

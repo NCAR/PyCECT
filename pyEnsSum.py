@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import configparser
 import sys, getopt, os 
 import numpy as np 
@@ -96,10 +95,15 @@ def main(argv):
             inc_varlist=[]
             # Read in the excluded or included var list
             ex_varlist,exclude=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ES')
+            if len(ex_varlist) > 0:
+                if ex_varlist[0] == "JSONERROR":
+                    jsonerror = True
+                    me.abort()
             if exclude == False:
                inc_varlist=ex_varlist
                ex_varlist=[]
 
+        
 
     # Broadcast the excluded var list to each processor
     if opts_dict['mpi_enable']:

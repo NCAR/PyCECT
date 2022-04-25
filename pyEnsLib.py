@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import configparser
 import sys, getopt, os 
 import numpy as np 
@@ -493,10 +492,15 @@ def read_jsonlist(metajson, method_name):
         return varList,exclude
     else:
         fd=open(metajson)
-        metainfo = json.load(fd)
+        try:
+            metainfo = json.load(fd)
+        except json.JSONDecodeError:    
+            print(f"ERROR: JSONDecode Error in file{metajson}")
+            varList=['JSONERROR']
+            exclude=[]
+            return varList, exclude
         if method_name == 'ES':
             exclude=False
-            #varList = metainfo['ExcludedVar']
             if 'ExcludedVar' in metainfo:
                 exclude=True
                 varList = metainfo['ExcludedVar']
@@ -1155,12 +1159,13 @@ def printsummary(results, key, name, namerange, thefilecount, variables, label):
   for k,v in results.items():
     if 'status' in v:
       temp0 = v['status']
+      strname = k.decode("utf-8")
       if key in temp0: 
          if thefile in temp0[key]:
             temp = temp0[key][thefile]
             if temp < 1:
                print(' ')
-               print(k+'       ('+'{0:9.2e}'.format(v[name][thefile])+' outside of ['+'{0:9.2e}'.format(variables[k][namerange][0])+' '+'{0:9.2e}'.format(variables[k][namerange][1])+'])')
+               print(f' {strname}: {v[name][thefile]:.2e} outside of of [{variables[k][namerange][0]:2e}, {variables[k][namerange][1]}]')
 
 #
 # Insert the range of rmsz score and global mean of the ensemble summary file to the dictionary variables

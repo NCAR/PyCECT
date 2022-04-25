@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Tools are taken from ASAPPyTools
+These tools are taken from ASAPPyTools
 https://github.com/NCAR/ASAPPyTools
 which is no longer actively supported ...
 '''
@@ -202,6 +202,9 @@ class SimpleCommMPI(SimpleComm):
 
     def sync(self):
         self._comm.Barrier()
+
+    def abort(self):
+        self._comm.Abort()
 
     def allreduce(self, data, op):
         """

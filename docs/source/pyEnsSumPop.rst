@@ -24,8 +24,6 @@ pyEnsSum.py, which has its own corresponding instructions.)
 To use pyEnsSumPop: 
 --------------------------
  
-*Note: compatible with Python 3*
-
 1. On NCAR's Cheyenne machine:
 
    An example script is given in ``test_pyEnsSum.sh``.  Modify as needed and do:
@@ -40,7 +38,6 @@ To use pyEnsSumPop:
 
          * numpy
          * scipy
-         * future
          * netcdf4
          * mpi4py
 

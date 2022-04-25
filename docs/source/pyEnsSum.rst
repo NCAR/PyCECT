@@ -22,7 +22,6 @@ which has its own corresponding instructions)
 
 To use pyEnsSum: 
 --------------------
-*Note: compatible with Python 3*
 
 1. On NCAR's Cheyenne machine:
 
@@ -38,7 +37,6 @@ To use pyEnsSum:
 
          * numpy
 	 * scipy
-	 * future
 	 * netcdf4
 	 * mpi4py
  

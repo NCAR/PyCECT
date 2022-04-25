@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import configparser
 import sys, getopt, os 
 import numpy as np 
@@ -80,6 +79,9 @@ def main(argv):
     if opts_dict['jsonfile']:
         # Read in the included var list
         Var2d,Var3d=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ESP')
+        if len(Var2d) > 0:
+            if Var2d[0] == 'JSONERROR':
+                me.abort()
         str_size=0
         for str in Var3d:
             if str_size < len(str):
@@ -119,6 +121,12 @@ def main(argv):
         sys.exit(2)
         
 
+    #Don't want more processors than months    
+    if  me.get_size() > opts_dict['nmonth']:
+        if me.get_rank() == 0:
+            print('ERROR: more processors requested than the number of months. Recommendation is one processor per month (or fewer).')
+        sys.exit(2)
+
 
     #Partition the input file list (ideally we have one processor per month)
     in_file_list=me.partition(in_files,func=EqualStride(),involved=True)
@@ -130,8 +138,8 @@ def main(argv):
 
     for onefile in in_file_list:
         fname = input_dir + '/' + onefile
-        if opts_dict['verbose']:
-            print( "my_rank = ", me.get_rank(), "  ", fname)
+        #if opts_dict['verbose']:
+        #    print( "my_rank = ", me.get_rank(), "  ", fname)
         if (os.path.isfile(fname)):
             full_in_files.append(fname)
         else:

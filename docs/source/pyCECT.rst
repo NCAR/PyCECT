@@ -46,8 +46,6 @@ Current functionality in the CESM-ECT suite includes:
 
 To use pyCECT:
 ---------------
-*Note: compatible with python 3*
-
 
 1. On NCAR's Cheyenne machine:
 
@@ -64,7 +62,6 @@ To use pyCECT:
 
          * numpy
          * scipy
-         * future
          * netcdf4
          * mpi4py
 
