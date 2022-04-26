@@ -1353,6 +1353,8 @@ def CECT_usage():
     print('   --pop_threshold <num>   : set pop threshold (default is 0.9)')
     print('   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from ')
     print('                           the input directory (indir), such as core48.pop.h.0003-12 or core48.pop.h.0003 (more info in README)')
+
+    print('   --base_year <num>       :We assume the pop test files names start in year 0001. Ube this option to specify a different start year.')
 #    print 'Version 3.0.8'
 
 #
@@ -1553,8 +1555,12 @@ def gather_npArray_pop(npArray, me, array_shape):
 
 #
 # Use input files from opts_dict['input_globs'] to get timeslices for pop ensemble
+#Test file years must start with 0001 (so we can figure out which year to compare)
 #
 def get_files_from_glob(opts_dict):
+       base_year = opts_dict["base_year"]
+       if base_year > 1:
+           print("base year = ", base_year)
        in_files=[]
        wildname='*'+str(opts_dict['input_globs'])+'*'
        if (os.path.exists(opts_dict['indir'])):
@@ -1568,9 +1574,12 @@ def get_files_from_glob(opts_dict):
        n_timeslice=[]
        for fname in in_files:
            istr=fname.find('.nc')
-#           print(istr)
-#           print(fname)
-           temp=(int(fname[istr-7:istr-3])-1)*12+int(fname[istr-2:istr])-1
+           #print(istr)
+           #print(fname)
+           #print(fname[istr-7:istr-3])
+           #print(fname[istr-2:istr])
+           
+           temp=(int(fname[istr-7:istr-3])-base_year)*12+int(fname[istr-2:istr])-1
            n_timeslice.append(temp)
        return n_timeslice, in_files
 
@@ -1641,6 +1650,8 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
            temp_list.append(i+1)
        print('STATUS: Checkpoint month(s) = ',temp_list)
 
+
+    skip_count = 0    
     #Compare an individual file with ensemble summary file to get zscore 
     for fcount,fid in enumerate(ifiles): 
         print(' ')
@@ -1653,9 +1664,10 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
         rmask=otimeSeries[rmask_var]
 
         print('**********'+'Run '+str(fcount+1)+" (file=" + in_file_names[fcount]+ "):")
-  
+
         if timeslice >= ens_timeslice:
-            print('WARNING: The summary file containing only ',ens_timeslice, ' timeslices. Skipping this run evaluation...')
+            print('WARNING: The summary file contains only ',ens_timeslice, ' timeslices. Skipping this run evaluation for timeslice = ', timeslice, '...')
+            skip_count = skip_count + 1
             continue
         for vcount,var_name in enumerate(Var3d): 
             orig=otimeSeries[var_name][0]
@@ -1688,6 +1700,12 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
         
 
     sum_file.close()
+
+    #give error msg is none of the files were valid
+    if skip_count == len(ifiles):
+        print("ERROR: no files to process with valid timeslices. Exiting...")
+        sys.exit(2)
+
     if has_zscore:
         return Zscore,n_timeslice
     else:

@@ -26,7 +26,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= printVars popens 
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile= 
          casejson= npick= pepsi_gm pop_tol= web_enabled
-         pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= """
+         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= """
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv,"h",optkeys)
@@ -67,6 +67,7 @@ def main(argv):
     opts_dict['sumfile'] = ''
     opts_dict['web_enabled'] = False
     opts_dict['saveResults']= False
+    opts_dict['base_year']= 1
 
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary

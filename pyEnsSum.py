@@ -97,7 +97,6 @@ def main(argv):
             ex_varlist,exclude=pyEnsLib.read_jsonlist(opts_dict['jsonfile'],'ES')
             if len(ex_varlist) > 0:
                 if ex_varlist[0] == "JSONERROR":
-                    jsonerror = True
                     me.abort()
             if exclude == False:
                inc_varlist=ex_varlist
