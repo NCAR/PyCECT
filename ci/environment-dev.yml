@@ -2,13 +2,10 @@ name: pycect-dev
 channels:
   - conda-forge
 dependencies:
-  - python=3.7.*
+  - python=*=*cp*
   - numpy
   - scipy
   - netcdf4
   - mpi4py
   - jupyter_contrib_nbextensions
   - jupyterlab
-  - pip
-  - pip:
-    - asaptools
