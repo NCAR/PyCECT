@@ -1,0 +1,12 @@
+name: pycect-dev
+channels:
+  - conda-forge
+dependencies:
+  - python=*=*cp*
+  - numpy
+  - scipy
+  - netcdf4
+  - mpi4py
+  - jupyter_contrib_nbextensions
+  - jupyterlab
+  - pre-commit

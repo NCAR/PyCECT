@@ -1,0 +1,9 @@
+name: pycect
+channels:
+  - conda-forge
+dependencies:
+  - python=*=*cp*
+  - numpy
+  - scipy
+  - netcdf4
+  - mpi4py

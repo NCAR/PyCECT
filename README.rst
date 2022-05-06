@@ -18,13 +18,13 @@ CESM simulations.
 
 
 :AUTHORS: Haiying Xu, Allison Baker, Daniel Milroy, Dorit Hammerling
-:COPYRIGHT: 2015-2020 University Corporation for Atmospheric Research
+:COPYRIGHT: 2015-2022 University Corporation for Atmospheric Research
 :LICENSE: Apache 2.0
 
 
 Obtaining the code:
 ----------------
-	  
+
 Currently, the most up-to-date development source code is available via git from the site:
 
 https://github.com/NCAR/PyCECT
