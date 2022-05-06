@@ -1,10 +1,14 @@
 #!/usr/bin/python
-import re
 import argparse
 import itertools
+import re
+
+
+def isect(a, b):
+    return a.intersection(b)
+
 
 class exhaustive_test(object):
-
     def __init__(self):
         super(exhaustive_test, self).__init__()
 
@@ -31,15 +35,14 @@ class exhaustive_test(object):
 
         passed = failed = 0
         for compset in itertools.combinations(sims, runsPerTest):
-            # This block is slightly slower than manually 
+            # This block is slightly slower than manually
             # specifying the pairs, but it generalizes
             # easily.
             failsets = [dictionary[s] for s in compset]
-            # The following three lines are adapted from 
+            # The following three lines are adapted from
             # user doug's answer in
             # http://stackoverflow.com/questions/27369373/pairwise-set-intersection-in-python
             pairs = itertools.combinations(failsets, 2)
-            isect = lambda a, b: a.intersection(b)
             isect_list = [isect(t[0], t[1]) for t in pairs]
             isect_tot = set()
             [isect_tot.update(x) for x in isect_list]
@@ -52,17 +55,19 @@ class exhaustive_test(object):
             else:
                 # print("this set passed")
                 # print(compset)
-                passed +=1
+                passed += 1
 
         return passed, failed
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="script to calculate all combinations of ensemble tests")
-    parser.add_argument("-f", dest="compfile",
-    help="compfile location", metavar="PATH")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='script to calculate all combinations of ensemble tests'
+    )
+    parser.add_argument('-f', dest='compfile', help='compfile location', metavar='PATH')
 
     args = parser.parse_args()
 
     eet = exhaustive_test()
     compare_dict = eet.file_to_sets(args.compfile)
-    print(("failure percent is %s" % eet.test_combinations(compare_dict)))
+    print(('failure percent is %s' % eet.test_combinations(compare_dict)))

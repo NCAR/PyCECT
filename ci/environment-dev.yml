@@ -9,3 +9,4 @@ dependencies:
   - mpi4py
   - jupyter_contrib_nbextensions
   - jupyterlab
+  - pre-commit

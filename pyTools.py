@@ -10,10 +10,24 @@ from collections import defaultdict
 # Define the supported reduction operators
 OPERATORS = ['sum', 'prod', 'max', 'min']
 
+# Define the reduction operators map (Maps names to function names.
+# The 'py' function names are passed to 'eval(*)' and executed as python code.
+# The 'np' function names are passed to 'getattr(numpy,*)' and executed as
+# numpy code.  The 'mpi' function names are passed to 'getattr(mpi4py,*)'
+# and return an MPI operator object which is passed as an argument to MPI
+# reduce functions.
+_OP_MAP = {
+    'sum': {'py': 'sum', 'np': 'sum', 'mpi': 'SUM'},
+    'prod': {'py': 'partial(reduce, lambda x, y: x * y)', 'np': 'prod', 'mpi': 'PROD'},
+    'max': {'py': 'max', 'np': 'max', 'mpi': 'MAX'},
+    'min': {'py': 'min', 'np': 'min', 'mpi': 'MIN'},
+}
+
+
 def create_comm(serial=False):
     """
-    Depending on the argument given, it returns an instance of a 
-    serial or parallel SimpleComm object.                                        
+    Depending on the argument given, it returns an instance of a
+    serial or parallel SimpleComm object.
     """
     if type(serial) is not bool:
         raise TypeError('Serial parameter must be a bool')
@@ -21,6 +35,7 @@ def create_comm(serial=False):
         return SimpleComm()
     else:
         return SimpleCommMPI()
+
 
 class SimpleComm(object):
 
@@ -47,11 +62,11 @@ class SimpleComm(object):
             return False
 
     def get_size(self):
-        #Get the integer number of ranks in this communicator.
+        # Get the integer number of ranks in this communicator.
         return 1
 
     def get_rank(self):
-        #Get the integer rank ID of this MPI process in this communicator.
+        # Get the integer rank ID of this MPI process in this communicator.
         return 0
 
     def is_manager(self):
@@ -82,6 +97,7 @@ class SimpleComm(object):
             return SimpleComm.allreduce(self, eval(_OP_MAP[op]['py'])(data), op)
         else:
             return data
+
     def partition(self, data=None, func=None, involved=False, tag=0):
         """
         Partition and send data from the 'manager' rank to 'worker' ranks.
@@ -129,6 +145,7 @@ class SimpleComm(object):
     def collect(self, data=None, tag=0):
         err_msg = 'Collection cannot be used in serial operation'
         raise RuntimeError(err_msg)
+
 
 class SimpleCommMPI(SimpleComm):
 
@@ -194,7 +211,7 @@ class SimpleCommMPI(SimpleComm):
             return False
 
     def get_size(self):
-        #Get the integer number of ranks in this communicator.
+        # Get the integer number of ranks in this communicator.
         return self._comm.Get_size()
 
     def get_rank(self):
@@ -539,13 +556,10 @@ class SimpleCommMPI(SimpleComm):
             err_msg = 'Collection cannot be used in a 1-rank communicator'
             raise RuntimeError(err_msg)
 
-"""
-data partitioning functions.
-
-"""
 
 from abc import ABCMeta, abstractmethod
 from operator import itemgetter
+
 
 class PartitionFunction(object):
 
@@ -633,6 +647,7 @@ class PartitionFunction(object):
         """
         return
 
+
 class Duplicate(PartitionFunction):
 
     """
@@ -660,6 +675,7 @@ class Duplicate(PartitionFunction):
         self._check_types(data, index, size)
 
         return data
+
 
 class EqualLength(PartitionFunction):
 
@@ -709,6 +725,7 @@ class EqualLength(PartitionFunction):
             else:
                 return []
 
+
 class EqualStride(PartitionFunction):
 
     """
@@ -751,4 +768,3 @@ class EqualStride(PartitionFunction):
                 return [data]
             else:
                 return []
-
