@@ -19,7 +19,7 @@ def main(argv):
     # Get command line stuff and store in a dictionary
     s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable mpi_disable nrand= rand seq= jsondir= esize='
     optkeys = s.split()
-    print(optkeys)
+
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
     except getopt.GetoptError:
