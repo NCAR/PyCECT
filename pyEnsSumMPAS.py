@@ -20,8 +20,9 @@ from pyTools import Duplicate, EqualLength, EqualStride
 def main(argv):
 
     # Get command line stuff and store in a dictionary
-    s = 'tag= compset= esize= tslice= core= mesh= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm  startMon= endMon= fIndex= mpi_disable'
+    s = 'tag= compset= esize= tslice= core= model= mesh= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable   mpi_disable'
     optkeys = s.split()
+
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
     except getopt.GetoptError:
@@ -42,14 +43,10 @@ def main(argv):
     opts_dict['sumfile'] = 'mpas.ens.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['sumfiledir'] = './'
-    opts_dict['jsonfile'] = 'exclude_empty.json'
+    opts_dict['jsonfile'] = 'empty_excluded.json'
     opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = True
     opts_dict['mpi_disable'] = False
-    opts_dict['maxnorm'] = False
-    opts_dict['startMon'] = 1
-    opts_dict['endMon'] = 1
-    opts_dict['fIndex'] = 151
 
     # This creates the dictionary of input arguments
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ES', opts_dict)
@@ -179,14 +176,13 @@ def main(argv):
     nvertex = -1
     # Look at first file and get dims
     input_dims = first_file.dimensions
-    # ndims = len(input_dims)
 
     for key in input_dims:
         if key == 'nVertLevels':
             nlev = len(input_dims[key])
-        elif key == 'NVertLevelsP1':
+        elif key == 'nVertLevelsP1':
             nlevp1 = len(input_dims[key])
-        elif key == 'NSoilLevels':
+        elif key == 'nSoilLevels':
             nsoil = len(input_dims[key])
         elif key == 'nCells':
             ncell = len(input_dims[key])
@@ -252,7 +248,11 @@ def main(argv):
             elif v_dim in vd:
                 vertex_names.append(k)
             else:
-                print('Warning: ', k, ' contains time but not cells, edges, or vertices.')
+                print(
+                    'Note: variable ',
+                    k,
+                    ' contains time but not cells, edges, or vertices (excluded).',
+                )
                 continue
             str_size = max(str_size, len(k))
 
@@ -278,10 +278,12 @@ def main(argv):
     edge_names.sort()
     vertex_names.sort()
 
-    if esize < total:
+    # TEMP to allow testing
+    #    if esize < total:
+    if esize < 1:
         if me.get_rank() == 0:
             print(
-                '************************************************************************************************************************************'
+                '**************************************************************************************************'
             )
             print(
                 '  ERROR: the total number of variables '
@@ -294,7 +296,7 @@ def main(argv):
             )
             print('  or add more variables in your excluded variable list  => EXITING....')
             print(
-                '************************************************************************************************************************************'
+                '**************************************************************************************************'
             )
         sys.exit()
     # All vars is cell vars first (sorted), the edge vars, the vertex
@@ -451,9 +453,11 @@ def main(argv):
     gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
         full_in_files, varCell_list_loc, varEdge_list_loc, varVertex_list_loc, opts_dict
     )
+
     if me.get_rank() == 0 and verbose:
         print('VERBOSE: Finished calculating global means .....')
 
+    # empty - not excluding any vars due to global means at this time
     var_list = []
 
     # gather to rank = 0
@@ -477,13 +481,14 @@ def main(argv):
         )
 
         #################
-        # TO DO
-        # gather variables to exclude (in pre_pca)
+        # gather variables to exclude (for pre_pca - currently will be empty)
         var_list = gather_list(var_list, me)
 
     # rank =0 : complete calculations for summary file
     if me.get_rank() == 0:
         gmall = np.concatenate((gmCell, gmEdge, gmVertex), axis=0)
+        # save to summary file
+        v_gm[:, :] = gmall[:, :]
 
         # PCA prep and calculation
         (
@@ -502,7 +507,6 @@ def main(argv):
             print('STATUS: Summary could not be created.')
             sys.exit(2)
 
-        v_gm[:, :] = gmall[:, :]
         v_standardized_gm[:, :] = standardized_global_mean[:, :]
         v_mu_gm[:] = mu_gm[:]
         v_sigma_gm[:] = sigma_gm[:]

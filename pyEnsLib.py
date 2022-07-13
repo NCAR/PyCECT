@@ -803,6 +803,8 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
 
         fname.close()
 
+        return gmCell, gmEdge, gmVertex
+
 
 # fname is open
 def calc_global_mean_for_onefile_MPAS(
@@ -1782,12 +1784,12 @@ def EnsSum_usage():
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded or included  (default = exclude_empty.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
-    print(
-        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
-    )
-    print(
-        '                          ensembles with numbers less than <num> are excluded from summary file) '
-    )
+    #    print(
+    #        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
+    #    )
+    #    print(
+    #        '                          ensembles with numbers less than <num> are excluded from summary file) '
+    #    )
     print('   ')
 
 
@@ -1809,14 +1811,14 @@ def EnsSumMPAS_usage():
     print('   --mach <name>        : Machine name used in the metadata (default = cheyenne)')
     print('   --tslice <num>       : the index into the time dimension (default = 0)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
-    print('                          be excluded or included  (default = exclude_empty.json)')
-    print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
-    print(
-        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
-    )
-    print(
-        '                          ensembles with numbers less than <num> are excluded from summary file) '
-    )
+    print('                          be excluded or included  (default = empty_excluded.json)')
+    print('   --mpi_disable        : Disable mpi mode to run in serial (mpi is enabled by default)')
+    #    print(
+    #        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
+    #    )
+    #    print(
+    #        '                          ensembles with numbers less than <num> are excluded from summary file) '
+    #    )
     print('   ')
 
 
