@@ -582,6 +582,9 @@ def calc_Z(val, avg, stddev, count, flag):
 #
 def read_jsonlist(metajson, method_name):
 
+    # method_name = ES for ensemble summary (CAM, MPAS)
+    #            = ESP for POP ensemble summary
+
     if not os.path.exists(metajson):
         print('\n')
         print(
@@ -604,7 +607,7 @@ def read_jsonlist(metajson, method_name):
             varList = ['JSONERROR']
             exclude = []
             return varList, exclude
-        if method_name == 'ES':
+        if method_name == 'ES':  # CAM or MPAS
             exclude = False
             if 'ExcludedVar' in metainfo:
                 exclude = True
@@ -612,7 +615,7 @@ def read_jsonlist(metajson, method_name):
             elif 'IncludedVar' in metainfo:
                 varList = metainfo['IncludedVar']
             return varList, exclude
-        elif method_name == 'ESP':
+        elif method_name == 'ESP':  # POP
             var2d = metainfo['Var2d']
             var3d = metainfo['Var3d']
             return var2d, var3d
@@ -733,6 +736,189 @@ def get_area_wgt(o_files, is_SE, nlev, popens):
     return output3d, output2d, area_wgt, z_wgt
 
 
+# ofiles are not open
+def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_vertex, opts_dict):
+
+    tslice = opts_dict['tslice']
+
+    nCell = len(var_cell)
+    nEdge = len(var_edge)
+    nVertex = len(var_vertex)
+
+    gmCell = np.zeros((nCell, len(o_files)), dtype=np.float64)
+    gmEdge = np.zeros((nEdge, len(o_files)), dtype=np.float64)
+    gmVertex = np.zeros((nVertex, len(o_files)), dtype=np.float64)
+
+    # get weights for area
+    first_file = nc.Dataset(o_files[0], 'r')
+    input_dims = first_file.dimensions
+
+    # cells weighted by areaCell
+    nCell = len(input_dims['nCells'])
+    cell_wgt = np.zeros(nCell, dtype=np.float64)
+    cell_area = first_file.variables['areaCell']
+    cell_wgt[:] = cell_area[:]
+
+    # edges weighted by dvEdge
+    nEdge = len(input_dims['nEdges'])
+    edge_wgt = np.zeros(nEdge, dtype=np.float64)
+    edge_area = first_file.variables['dvEdge']
+    edge_wgt[:] = edge_area[:]
+
+    # vertices weighted by areaTriangle
+    nVertex = len(input_dims['nVertices'])
+    vertex_wgt = np.zeros(nVertex, dtype=np.float64)
+    vertex_area = first_file.variables['areaTriangle']
+    vertex_wgt[:] = vertex_area[:]
+
+    weights = {}
+    weights['cell'] = cell_wgt
+    weights['edge'] = edge_wgt
+    weights['vertex'] = vertex_wgt
+
+    # WORK BUFFERS?
+    outputCell = np.zeros(nCell, dtype=np.float64)
+    outputEdge = np.zeros(nEdge, dtype=np.float64)
+    outputVertex = np.zeros(nVertex, dtype=np.float64)
+
+    # loop through the input file list to calculate global means
+    for fcount, in_file in enumerate(o_files):
+        fname = nc.Dataset(in_file, 'r')
+
+        (
+            gmCell[:, fcount],
+            gmEdge[:, fcount],
+            gmVertex[:, fcount],
+        ) = calc_global_mean_for_onefile_MPAS(
+            fname,
+            weights,
+            var_cell,
+            var_edge,
+            var_vertex,
+            outputCell,
+            outputEdge,
+            outputVertex,
+            tslice,
+        )
+
+        fname.close()
+
+
+# fname is open
+def calc_global_mean_for_onefile_MPAS(
+    fname, weight_dict, var_cell, var_edge, var_vertex, outputCell, outputEdge, outputVertex, tslice
+):
+
+    nan_flag = False
+
+    # how many of each variable to work on
+    nCellVars = len(var_cell)
+    nEdgeVars = len(var_edge)
+    nVertexVars = len(var_vertex)
+
+    gmCell = np.zeros((nCellVars), dtype=np.float64)
+    gmEdge = np.zeros((nEdgeVars), dtype=np.float64)
+    gmVertex = np.zeros((nVertexVars), dtype=np.float64)
+
+    cell_wgt = weight_dict['cell']
+    edge_wgt = weight_dict['cell']
+    vertex_wgt = weight_dict['cell']
+
+    # calculate global mean for each Cell var
+    # note: some vars are 2d and some 3d
+    for count, vname in enumerate(var_cell):
+        if isinstance(vname, str):
+            vname_d = vname
+        else:
+            vname_d = vname.decode('utf-8')
+        if vname_d not in fname.variables:
+            print(
+                'WARNING 1: the test file does not have the variable ',
+                vname_d,
+                ' that is in the ensemble summary file ...',
+            )
+            continue
+        data = fname.variables[vname_d]
+        if not data[tslice].size:
+            print('ERROR: ', vname_d, ' data is empty => EXITING....')
+            sys.exit(2)
+        if np.any(np.isnan(data)):
+            print('ERROR: ', vname_d, ' data contains NaNs - please check input => EXITING')
+            nan_flag = True
+            continue
+
+        data_slice = data[tslice]
+        a = np.average(data_slice, axis=0, weights=cell_wgt)
+        # if 3d, have to average over levels (unweighted)
+        if len(a.shape) > 0:
+            a = np.average(a)
+        gmCell[count] = a
+
+    # calculate global mean for each Edge var
+    for count, vname in enumerate(var_edge):
+        if isinstance(vname, str):
+            vname_d = vname
+        else:
+            vname_d = vname.decode('utf-8')
+        if vname_d not in fname.variables:
+            print(
+                'WARNING 1: the test file does not have the variable ',
+                vname_d,
+                ' that is in the ensemble summary file ...',
+            )
+            continue
+        data = fname.variables[vname_d]
+        if not data[tslice].size:
+            print('ERROR: ', vname_d, ' data is empty => EXITING....')
+            sys.exit(2)
+        if np.any(np.isnan(data)):
+            print('ERROR: ', vname_d, ' data contains NaNs - please check input => EXITING')
+            nan_flag = True
+            continue
+
+            data_slice = data[tslice]
+        a = np.average(data_slice, axis=0, weights=edge_wgt)
+        # if 3d, have to average over levels (unweighted)
+        if len(a.shape) > 0:
+            a = np.average(a)
+        gmEdge[count] = a
+
+    # calculate global mean for each Edge var
+    for count, vname in enumerate(var_vertex):
+        if isinstance(vname, str):
+            vname_d = vname
+        else:
+            vname_d = vname.decode('utf-8')
+        if vname_d not in fname.variables:
+            print(
+                'WARNING 1: the test file does not have the variable ',
+                vname_d,
+                ' that is in the ensemble summary file ...',
+            )
+            continue
+        data = fname.variables[vname_d]
+        if not data[tslice].size:
+            print('ERROR: ', vname_d, ' data is empty => EXITING....')
+            sys.exit(2)
+        if np.any(np.isnan(data)):
+            print('ERROR: ', vname_d, ' data contains NaNs - please check input => EXITING')
+            nan_flag = True
+            continue
+
+            data_slice = data[tslice]
+        a = np.average(data_slice, axis=0, weights=vertex_wgt)
+        # if 3d, have to average over levels (unweighted)
+        if len(a.shape) > 0:
+            a = np.average(a)
+        gmVertex[count] = a
+
+    if nan_flag:
+        print('ERROR: Nans in input data => EXITING....')
+        sys.exit()
+
+    return gmCell, gmEdge, gmVertex
+
+
 #
 # compute area_wgts, and then loop through all files to call calc_global_means_for_onefile
 # o_files are not open for CAM
@@ -744,10 +930,7 @@ def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pep
 
     n3d = len(var_name3d)
     n2d = len(var_name2d)
-    # tot = n3d + n2d
 
-    #    gm3d = np.zeros((n3d,len(o_files)), dtype=np.float32)
-    #    gm2d = np.zeros((n2d,len(o_files)), dtype=np.float32)
     gm3d = np.zeros((n3d, len(o_files)), dtype=np.float64)
     gm2d = np.zeros((n2d, len(o_files)), dtype=np.float64)
 
@@ -756,35 +939,11 @@ def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pep
     output3d, output2d, area_wgt, z_wgt = get_area_wgt(o_files, is_SE, nlev, popens)
 
     # loop through the input file list to calculate global means
-    # var_name3d=[]
     for fcount, in_file in enumerate(o_files):
 
         fname = nc.Dataset(in_file, 'r')
 
-        if pepsi_gm:
-            # Generate global mean for pepsi challenge data timeseries daily files, they all are 2d variables
-            var_name2d = []
-            for k, v in fname.variables.items():
-                if v.typecode() == 'f':
-                    var_name2d.append(k)
-                    fout = open(k + '_33.txt', 'w')
-                if k == 'time':
-                    ntslice = v[:]
-            for i in np.nditer(ntslice):
-                temp1, temp2 = calc_global_mean_for_onefile(
-                    fname,
-                    area_wgt,
-                    var_name3d,
-                    var_name2d,
-                    output3d,
-                    output2d,
-                    int(i),
-                    is_SE,
-                    nlev,
-                    opts_dict,
-                )
-                fout.write(str(temp2[0]) + '\n')
-        elif popens:
+        if popens:
             gm3d[:, fcount], gm2d[:, fcount] = calc_global_mean_for_onefile_pop(
                 fname,
                 area_wgt,
@@ -799,7 +958,7 @@ def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pep
                 opts_dict,
             )
 
-        else:
+        else:  # CAM
             gm3d[:, fcount], gm2d[:, fcount] = calc_global_mean_for_onefile(
                 fname,
                 area_wgt,
@@ -816,14 +975,13 @@ def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pep
         fname.close()
 
     var_list = []
-    # some valid CAM vars are all small entries(e.g. DTWR_H2O2 and DTWR_H2O4), so we no longer excluse them via var_list
+    # some valid CAM vars are all small entries(e.g. DTWR_H2O2 and DTWR_H2O4), so we no longer exclude them via var_list
 
     return gm3d, gm2d, var_list
 
 
-#
 # Calculate global means for one OCN input file
-# (fname is open) NOT USED ANY LONGER
+# (fname is open) NO LONGER USING GLOBAL MEANS for POP
 def calc_global_mean_for_onefile_pop(
     fname,
     area_wgt,
@@ -843,8 +1001,6 @@ def calc_global_mean_for_onefile_pop(
     n3d = len(var_name3d)
     n2d = len(var_name2d)
 
-    #    gm3d = np.zeros((n3d),dtype=np.float32)
-    #    gm2d = np.zeros((n2d),dtype=np.float32)
     gm3d = np.zeros((n3d), dtype=np.float64)
     gm2d = np.zeros((n2d), dtype=np.float64)
 
@@ -898,8 +1054,6 @@ def calc_global_mean_for_onefile(
     n3d = len(var_name3d)
     n2d = len(var_name2d)
 
-    # gm3d = np.zeros((n3d),dtype=np.float32)
-    # gm2d = np.zeros((n2d),dtype=np.float32)
     gm3d = np.zeros((n3d), dtype=np.float64)
     gm2d = np.zeros((n2d), dtype=np.float64)
 
@@ -1229,6 +1383,9 @@ def getopt_parseconfig(opts, optkeys, caller, opts_dict):
             sys.exit()
         elif opt == '-h' and caller == 'ESP':
             EnsSumPop_usage()
+            sys.exit()
+        elif opt == '-h' and caller == 'ES_MPAS':
+            EnsSumMPAS_usage()
             sys.exit()
         elif opt == '-f':
             opts_dict['orig'] = arg
@@ -1634,7 +1791,33 @@ def EnsSum_usage():
     print('   ')
 
 
-#    print 'Version 3.0.7'
+def EnsSumMPAS_usage():
+    print('\n Creates the summary file for an ensemble of CAM data. \n')
+    print('  ------------------------')
+    print('   Args for pyEnsSumMPAS : ')
+    print('  ------------------------')
+    print('   pyEnsSumMPAS.py')
+    print('   -h                   : prints out this usage message')
+    print('   --verbose            : prints out in verbose mode (off by default)')
+    print('   --sumfile <ofile>    : the output summary data file (default = mpas.ens.summary.nc)')
+    print('   --indir <path>       : directory containing all of the ensemble runs (default = ./)')
+    print('   --esize  <num>       : Number of ensemble members (default = 10)')
+    print('   --tag <name>         : Tag name for the summary metadata (default = v7.1)')
+    print('   --core <name>        : Core name for the summary metadata (default = atmosphere)')
+    print('   --mesh <name>        : Mesh name for the summary metadata (default = mesh)')
+    print('   --model <name>       : Model name for the summary metadata (default = mpas)')
+    print('   --mach <name>        : Machine name used in the metadata (default = cheyenne)')
+    print('   --tslice <num>       : the index into the time dimension (default = 0)')
+    print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
+    print('                          be excluded or included  (default = exclude_empty.json)')
+    print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
+    print(
+        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
+    )
+    print(
+        '                          ensembles with numbers less than <num> are excluded from summary file) '
+    )
+    print('   ')
 
 
 #
