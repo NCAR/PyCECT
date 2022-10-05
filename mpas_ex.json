@@ -1,0 +1,12 @@
+{
+  "ExcludedVar": [
+    "i_rainc",
+    "i_rainnc",
+    "xice",
+    "xtime",
+    "xland",
+    "vegfra",
+    "depv_dt_diab",
+    "sst"
+  ]
+}

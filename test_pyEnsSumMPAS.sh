@@ -14,4 +14,4 @@ conda activate npl
 setenv TMPDIR /glade/scratch/$USER/temp
 mkdir -p $TMPDIR
 
-mpiexec python pyEnsSumMPAS.py --esize 100 --indir /glade/scratch/abaker/mpas_hist --sumfile mpas_sum_ts6.nc  --tslice 6 --tag v7.1 --model mpas  --mach cheyenne --verbose --jsonfile mpas_ex.json
+mpiexec python pyEnsSumMPAS.py --esize 100 --indir /glade/scratch/abaker/mpas_hist --sumfile mpas_sum_ts3.nc  --tslice 3 --tag v7.1 --model mpas  --mach cheyenne --verbose --jsonfile mpas_ex.json
