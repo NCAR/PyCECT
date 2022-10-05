@@ -745,6 +745,8 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     nEdge = len(var_edge)
     nVertex = len(var_vertex)
 
+    # print("MPAS - gen summary", nCell, nEdge, nVertex)
+
     gmCell = np.zeros((nCell, len(o_files)), dtype=np.float64)
     gmEdge = np.zeros((nEdge, len(o_files)), dtype=np.float64)
     gmVertex = np.zeros((nVertex, len(o_files)), dtype=np.float64)
@@ -754,20 +756,20 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     input_dims = first_file.dimensions
 
     # cells weighted by areaCell
-    nCell = len(input_dims['nCells'])
-    cell_wgt = np.zeros(nCell, dtype=np.float64)
+    nCellD = len(input_dims['nCells'])
+    cell_wgt = np.zeros(nCellD, dtype=np.float64)
     cell_area = first_file.variables['areaCell']
     cell_wgt[:] = cell_area[:]
 
     # edges weighted by dvEdge
-    nEdge = len(input_dims['nEdges'])
-    edge_wgt = np.zeros(nEdge, dtype=np.float64)
+    nEdgeD = len(input_dims['nEdges'])
+    edge_wgt = np.zeros(nEdgeD, dtype=np.float64)
     edge_area = first_file.variables['dvEdge']
     edge_wgt[:] = edge_area[:]
 
     # vertices weighted by areaTriangle
-    nVertex = len(input_dims['nVertices'])
-    vertex_wgt = np.zeros(nVertex, dtype=np.float64)
+    nVertexD = len(input_dims['nVertices'])
+    vertex_wgt = np.zeros(nVertexD, dtype=np.float64)
     vertex_area = first_file.variables['areaTriangle']
     vertex_wgt[:] = vertex_area[:]
 
@@ -775,11 +777,6 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     weights['cell'] = cell_wgt
     weights['edge'] = edge_wgt
     weights['vertex'] = vertex_wgt
-
-    # WORK BUFFERS?
-    outputCell = np.zeros(nCell, dtype=np.float64)
-    outputEdge = np.zeros(nEdge, dtype=np.float64)
-    outputVertex = np.zeros(nVertex, dtype=np.float64)
 
     # loop through the input file list to calculate global means
     for fcount, in_file in enumerate(o_files):
@@ -795,21 +792,16 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
             var_cell,
             var_edge,
             var_vertex,
-            outputCell,
-            outputEdge,
-            outputVertex,
             tslice,
         )
 
         fname.close()
 
-        return gmCell, gmEdge, gmVertex
+    return gmCell, gmEdge, gmVertex
 
 
 # fname is open
-def calc_global_mean_for_onefile_MPAS(
-    fname, weight_dict, var_cell, var_edge, var_vertex, outputCell, outputEdge, outputVertex, tslice
-):
+def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, var_vertex, tslice):
 
     nan_flag = False
 
@@ -823,8 +815,8 @@ def calc_global_mean_for_onefile_MPAS(
     gmVertex = np.zeros((nVertexVars), dtype=np.float64)
 
     cell_wgt = weight_dict['cell']
-    edge_wgt = weight_dict['cell']
-    vertex_wgt = weight_dict['cell']
+    edge_wgt = weight_dict['edge']
+    vertex_wgt = weight_dict['vertex']
 
     # calculate global mean for each Cell var
     # note: some vars are 2d and some 3d
@@ -851,10 +843,12 @@ def calc_global_mean_for_onefile_MPAS(
 
         data_slice = data[tslice]
         a = np.average(data_slice, axis=0, weights=cell_wgt)
+        # print("weightd = ", cell_wgt)
         # if 3d, have to average over levels (unweighted)
         if len(a.shape) > 0:
             a = np.average(a)
         gmCell[count] = a
+        # print("a = ", a)
 
     # calculate global mean for each Edge var
     for count, vname in enumerate(var_edge):
@@ -878,7 +872,7 @@ def calc_global_mean_for_onefile_MPAS(
             nan_flag = True
             continue
 
-            data_slice = data[tslice]
+        data_slice = data[tslice]
         a = np.average(data_slice, axis=0, weights=edge_wgt)
         # if 3d, have to average over levels (unweighted)
         if len(a.shape) > 0:
@@ -907,7 +901,7 @@ def calc_global_mean_for_onefile_MPAS(
             nan_flag = True
             continue
 
-            data_slice = data[tslice]
+        data_slice = data[tslice]
         a = np.average(data_slice, axis=0, weights=vertex_wgt)
         # if 3d, have to average over levels (unweighted)
         if len(a.shape) > 0:
@@ -918,6 +912,7 @@ def calc_global_mean_for_onefile_MPAS(
         print('ERROR: Nans in input data => EXITING....')
         sys.exit()
 
+    # print("before ret = ", gmCell)
     return gmCell, gmEdge, gmVertex
 
 

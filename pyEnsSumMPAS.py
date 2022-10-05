@@ -49,7 +49,7 @@ def main(argv):
     opts_dict['mpi_disable'] = False
 
     # This creates the dictionary of input arguments
-    opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ES', opts_dict)
+    opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ES_MPAS', opts_dict)
 
     verbose = opts_dict['verbose']
 
@@ -278,9 +278,7 @@ def main(argv):
     edge_names.sort()
     vertex_names.sort()
 
-    # TEMP to allow testing
-    #    if esize < total:
-    if esize < 1:
+    if esize < total:
         if me.get_rank() == 0:
             print(
                 '**************************************************************************************************'
@@ -299,14 +297,14 @@ def main(argv):
                 '**************************************************************************************************'
             )
         sys.exit()
-    # All vars is cell vars first (sorted), the edge vars, the vertex
+
+    # All vars is cell vars, the edge vars, the vertex
     all_var_names = list(cell_names)
     all_var_names += edge_names
     all_var_names += vertex_names
 
     # Rank 0 - Create new summary ensemble file
     this_sumfile = opts_dict['sumfile']
-
     # check if directory is valid
     sum_dir = os.path.dirname(this_sumfile)
     if len(sum_dir) == 0:
@@ -379,6 +377,7 @@ def main(argv):
         v_sigma_scores_gm = nc_sumfile.createVariable('sigma_scores_gm', 'f8', ('nvars',))
 
         # Assign vars, var3d and var2d
+        # strings need to be the same length...
         if verbose:
             print('VERBOSE: Assigning vars ...')
 
@@ -438,7 +437,7 @@ def main(argv):
     # end of rank=0 work
 
     # All:
-    # Partition the var list
+
     varCell_list_loc = me.partition(cell_names, func=EqualStride(), involved=True)
     varEdge_list_loc = me.partition(edge_names, func=EqualStride(), involved=True)
     varVertex_list_loc = me.partition(vertex_names, func=EqualStride(), involved=True)
@@ -466,7 +465,10 @@ def main(argv):
         # Gather the cell variable results from all processors to the master processor
         slice_index = get_stride_list(len(cell_names), me)
         # Gather global means cell results
+
+        # print("MYRANK = ", me.get_rank(), slice_index)
         gmCell = gather_npArray(gmCell, me, slice_index, (len(cell_names), len(full_in_files)))
+        # print(gmCell)
 
         # Gather the edge variable results from all processors to the master processor
         slice_index = get_stride_list(len(edge_names), me)
@@ -490,6 +492,8 @@ def main(argv):
         # save to summary file
         v_gm[:, :] = gmall[:, :]
 
+        # print("gmall = ", gmall)
+
         # PCA prep and calculation
         (
             mu_gm,
@@ -503,6 +507,7 @@ def main(argv):
         # if PCA calc encounters an error, then remove the summary file and exit
         if b_exit:
             nc_sumfile.close()
+
             os.unlink(this_sumfile)
             print('STATUS: Summary could not be created.')
             sys.exit(2)
