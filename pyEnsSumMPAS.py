@@ -226,7 +226,7 @@ def main(argv):
             if (k not in inc_varlist) and (vars_dict_all[k].typecode() == 'f'):
                 del vars_dict[k]
 
-    # We have cell vars and edge vars and vertex vars (and only want timeseries)
+    # We have cell vars and edge vars and vertex vars (and only want time-dependent vars)
     str_size = 0  # longest var name
     cell_names = []
     edge_names = []
@@ -235,6 +235,8 @@ def main(argv):
     c_dim = 'nCells'
     e_dim = 'nEdges'
     v_dim = 'nVertices'
+
+    # CHECK FOR edge variable u (horizontal wind velocity vector)
 
     # sort to cell, edge, and vertex (and grab max str_size)
     for k, v in vars_dict.items():
@@ -245,13 +247,17 @@ def main(argv):
                 cell_names.append(k)
             elif e_dim in vd:
                 edge_names.append(k)
+                if k == 'u':
+                    print(
+                        'Note: We suggest that variable u (Horizontal normal velocity at edges) be excluded from the summary file in favor of uReconstructZonal and uReconstructMeridional (cell variables).'
+                    )
             elif v_dim in vd:
                 vertex_names.append(k)
             else:
                 print(
                     'Note: variable ',
                     k,
-                    ' contains time but not cells, edges, or vertices (excluded).',
+                    ' contains time but not cells, edges, or vertices (and will be excluded).',
                 )
                 continue
             str_size = max(str_size, len(k))

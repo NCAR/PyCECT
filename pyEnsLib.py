@@ -62,11 +62,6 @@ def calc_rmsz(o_files, var_name3d, var_name2d, opts_dict):
         nlon = len(input_dims['lon'])
         nlat = len(input_dims['lat'])
 
-    #    npts2d=nlat*nlon
-    #    npts3d=nlev*nlat*nlon
-
-    #    print("calc_rmsz: nlev,nlat,nlon,o_files, var3dv var2d ..." , nlev, nlat, nlon, len(o_files), len(var_name3d), len(var_name2d))
-
     output3d = np.zeros((len(o_files), nlev, nlat, nlon), dtype=np.float32)
     output2d = np.zeros((len(o_files), nlat, nlon), dtype=np.float32)
 
@@ -88,7 +83,6 @@ def calc_rmsz(o_files, var_name3d, var_name2d, opts_dict):
 
     # Now lOOP THROUGH 3D
     for vcount, vname in enumerate(var_name3d):
-        #        print(vcount, "   ", vname)
         # Read in vname's data from all ens. files
         for fcount, this_file in enumerate(handle_o_files):
             data = this_file.variables[vname]
@@ -673,11 +667,6 @@ def pop_area_avg(data_orig, weight):
     return a
 
 
-# def get_lev(file_dim_dict,lev_name):
-#    return len(file_dim_dict[lev_name])
-
-#
-# Get dimension 'lev' or 'z_t'
 #
 def get_nlev(o_files, popens):
 
@@ -745,8 +734,6 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     nEdge = len(var_edge)
     nVertex = len(var_vertex)
 
-    # print("MPAS - gen summary", nCell, nEdge, nVertex)
-
     gmCell = np.zeros((nCell, len(o_files)), dtype=np.float64)
     gmEdge = np.zeros((nEdge, len(o_files)), dtype=np.float64)
     gmVertex = np.zeros((nVertex, len(o_files)), dtype=np.float64)
@@ -779,9 +766,9 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     weights['vertex'] = vertex_wgt
 
     # loop through the input file list to calculate global means
+    print('Examining data from files ...')
     for fcount, in_file in enumerate(o_files):
         fname = nc.Dataset(in_file, 'r')
-
         (
             gmCell[:, fcount],
             gmEdge[:, fcount],
@@ -879,7 +866,7 @@ def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, va
             a = np.average(a)
         gmEdge[count] = a
 
-    # calculate global mean for each Edge var
+    # calculate global mean for each Vertex var
     for count, vname in enumerate(var_vertex):
         if isinstance(vname, str):
             vname_d = vname
@@ -912,7 +899,6 @@ def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, va
         print('ERROR: Nans in input data => EXITING....')
         sys.exit()
 
-    # print("before ret = ", gmCell)
     return gmCell, gmEdge, gmVertex
 
 
@@ -1137,7 +1123,6 @@ def calc_global_mean_for_onefile(
     return gm3d, gm2d
 
 
-#
 # Read variable values from ensemble summary file
 #
 def read_ensemble_summary(ens_file):
@@ -1170,7 +1155,9 @@ def read_ensemble_summary(ens_file):
                 for j in i:
                     if j:
                         lcount = lcount + 1
-                ens_var_name.append(i[0:lcount].tostring().strip())
+                tempn = i[0:lcount].tostring().strip()
+                tempn = tempn.decode('UTF-8')
+                ens_var_name.append(tempn)
         elif k == 'var3d':
             num_var3d = len(v)
         elif k == 'var2d':
@@ -1255,6 +1242,91 @@ def read_ensemble_summary(ens_file):
     )
 
 
+# MPAS: Read variable values from ensemble summary file
+#
+def mpas_read_ensemble_summary(ens_file):
+    if os.path.isfile(ens_file):
+        fens = nc.Dataset(ens_file, 'r')
+    else:
+        print('ERROR: file mpas ens summary: ', ens_file, ' not found => EXITING....')
+        sys.exit(2)
+
+    dims = fens.dimensions
+
+    esize = len(dims['ens_size'])
+    str_size = len(dims['str_size'])
+
+    ens_var_name = []
+    std_gm = {}
+    ens_gm = {}
+
+    # Retrieve the variable lists from ensemble file
+    for k, v in fens.variables.items():
+        if k == 'vars':
+            for i in v[0 : len(v)]:
+                lcount = 0
+                for j in i:
+                    if j:
+                        lcount = lcount + 1
+                tempn = i[0:lcount].tostring().strip()
+                tempn = tempn.decode('UTF-8')
+                ens_var_name.append(tempn)
+        elif k == 'varCell':
+            num_varCell = len(v)
+        elif k == 'varEdge':
+            num_varEdge = len(v)
+        elif k == 'varVertex':
+            num_varVertex = len(v)
+
+    num_var = num_varCell + num_varEdge + num_varVertex
+
+    for k, v in fens.variables.items():
+        if k == 'global_mean':
+            m = 0
+            for i in v[0 : len(v)]:
+                temp_name = ens_var_name[m]
+                ens_gm[temp_name] = i
+                m = m + 1
+        elif k == 'standardized_gm':
+            m = 0
+            for i in v[0 : len(v)]:
+                temp_name = ens_var_name[m]
+                std_gm[temp_name] = i
+                m = m + 1
+            # also get as array (not just dictionary)
+            std_gm_array = np.zeros((num_var, esize), dtype=np.float64)
+            std_gm_array[:] = v[:, :]
+        elif k == 'mu_gm':
+            mu_gm = np.zeros(num_var, dtype=np.float64)
+            mu_gm[:] = v[:]
+        elif k == 'sigma_gm':
+            sigma_gm = np.zeros(num_var, dtype=np.float64)
+            sigma_gm[:] = v[:]
+        elif k == 'loadings_gm':
+            loadings_gm = np.zeros((num_var, num_var), dtype=np.float64)
+            loadings_gm[:, :] = v[:, :]
+        elif k == 'sigma_scores_gm':
+            sigma_scores_gm = np.zeros((num_var), dtype=np.float64)
+            sigma_scores_gm[:] = v[:]
+
+    fens.close()
+
+    return (
+        ens_var_name,
+        num_varCell,
+        num_varEdge,
+        num_varVertex,
+        mu_gm,
+        sigma_gm,
+        loadings_gm,
+        sigma_scores_gm,
+        std_gm,
+        std_gm_array,
+        str_size,
+        ens_gm,
+    )
+
+
 #
 # Get the ncol and nlev value from cam run file
 # (frun is not open)
@@ -1264,12 +1336,10 @@ def get_ncol_nlev(frun):
     input_dims = o_frun.dimensions
     ncol = -1
     nlev = -1
-    # ilev = -1
+
     nlat = -1
     nlon = -1
-    # icol = -1
-    # ilat = -1
-    # ilon = -1
+
     for k, v in input_dims.items():
         if k == 'lev':
             nlev = len(v)
@@ -1428,7 +1498,7 @@ def getopt_parseconfig(opts, optkeys, caller, opts_dict):
 #
 # Figure out the scores of the 3 new runs, standardized global means, then multiple by the loadings_gm
 #
-def standardized(gm, mu_gm, sigma_gm, loadings_gm, all_var_names, opts_dict, ens_avg, me):
+def standardized(gm, mu_gm, sigma_gm, loadings_gm, all_var_names, opts_dict, me):
     nvar = gm.shape[0]
     nfile = gm.shape[1]
     sum_std_mean = np.zeros((nvar,), dtype=np.float64)
@@ -1503,7 +1573,8 @@ def printsummary(results, key, name, namerange, thefilecount, variables, label):
     for k, v in results.items():
         if 'status' in v:
             temp0 = v['status']
-            strname = k.decode('utf-8')
+            # strname = k.decode('utf-8')
+            strname = k
             if key in temp0:
                 if thefile in temp0[key]:
                     temp = temp0[key][thefile]
@@ -1515,7 +1586,7 @@ def printsummary(results, key, name, namerange, thefilecount, variables, label):
 
 
 #
-# Insert the range of rmsz score and global mean of the ensemble summary file to the dictionary variables
+# Insert the range of  global mean of the ensemble summary file to the dictionary variables
 #
 def addvariables(variables, var, vrange, thearray):
     if var in variables:
@@ -1528,9 +1599,12 @@ def addvariables(variables, var, vrange, thearray):
 
 
 #
-# Evaluate if the new run rmsz score/global mean in the range of rmsz scores/global mean of the ensemble summary
+# Evaluate if the new run global mean in the range of global mean of the ensemble summary
 #
 def evaluatestatus(name, rangename, variables, key, results, thefile):
+
+    # print("thefile = ", thefile)
+    # print("vars = ", variables)
     totalcount = 0
     for k, v in results.items():
         if name in v and rangename in variables[k]:
@@ -1704,7 +1778,7 @@ def CECT_usage():
     )
     print('   --tslice   <num>        : which time slice to use from input run files (default = 1)')
     print('  ----------------------------')
-    print('   Args for CAM-CECT and UF-CAM-ECT:')
+    print('   Args for CAM-CECT and UF-CAM-ECT and MPAS-ECT:')
     print('  ----------------------------')
     print(
         '   --nPC <num>             : number of principal components (PCs) to check (default = 50, but can\'t be greater than the number of variables)'
@@ -1720,7 +1794,7 @@ def CECT_usage():
     )
     print('   --numRunFile <num>      : total number of runs to include in test (default = 3)')
     print(
-        '   --printVars             : print out variables that fall outsie of the global mean ensemble distribution (off by default)'
+        '   --printVars             : print out variables that fall outside of the global mean ensemble distribution (off by default)'
     )
     print(
         '   --printStdMean          : print out sum of standardized mean of all variables in decreasing order.  If test returns a FAIL, '
@@ -1734,10 +1808,16 @@ def CECT_usage():
     print(
         '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (greater than or equal to numRunFile)'
     )
+
+    print('  ----------------------------')
+    print('   Args for MPAS-CECT (in addition to CAM args):')
+    print('  ----------------------------')
+    print('   --mpas                  : indicate MPAS-ECT (required!)')
+
     print('  ----------------------------')
     print('   Args for POP-CECT :')
     print('  ----------------------------')
-    print('   --popens                : indicate POP-ECT (required!) (tslice will bet set to 0)')
+    print('   --popens or --pop       : indicate POP-ECT (required!) (tslice will bet set to 0)')
     print(
         '   --jsonfile  <file>      : list the json file that specifies variables to test (required!), e.g. pop_ensemble.json'
     )
@@ -1808,12 +1888,6 @@ def EnsSumMPAS_usage():
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded or included  (default = empty_excluded.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (mpi is enabled by default)')
-    #    print(
-    #        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
-    #    )
-    #    print(
-    #        '                          ensembles with numbers less than <num> are excluded from summary file) '
-    #    )
     print('   ')
 
 
@@ -1856,10 +1930,12 @@ def Random_pickup(ifiles, opts_dict):
         nFiles = opts_dict['eet']
     if len(ifiles) > nFiles:
         random_index = random.sample(list(range(0, len(ifiles))), nFiles)
+        print('Randomly selected input files:')
     else:
         random_index = list(range(len(ifiles)))
+        print('Input files:')
     new_ifiles = []
-    print('Randomly pick input files:')
+
     for i in random_index:
         new_ifiles.append(ifiles[i])
         print(ifiles[i])
@@ -1912,7 +1988,7 @@ def Random_pickup_pop(indir, opts_dict, npick):
 
 #
 # Check the false positive rate
-# (needs updating: this is only for ensemble 151)
+# (needs updating: this is only for esize 151)
 def check_falsepositive(opts_dict, sum_index):
 
     fp = np.zeros((opts_dict['nPC'],), dtype=np.float32)
@@ -2000,7 +2076,6 @@ def gather_npArray_pop(npArray, me, array_shape):
             elif len(array_shape) == 5:
                 the_array[rank, :, :, :, :] = npArray[:, :, :, :]
     if me.get_rank() != 0:
-        # message = {'from_rank': me.get_rank(), 'shape': npArray.shape}
         me.collect(npArray)
     me.sync()
     return the_array
@@ -2027,11 +2102,6 @@ def get_files_from_glob(opts_dict):
     n_timeslice = []
     for fname in in_files:
         istr = fname.find('.nc')
-        # print(istr)
-        # print(fname)
-        # print(fname[istr-7:istr-3])
-        # print(fname[istr-2:istr])
-
         temp = (int(fname[istr - 7 : istr - 3]) - base_year) * 12 + int(fname[istr - 2 : istr]) - 1
         n_timeslice.append(temp)
     return n_timeslice, in_files
@@ -2047,7 +2117,7 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
     else:
         nbin = 1
     Zscore = np.zeros((len(Var3d) + len(Var2d), len(ifiles), (nbin)), dtype=np.float32)
-    # Zscore_tran = np.zeros((len(ifiles), len(Var3d) + len(Var2d), (nbin)), dtype=np.float32)
+
     failure_count = np.zeros((len(ifiles)), dtype=np.int)
     sum_file = nc.Dataset(opts_dict['sumfile'], 'r')
     for k, v in sum_file.variables.items():
