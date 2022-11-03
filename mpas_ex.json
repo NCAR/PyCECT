@@ -7,6 +7,9 @@
     "xland",
     "vegfra",
     "depv_dt_diab",
+    "kpbl",
+    "iLev_DT",
+    "u",
     "sst"
   ]
 }
