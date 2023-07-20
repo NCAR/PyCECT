@@ -3,7 +3,7 @@
         {
             "var_name" : "config_coef_3rd_order",
             "namelist_preface": "nhyd_model",
-            "neg_test_orders" : [0, -1, -2, -3],
+            "neg_test_orders" : [],
             "pos_test_orders" : [0.477, 0, -1, -2, -3]
         },
         {

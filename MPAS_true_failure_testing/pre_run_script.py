@@ -79,7 +79,7 @@ for each in test_vars:
         mod_nml.write(f"{init_copy_folder}/{namelist_name}", force=True)
 
         # Create readme
-        with open(test_output_dir + f"/{var_name}_perturb_neg{order}/history_files/readme.txt", 'w') as f:
+        with open(test_output_dir + f"/{var_name}_perturb_{order}/history_files/readme.txt", 'w') as f:
             print(f"Output files in the directory were created using perturbed values", file=f)
             print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
 
