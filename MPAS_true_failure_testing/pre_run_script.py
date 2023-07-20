@@ -45,11 +45,11 @@ for each in test_vars:
     for order in neg_test_orders:
         # create initial conditions copy directories using symlinks
         init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_neg{order}"
-        command = f"cp -as {init_dir}/ {init_copy_folder}"
+        command = f"cp -a {init_dir}/ {init_copy_folder}"
         os.system(command)
 
-        # remove old linked namelist
-        os.remove(f"{init_copy_folder}/{namelist_name}")
+        # # remove old linked namelist
+        # os.remove(f"{init_copy_folder}/{namelist_name}")
 
         # create empty directories for outputs
         output_folder = test_output_dir + f"/{var_name}_perturb_neg{order}"
@@ -72,11 +72,11 @@ for each in test_vars:
     for order in pos_test_orders:
         # create initial conditions copy directories using symlinks
         init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_{order}"
-        command = f"cp -as {init_dir}/ {init_copy_folder}"
+        command = f"cp -a {init_dir}/ {init_copy_folder}"
         os.system(command)
 
-        # remove old linked namelist
-        os.remove(f"{init_copy_folder}/{namelist_name}")
+        # # remove old linked namelist
+        # os.remove(f"{init_copy_folder}/{namelist_name}")
 
         # create empty directories for outputs
         output_folder = test_output_dir + f"/{var_name}_perturb_{order}"
