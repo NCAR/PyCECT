@@ -10,6 +10,7 @@ import f90nml
 import numpy as np
 import copy
 
+# read in testing parameter files
 with open('test_params.json', 'r') as f:
   test_params = json.load(f)
 
@@ -47,9 +48,13 @@ for each in test_vars:
         command = f"cp -as {init_dir}/ {init_copy_folder}"
         os.system(command)
 
+        # remove old linked namelist
+        os.remove(f"init_copy_folder/{namelist_name}")
+
         # create empty directories for outputs
-        os.mkdir(test_output_dir + f"/{var_name}_perturb_neg{order}")
-        os.mkdir(test_output_dir + f"/{var_name}_perturb_neg{order}/history_files")
+        output_folder = test_output_dir + f"/{var_name}_perturb_neg{order}"
+        os.mkdir(output_folder)
+        os.mkdir(output_folder + "/history_files")
 
         # modify namelist params
         mod_nml[namelist_preface][var_name] = default_var_value * (1 - 10.**order)
@@ -61,7 +66,7 @@ for each in test_vars:
             print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
 
         # submit jobs
-        run_cmd = f"python {mpas_src}/ensemble.py -rd {mpas_src} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
+        run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
         os.system(run_cmd)
 
     for order in pos_test_orders:
@@ -70,9 +75,13 @@ for each in test_vars:
         command = f"cp -as {init_dir}/ {init_copy_folder}"
         os.system(command)
 
+        # remove old linked namelist
+        os.remove(f"init_copy_folder/{namelist_name}")
+
         # create empty directories for outputs
-        os.mkdir(test_output_dir + f"/{var_name}_perturb_{order}")
-        os.mkdir(test_output_dir + f"/{var_name}_perturb_{order}/history_files")
+        output_folder = test_output_dir + f"/{var_name}_perturb_{order}"
+        os.mkdir(output_folder)
+        os.mkdir(output_folder + "/history_files")
 
         # modify namelist params
         mod_nml[namelist_preface][var_name] = default_var_value * (1 + 10.**order)
@@ -84,5 +93,6 @@ for each in test_vars:
             print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
 
         # submit jobs
-        run_cmd = f"python {mpas_src}/ensemble.py -rd {mpas_src} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
+        # run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
+        run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} --verify"
         os.system(run_cmd)
