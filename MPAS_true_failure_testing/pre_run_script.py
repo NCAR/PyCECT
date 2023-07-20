@@ -49,7 +49,7 @@ for each in test_vars:
         os.system(command)
 
         # remove old linked namelist
-        os.remove(f"init_copy_folder/{namelist_name}")
+        os.remove(f"{init_copy_folder}/{namelist_name}")
 
         # create empty directories for outputs
         output_folder = test_output_dir + f"/{var_name}_perturb_neg{order}"
@@ -76,7 +76,7 @@ for each in test_vars:
         os.system(command)
 
         # remove old linked namelist
-        os.remove(f"init_copy_folder/{namelist_name}")
+        os.remove(f"{init_copy_folder}/{namelist_name}")
 
         # create empty directories for outputs
         output_folder = test_output_dir + f"/{var_name}_perturb_{order}"
