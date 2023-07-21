@@ -5,7 +5,7 @@
             "namelist_preface": "nhyd_model",
             "neg_test_orders" : [-3],
             "pos_test_orders" : [-3]
-        },
+        }
     ],
     "file_paths" : {
         "mpas_src" : "/glade/work/teopb/MPAS-Model",
