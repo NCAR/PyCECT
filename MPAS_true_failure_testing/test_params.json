@@ -9,10 +9,10 @@
     ],
     "file_paths" : {
         "mpas_src" : "/glade/work/teopb/MPAS-Model",
-        "init_dir" : "/glade/work/teopb/mpas_init_large_files_linked",
+        "init_dir" : "/glade/scracth/teopb/mpas_init_large_files_linked",
         "namelist_name" : "namelist.atmosphere",
-        "init_copy_dir": "/glade/work/teopb/mpas_test_sym_dirs",
-        "test_output_dir": "/glade/scratch/teopb/mpas_test_dirs"
+        "init_copy_dir": "/glade/scratch/teopb/mpas_test_mod_dirs",
+        "test_output_dir": "/glade/scratch/teopb/mpas_test_run_dirs"
     },
     "verify_runs": 3
 }
