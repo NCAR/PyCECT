@@ -66,7 +66,9 @@ for each in test_vars:
             print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
 
         # submit jobs
-        run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
+        # run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
+        run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} --verify"
+
         os.system(run_cmd)
 
     for order in pos_test_orders:
