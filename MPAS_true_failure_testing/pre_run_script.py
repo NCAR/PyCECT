@@ -27,7 +27,7 @@ test_vars = test_params["test_vars"]
 
 orig_namelist = f90nml.read(f"{init_dir}/{namelist_name}")
 
-# print(orig_namelist)
+print(orig_namelist)
 
 for each in test_vars:
     var_name = each["var_name"]
