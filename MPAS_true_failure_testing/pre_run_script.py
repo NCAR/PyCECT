@@ -32,8 +32,9 @@ print(orig_namelist)
 for each in test_vars:
     var_name = each["var_name"]
     namelist_preface = each["namelist_preface"]
-    neg_test_orders = np.array(each["neg_test_orders"])
-    pos_test_orders = np.array(each["pos_test_orders"])
+    # read perturb orders in and set as float to ensure consistent formatting
+    neg_test_orders = np.array(each["neg_test_orders"], dtype=float)
+    pos_test_orders = np.array(each["pos_test_orders"], dtype=float)
 
     default_var_value = orig_namelist[namelist_preface][var_name]
 

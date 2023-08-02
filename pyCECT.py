@@ -28,7 +28,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= printVars popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
          casejson= npick= pepsi_gm pop_tol= web_enabled
-         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= """
+         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= savePCAMat= saveEET="""
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
@@ -72,17 +72,23 @@ def main(argv):
     opts_dict['web_enabled'] = False
     opts_dict['saveResults'] = False
     opts_dict['base_year'] = 1
+    opts_dict['savePCAMat'] = ''
+    opts_dict['saveEET'] = ''
 
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
     caller = 'CECT'
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, caller, opts_dict)
 
+    print(opts_dict)
+
     # ens type
     # cam = opts_dict['cam']
     popens = opts_dict['popens']
     pop = opts_dict['pop']
     mpas = opts_dict['mpas']
+
+    print(f"!test mpas:{mpas}")
 
     if pop or popens:
         ens = 'pop'

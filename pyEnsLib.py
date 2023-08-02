@@ -1670,6 +1670,11 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
             totalcount = totalcount + 1
             sum_index.append(i + 1)
 
+    # save comp_array if filepath is provided
+    if me.get_rank() == 0:
+        if len(opts_dict["savePCAMat"]) > 0:
+            np.save(opts_dict["savePCAMat"], comp_array)
+
     # false_positive=check_falsepositive(opts_dict,sum_index)
 
     # If the length of sum_index is larger than min_PC_fail, the three runs failed.
@@ -1744,6 +1749,10 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
                 decision = 'FAILED'
             else:
                 decision = 'PASSED'
+
+            # save eet if filepath is provided
+            if len(opts_dict["saveEET"]) > 0:
+                np.save(opts_dict["saveEET"], np.array([passes, passes+failures]))
 
     else:
         for j in range(comp_array.shape[1]):
