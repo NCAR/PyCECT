@@ -170,7 +170,7 @@ def main(argv):
             sys.exit()
         print('in_files=', in_files)
     else:
-        wildname = '*' + str(opts_dict['input_globs']) + '*'
+        wildname = '*' + str(opts_dict['input_globs']) + '*.nc'
         # Open all input files
         if os.path.exists(opts_dict['indir']):
             full_glob_str = os.path.join(opts_dict['indir'], wildname)
