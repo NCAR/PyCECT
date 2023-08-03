@@ -1,6 +1,6 @@
 #!/bin/bash
 ### Job Name 
-#PBS -N ect_postrun_2
+#PBS -N ect_postrun_3
 ### Project Code
 #PBS -A NTDD0005
 #PBS -l walltime=08:00:00
