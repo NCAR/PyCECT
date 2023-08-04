@@ -104,20 +104,11 @@ def main(argv):
         print(f"EET rate: {avg_eet_fails}")
 
         # plot perturbation outputs
-
-        # # log perturbation plot
-        # plt.xscale("symlog")
-        # plt.plot(perturbations, avg_pca_fails/PCA_dims)
-        # plt.xticks(perturbations)
-        # plt.axvline(x=0, color='r', label='axvline - full height')
-        # plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Perturbation")
-        # plt.ylabel("PCA Fail Percent")
-        # plt.xlabel("Perturbation Factor")
-        # plt.savefig(f"{test_output_dir}/plots/{var_name}_log_perturb_plot.png")
-        # plt.clf()
-
         plot_data = (var_name, avg_pca_fails/PCA_dims, avg_eet_fails, perturbations, test_vals, default_var_value)
-        plot_test_results(plot_data, test_output_dir)
+        for pca_arg in [True, False]:
+            for perturb_arg in [True, False]:
+                for log_arg in ["log", "linear"]:
+                    plot_test_results(plot_data, test_output_dir, plot_pca=pca_arg, plot_perturbations=perturb_arg, scale = log_arg)
         
 
 
@@ -178,7 +169,8 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
     if scale == "log":
         file_name = file_name + "_log"
 
-    plt.savefig(file_path + "/" + file_name)
+    plt.title(title)
+    plt.savefig(file_path + "/" + file_name, bbox_inches="tight")
 
     plt.clf()
 
