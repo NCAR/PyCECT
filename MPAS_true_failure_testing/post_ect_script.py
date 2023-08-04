@@ -104,78 +104,85 @@ def main(argv):
         print(f"EET rate: {avg_eet_fails}")
 
         # plot perturbation outputs
-        plot_dir_exists = os.path.exists(f"{test_output_dir}/plots")
-        if not plot_dir_exists:
-                # create plot directory
-            os.makedirs(f"{test_output_dir}/plots")
 
-        # log perturbation plot
-        plt.xscale("symlog")
-        plt.plot(perturbations, avg_pca_fails/PCA_dims)
-        plt.xticks(perturbations)
-        plt.axvline(x=0, color='r', label='axvline - full height')
-        plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Perturbation")
-        plt.ylabel("PCA Fail Percent")
-        plt.xlabel("Perturbation Factor")
-        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_perturb_plot.png")
-        plt.clf()
+        # # log perturbation plot
+        # plt.xscale("symlog")
+        # plt.plot(perturbations, avg_pca_fails/PCA_dims)
+        # plt.xticks(perturbations)
+        # plt.axvline(x=0, color='r', label='axvline - full height')
+        # plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Perturbation")
+        # plt.ylabel("PCA Fail Percent")
+        # plt.xlabel("Perturbation Factor")
+        # plt.savefig(f"{test_output_dir}/plots/{var_name}_log_perturb_plot.png")
+        # plt.clf()
+
+        plot_data = (var_name, avg_pca_fails/PCA_dims, avg_eet_fails, perturbations, test_vals, default_var_value)
+        plot_test_results(plot_data, test_output_dir)
         
-        # log value plot
-        plt.xscale("symlog")
-        plt.plot(test_vals, avg_pca_fails/PCA_dims)
-        plt.xticks(test_vals)
-        plt.axvline(x=default_var_value, color='r', label='axvline - full height')
-        plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
-        plt.ylabel("PCA Fail Percent")
-        plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_val_plot.png")
-        plt.clf()
-
-        # non-log value plot
-        plt.xscale("linear")
-        plt.plot(test_vals, avg_pca_fails/PCA_dims)
-        plt.xticks(test_vals)
-        plt.axvline(x=default_var_value, color='r', label='axvline - full height')
-        plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
-        plt.ylabel("PCA Fail Percent")
-        plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/plots/{var_name}_val_plot.png")
-        plt.clf()
-
-        # log EET vs perturbation plot
-        plt.xscale("symlog")
-        plt.plot(perturbations, avg_eet_fails)
-        plt.xticks(perturbations)
-        plt.axvline(x=0, color='r', label='axvline - full height')
-        plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Perturbation")
-        plt.ylabel("EET Fail Percent")
-        plt.xlabel(f"Perturbation Factor")
-        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_eet_perturb_plot.png")
-        plt.clf()
-
-        # log EET vs value plot
-        plt.xscale("symlog")
-        plt.plot(test_vals, avg_eet_fails)
-        plt.xticks(test_vals)
-        plt.axvline(x=default_var_value, color='r', label='axvline - full height')
-        plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
-        plt.ylabel("EET Fail Percent")
-        plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_eet_value_plot.png")
-        plt.clf()
-
-        # non-log EET vs value plot
-        plt.xscale("linear")
-        plt.plot(test_vals, avg_eet_fails)
-        plt.xticks(test_vals)
-        plt.axvline(x=default_var_value, color='r', label='axvline - full height')
-        plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
-        plt.ylabel("EET Fail Percent")
-        plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/plots/{var_name}_eet_value_plot.png")
-        plt.clf()
 
 
+def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_perturbations = True):
+    var_name, pca_failure_rate, eet_failure_rate, perturbations, test_vals, default_val = plot_data
+
+    plot_dir_exists = os.path.exists(f"{file_path}/plots")
+    if not plot_dir_exists:
+        # create plot directory
+        os.makedirs(f"{file_path}/plots")
+
+    file_path = file_path + "/plots"
+
+    if plot_pca:
+        y = pca_failure_rate
+    else:
+        y = eet_failure_rate
+
+    if plot_perturbations:
+        x = perturbations
+        linthresh = np.min(perturbations)
+    else:
+        x = test_vals - default_val
+        linthresh = np.min(perturbations) * default_val
+
+    plt.plot(x, y)
+    plt.axvline(x=0, color='r', label='axvline - full height')
+
+    if scale == "log":
+        plt.xscale("symlog", linthresh=linthresh)
+
+    if plot_perturbations:
+        plt.xticks(perturbations, rotation = 50)
+    else:
+        plt.xticks(x, labels = test_vals, rotation = 50)
+    
+    if plot_pca and plot_perturbations:
+        title = f"MPAS UF-ECT PCA Failure Rate vs\n{var_name} Perturbation"
+        plt.ylabel("PCA Failure Rate")
+        plt.xlabel("Perturbation Magnitude")
+        file_name = f"{var_name}_pca_perturb_plot"
+    elif plot_pca and not plot_perturbations:
+        title = f"MPAS UF-ECT PCA Failure Rate vs\n{var_name} Value"
+        plt.ylabel("PCA Failure Rate")
+        plt.xlabel(f"{var_name} Value")
+        file_name = f"{var_name}_pca_var_value_plot"
+    elif not plot_pca and plot_perturbations:
+        title = f"MPAS UF-ECT EET Failure Rate vs\n{var_name} Perturbation"
+        plt.ylabel("EET Failure Rate")
+        plt.xlabel("Perturbation Magnitude")
+        file_name = f"{var_name}_eet_perturb_plot"
+    else:
+        title = f"MPAS UF-ECT EET Failure Rate vs\n{var_name} Value"
+        plt.ylabel("EET Failure Rate")
+        plt.xlabel(f"{var_name} Value")
+        file_name = f"{var_name}_eet_var_value_plot"
+
+    if scale == "log":
+        file_name = file_name + "_log"
+
+    plt.savefig(file_path + "/" + file_name)
+
+    plt.clf()
+
+    return
 
 
 if __name__ == '__main__':
