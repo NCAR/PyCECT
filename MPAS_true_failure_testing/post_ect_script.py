@@ -94,6 +94,9 @@ def main(argv):
             else:
                 print(f"PCA fail file not found for {var_name}_perturb_{order}")
 
+        # sort outputs in order so they plot correctly
+        perturbations, test_vals, avg_pca_fails, avg_eet_fails = zip(*sorted(zip(perturbations, test_vals, avg_pca_fails, avg_eet_fails)))
+
         print(f"Outputs for {var_name}")
         print(f"Perturbations: {perturbations}")
         print(f"Resulting test values: {test_vals}")
@@ -105,8 +108,6 @@ def main(argv):
         if not plot_dir_exists:
                 # create plot directory
             os.makedirs(f"{test_output_dir}/plots")
-
-        perturbations, test_vals, avg_pca_fails, avg_eet_fails = zip(*sorted(zip(perturbations, test_vals, avg_pca_fails, avg_eet_fails)))
 
         # log perturbation plot
         plt.plot(perturbations, avg_pca_fails/PCA_dims)
