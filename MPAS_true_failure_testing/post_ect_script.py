@@ -94,6 +94,12 @@ def main(argv):
             else:
                 print(f"PCA fail file not found for {var_name}_perturb_{order}")
 
+        print(f"Outputs for {var_name}")
+        print(f"Perturbations: {perturbations}")
+        print(f"Resulting test values: {test_vals}")
+        print(f"Average PCA failures: {avg_pca_fails}")
+        print(f"EET rate: {avg_eet_fails}")
+
         # plot perturbation outputs
         plot_dir_exists = os.path.exists(f"{test_output_dir}/plots")
         if not plot_dir_exists:
@@ -131,7 +137,7 @@ def main(argv):
         plt.xscale("symlog")
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Perturbation")
         plt.ylabel("EET Fail Percent")
-        plt.xlabel(f"Perturbation Facto")
+        plt.xlabel(f"Perturbation Factor")
         plt.savefig(f"{test_output_dir}/plots/{var_name}_log_eet_perturb_plot.png")
         plt.clf()
 
