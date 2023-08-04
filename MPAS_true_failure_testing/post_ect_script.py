@@ -64,7 +64,8 @@ def main(argv):
 
                 pca_fail_file = np.load(f"{test_output_dir}/{test_folder}/pca.npy")
 
-                print(pca_fail_file)
+                with np.printoptions(threshold=np.inf):
+                    print(pca_fail_file)
 
                 avg_pca_fails[i] = np.mean(pca_fail_file.sum(axis=0))
 
