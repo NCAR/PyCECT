@@ -95,6 +95,10 @@ def main(argv):
                 print(f"PCA fail file not found for {var_name}_perturb_{order}")
 
         # plot perturbation outputs
+        plot_dir_exists = os.path.exists(test_output_dir)
+        if not plot_dir_exists:
+                # create plot directory
+            os.makedirs(f"{test_output_dir}/plots")
 
         # log perturbation plot
         plt.plot(perturbations, avg_pca_fails/PCA_dims)
@@ -102,7 +106,7 @@ def main(argv):
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Perturbation")
         plt.ylabel("PCA Fail Percent")
         plt.xlabel("Perturbation Factor")
-        plt.savefig(f"{test_output_dir}/{test_folder}/{var_name}_log_perturb_plot.png")
+        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_perturb_plot.png")
         plt.clf()
         
         # log value plot
@@ -111,7 +115,7 @@ def main(argv):
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
         plt.ylabel("PCA Fail Percent")
         plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/{test_folder}/{var_name}_log_val_plot.png")
+        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_val_plot.png")
         plt.clf()
 
         # non-log value plot
@@ -119,7 +123,7 @@ def main(argv):
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
         plt.ylabel("PCA Fail Percent")
         plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/{test_folder}/{var_name}_val_plot.png")
+        plt.savefig(f"{test_output_dir}/plots/{var_name}_val_plot.png")
         plt.clf()
 
         # log EET vs perturbation plot
@@ -128,7 +132,7 @@ def main(argv):
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Perturbation")
         plt.ylabel("EET Fail Percent")
         plt.xlabel(f"Perturbation Facto")
-        plt.savefig(f"{test_output_dir}/{test_folder}/{var_name}_log_eet_perturb_plot.png")
+        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_eet_perturb_plot.png")
         plt.clf()
 
         # log EET vs value plot
@@ -137,7 +141,7 @@ def main(argv):
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
         plt.ylabel("EET Fail Percent")
         plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/{test_folder}/{var_name}_log_eet_value_plot.png")
+        plt.savefig(f"{test_output_dir}/plots/{var_name}_log_eet_value_plot.png")
         plt.clf()
 
         # log EET vs value plot
@@ -145,7 +149,7 @@ def main(argv):
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
         plt.ylabel("EET Fail Percent")
         plt.xlabel(f"{var_name}")
-        plt.savefig(f"{test_output_dir}/{test_folder}/{var_name}_eet_value_plot.png")
+        plt.savefig(f"{test_output_dir}/plots/{var_name}_eet_value_plot.png")
         plt.clf()
 
 
