@@ -95,7 +95,7 @@ def main(argv):
                 print(f"PCA fail file not found for {var_name}_perturb_{order}")
 
         # plot perturbation outputs
-        plot_dir_exists = os.path.exists(test_output_dir)
+        plot_dir_exists = os.path.exists(f"{test_output_dir}/plots")
         if not plot_dir_exists:
                 # create plot directory
             os.makedirs(f"{test_output_dir}/plots")
