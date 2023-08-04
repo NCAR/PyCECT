@@ -138,10 +138,10 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
 
     if plot_perturbations:
         x = perturbations
-        linthresh = np.min(perturbations)
+        linthresh = np.min(np.abs(perturbations))
     else:
         x = test_vals - default_val
-        linthresh = np.min(perturbations) * default_val
+        linthresh = np.min(np.abs(perturbations)) * default_val
 
     plt.plot(x, y)
     plt.axvline(x=0, color='r', label='axvline - full height')
