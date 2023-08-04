@@ -112,6 +112,7 @@ def main(argv):
         # log perturbation plot
         plt.plot(perturbations, avg_pca_fails/PCA_dims)
         plt.xscale("symlog")
+        plt.xticks(perturbations)
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Perturbation")
         plt.ylabel("PCA Fail Percent")
         plt.xlabel("Perturbation Factor")
@@ -121,6 +122,7 @@ def main(argv):
         # log value plot
         plt.plot(test_vals, avg_pca_fails/PCA_dims)
         plt.xscale("symlog")
+        plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
         plt.ylabel("PCA Fail Percent")
         plt.xlabel(f"{var_name}")
@@ -129,6 +131,8 @@ def main(argv):
 
         # non-log value plot
         plt.plot(test_vals, avg_pca_fails/PCA_dims)
+        plt.xscale("linear")
+        plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
         plt.ylabel("PCA Fail Percent")
         plt.xlabel(f"{var_name}")
@@ -138,6 +142,7 @@ def main(argv):
         # log EET vs perturbation plot
         plt.plot(perturbations, avg_eet_fails)
         plt.xscale("symlog")
+        plt.xticks(perturbations)
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Perturbation")
         plt.ylabel("EET Fail Percent")
         plt.xlabel(f"Perturbation Factor")
@@ -147,14 +152,17 @@ def main(argv):
         # log EET vs value plot
         plt.plot(test_vals, avg_eet_fails)
         plt.xscale("symlog")
+        plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
         plt.ylabel("EET Fail Percent")
         plt.xlabel(f"{var_name}")
         plt.savefig(f"{test_output_dir}/plots/{var_name}_log_eet_value_plot.png")
         plt.clf()
 
-        # log EET vs value plot
+        # non-log EET vs value plot
         plt.plot(test_vals, avg_eet_fails)
+        plt.xscale("linear")
+        plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
         plt.ylabel("EET Fail Percent")
         plt.xlabel(f"{var_name}")
