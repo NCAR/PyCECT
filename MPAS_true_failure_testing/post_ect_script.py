@@ -106,6 +106,8 @@ def main(argv):
                 # create plot directory
             os.makedirs(f"{test_output_dir}/plots")
 
+        perturbations, test_vals, avg_pca_fails, avg_eet_fails = zip(*sorted(zip(perturbations, test_vals, avg_pca_fails, avg_eet_fails)))
+
         # log perturbation plot
         plt.plot(perturbations, avg_pca_fails/PCA_dims)
         plt.xscale("symlog")
