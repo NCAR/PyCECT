@@ -54,7 +54,7 @@ def main(argv):
 
         avg_eet_fails = np.empty(len(perturbations))
 
-        for order, i in enumerate(neg_test_orders):
+        for i, order in enumerate(neg_test_orders):
             # test folder name (change from negative to positive)
             test_folder = f"{var_name}_perturb_neg{order}"
 
@@ -74,7 +74,7 @@ def main(argv):
             else:
                 print(f"PCA fail file not found for {var_name}_perturb_neg{order}")
 
-        for order, i in enumerate(pos_test_orders):
+        for i, order in enumerate(pos_test_orders):
             # test folder name (positive)
             test_folder = f"{var_name}_perturb_{order}"
 
