@@ -95,7 +95,7 @@ def main(argv):
                 print(f"PCA fail file not found for {var_name}_perturb_{order}")
 
         # sort outputs in order so they plot correctly
-        perturbations, test_vals, avg_pca_fails, avg_eet_fails = map(list, zip(*sorted(zip(perturbations, test_vals, avg_pca_fails, avg_eet_fails))))
+        perturbations, test_vals, avg_pca_fails, avg_eet_fails = map(np.array, zip(*sorted(zip(perturbations, test_vals, avg_pca_fails, avg_eet_fails))))
 
         print(f"Outputs for {var_name}")
         print(f"Perturbations: {perturbations}")
