@@ -64,8 +64,8 @@ def main(argv):
 
                 pca_fail_file = np.load(f"{test_output_dir}/{test_folder}/pca.npy")
 
-                with np.printoptions(threshold=np.inf):
-                    print(pca_fail_file)
+                # with np.printoptions(threshold=np.inf):
+                #     print(pca_fail_file)
 
                 avg_pca_fails[i] = np.mean(pca_fail_file.sum(axis=0))
 
@@ -146,7 +146,7 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
     if plot_perturbations:
         plt.xticks(perturbations, rotation = 50)
     else:
-        plt.xticks(x, labels = test_vals, rotation = 50)
+        plt.xticks(x, labels = ["%.5f" % x for x in test_vals], rotation = 50)
     
     if plot_pca and plot_perturbations:
         title = f"MPAS UF-ECT PCA Failure Rate vs\n{var_name} Perturbation"
