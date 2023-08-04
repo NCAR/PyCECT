@@ -110,8 +110,8 @@ def main(argv):
             os.makedirs(f"{test_output_dir}/plots")
 
         # log perturbation plot
-        plt.plot(perturbations, avg_pca_fails/PCA_dims)
         plt.xscale("symlog")
+        plt.plot(perturbations, avg_pca_fails/PCA_dims)
         plt.xticks(perturbations)
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Perturbation")
         plt.ylabel("PCA Fail Percent")
@@ -120,8 +120,8 @@ def main(argv):
         plt.clf()
         
         # log value plot
-        plt.plot(test_vals, avg_pca_fails/PCA_dims)
         plt.xscale("symlog")
+        plt.plot(test_vals, avg_pca_fails/PCA_dims)
         plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
         plt.ylabel("PCA Fail Percent")
@@ -130,8 +130,8 @@ def main(argv):
         plt.clf()
 
         # non-log value plot
-        plt.plot(test_vals, avg_pca_fails/PCA_dims)
         plt.xscale("linear")
+        plt.plot(test_vals, avg_pca_fails/PCA_dims)
         plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT PCA Fails vs\n {var_name} Value")
         plt.ylabel("PCA Fail Percent")
@@ -140,8 +140,8 @@ def main(argv):
         plt.clf()
 
         # log EET vs perturbation plot
-        plt.plot(perturbations, avg_eet_fails)
         plt.xscale("symlog")
+        plt.plot(perturbations, avg_eet_fails)
         plt.xticks(perturbations)
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Perturbation")
         plt.ylabel("EET Fail Percent")
@@ -150,8 +150,8 @@ def main(argv):
         plt.clf()
 
         # log EET vs value plot
-        plt.plot(test_vals, avg_eet_fails)
         plt.xscale("symlog")
+        plt.plot(test_vals, avg_eet_fails)
         plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
         plt.ylabel("EET Fail Percent")
@@ -160,8 +160,8 @@ def main(argv):
         plt.clf()
 
         # non-log EET vs value plot
-        plt.plot(test_vals, avg_eet_fails)
         plt.xscale("linear")
+        plt.plot(test_vals, avg_eet_fails)
         plt.xticks(test_vals)
         plt.title(f"MPAS UF-ECT EET Rate vs\n {var_name} Value")
         plt.ylabel("EET Fail Percent")
