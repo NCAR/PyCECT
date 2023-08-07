@@ -16,7 +16,7 @@
         "true_sum_file": "/glade/work/teopb/PyCECT/mpas_sum_t18_base.nc"
     },
     "verify_runs": 30,
-    "output_timestep": 1,
+    "output_timestep": 0,
     "ect_pca_dims": 40
 
 }
