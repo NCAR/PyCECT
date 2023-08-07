@@ -5,90 +5,97 @@
 # Test parameter should be saved in a json file so they can be easily edited and shared between steps of the procedure.
 
 import json
-import os
+import os, sys
 import f90nml
 import numpy as np
 import copy
 
-# read in testing parameter files
-with open('test_params.json', 'r') as f:
-  test_params = json.load(f)
+def main(argv):
 
-mpas_src = test_params["file_paths"]["mpas_src"]
-init_dir = test_params["file_paths"]["init_dir"]
-namelist_name = test_params["file_paths"]["namelist_name"]
+    # read in testing parameter files
+    with open(argv, 'r') as f:
+        test_params = json.load(f)
 
-init_copy_dir = test_params["file_paths"]["init_copy_dir"]
-test_output_dir = test_params["file_paths"]["test_output_dir"]
+    print(test_params)
 
-verify_runs = test_params["verify_runs"]
+    mpas_src = test_params["file_paths"]["mpas_src"]
+    init_dir = test_params["file_paths"]["init_dir"]
+    namelist_name = test_params["file_paths"]["namelist_name"]
 
-test_vars = test_params["test_vars"]
+    init_copy_dir = test_params["file_paths"]["init_copy_dir"]
+    test_output_dir = test_params["file_paths"]["test_output_dir"]
 
-orig_namelist = f90nml.read(f"{init_dir}/{namelist_name}")
+    verify_runs = test_params["verify_runs"]
 
-print(orig_namelist)
+    test_vars = test_params["test_vars"]
 
-for each in test_vars:
-    var_name = each["var_name"]
-    namelist_preface = each["namelist_preface"]
-    
-    # read perturb orders in and set as float to ensure consistent formatting
-    neg_test_orders = np.array(each["neg_test_orders"], dtype=float)
-    pos_test_orders = np.array(each["pos_test_orders"], dtype=float)
+    orig_namelist = f90nml.read(f"{init_dir}/{namelist_name}")
 
-    default_var_value = orig_namelist[namelist_preface][var_name]
+    print(orig_namelist)
 
-    print(f"Creating directories for {var_name}. Default value: {default_var_value}")
-    print(f"Perturbation orders: negative {neg_test_orders} and positive {pos_test_orders}")
+    for each in test_vars:
+        var_name = each["var_name"]
+        namelist_preface = each["namelist_preface"]
 
-    mod_nml = copy.deepcopy(orig_namelist)
+        # read perturb orders in and set as float to ensure consistent formatting
+        neg_test_orders = np.array(each["neg_test_orders"], dtype=float)
+        pos_test_orders = np.array(each["pos_test_orders"], dtype=float)
 
-    for order in neg_test_orders:
-        # create initial conditions copy directories (helpful if initial directory restart files are absolute symlinks for size)
-        init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_neg{order}"
-        command = f"cp -a {init_dir}/ {init_copy_folder}"
-        os.system(command)
+        default_var_value = orig_namelist[namelist_preface][var_name]
 
-        # create empty directories for outputs
-        output_folder = test_output_dir + f"/{var_name}_perturb_neg{order}"
-        os.mkdir(output_folder)
-        os.mkdir(output_folder + "/history_files")
+        print(f"Creating directories for {var_name}. Default value: {default_var_value}")
+        print(f"Perturbation orders: negative {neg_test_orders} and positive {pos_test_orders}")
 
-        # modify namelist params
-        mod_nml[namelist_preface][var_name] = default_var_value * (1 - 10.**order)
-        mod_nml.write(f"{init_copy_folder}/{namelist_name}", force=True)
+        mod_nml = copy.deepcopy(orig_namelist)
 
-        # Create readme
-        with open(test_output_dir + f"/{var_name}_perturb_neg{order}/history_files/readme.txt", 'w') as f:
-            print(f"Output files in the directory were created using perturbed values", file=f)
-            print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
+        for order in neg_test_orders:
+            # create initial conditions copy directories (helpful if initial directory restart files are absolute symlinks for size)
+            init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_neg{order}"
+            command = f"cp -a {init_dir}/ {init_copy_folder}"
+            os.system(command)
 
-        # submit jobs
-        run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
+            # create empty directories for outputs
+            output_folder = test_output_dir + f"/{var_name}_perturb_neg{order}"
+            os.mkdir(output_folder)
+            os.mkdir(output_folder + "/history_files")
 
-        os.system(run_cmd)
+            # modify namelist params
+            mod_nml[namelist_preface][var_name] = default_var_value * (1 - 10.**order)
+            mod_nml.write(f"{init_copy_folder}/{namelist_name}", force=True)
 
-    for order in pos_test_orders:
-        # create initial conditions copy directories (helpful if initial directory restart files are absolute symlinks for size)
-        init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_{order}"
-        command = f"cp -a {init_dir}/ {init_copy_folder}"
-        os.system(command)
+            # Create readme
+            with open(test_output_dir + f"/{var_name}_perturb_neg{order}/history_files/readme.txt", 'w') as f:
+                print(f"Output files in the directory were created using perturbed values", file=f)
+                print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
 
-        # create empty directories for outputs
-        output_folder = test_output_dir + f"/{var_name}_perturb_{order}"
-        os.mkdir(output_folder)
-        os.mkdir(output_folder + "/history_files")
+            # submit jobs
+            run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
 
-        # modify namelist params
-        mod_nml[namelist_preface][var_name] = default_var_value * (1 + 10.**order)
-        mod_nml.write(f"{init_copy_folder}/{namelist_name}", force=True)
+            os.system(run_cmd)
 
-        # Create readme
-        with open(test_output_dir + f"/{var_name}_perturb_{order}/history_files/readme.txt", 'w') as f:
-            print(f"Output files in the directory were created using perturbed values", file=f)
-            print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
+        for order in pos_test_orders:
+            # create initial conditions copy directories (helpful if initial directory restart files are absolute symlinks for size)
+            init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_{order}"
+            command = f"cp -a {init_dir}/ {init_copy_folder}"
+            os.system(command)
 
-        # submit jobs
-        run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
-        os.system(run_cmd)
+            # create empty directories for outputs
+            output_folder = test_output_dir + f"/{var_name}_perturb_{order}"
+            os.mkdir(output_folder)
+            os.mkdir(output_folder + "/history_files")
+
+            # modify namelist params
+            mod_nml[namelist_preface][var_name] = default_var_value * (1 + 10.**order)
+            mod_nml.write(f"{init_copy_folder}/{namelist_name}", force=True)
+
+            # Create readme
+            with open(test_output_dir + f"/{var_name}_perturb_{order}/history_files/readme.txt", 'w') as f:
+                print(f"Output files in the directory were created using perturbed values", file=f)
+                print(f"{var_name} changed from default value of {default_var_value} to {mod_nml[namelist_preface][var_name]}", file=f)
+
+            # submit jobs
+            run_cmd = f"python {mpas_src}/ensemble.py -rd {output_folder} -c  {init_copy_folder} --verify_size {verify_runs} -s --verify"
+            os.system(run_cmd)
+
+if __name__ == '__main__':
+    main(sys.argv[1])
