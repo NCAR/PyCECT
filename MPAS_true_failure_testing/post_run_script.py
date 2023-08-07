@@ -39,9 +39,8 @@ def main(argv):
         var_name = each["var_name"]
         namelist_preface = each["namelist_preface"]
 
-        # TODO update dtype to float after initial run
-        neg_test_orders = np.array(each["neg_test_orders"])
-        pos_test_orders = np.array(each["pos_test_orders"])
+        neg_test_orders = np.array(each["neg_test_orders"], dtype=float)
+        pos_test_orders = np.array(each["pos_test_orders"], dtype=float)
 
         # default_var_value = orig_namelist[namelist_preface][var_name]
 

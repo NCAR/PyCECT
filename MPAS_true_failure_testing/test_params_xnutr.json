@@ -1,19 +1,7 @@
 {
     "test_vars": [
         {
-            "var_name" : "config_coef_3rd_order",
-            "namelist_preface": "nhyd_model",
-            "neg_test_orders" : [0, -1, -2, -3],
-            "pos_test_orders" : [0.477, 0, -1, -2, -3]
-        },
-        {
-            "var_name" : "config_epssm",
-            "namelist_preface": "nhyd_model",
-            "neg_test_orders" : [0, -1, -2, -3],
-            "pos_test_orders" : [0.477, 0, -1, -2, -3]
-        },
-        {
-            "var_name" : "config_zd",
+            "var_name" : "config_xnutr",
             "namelist_preface": "damping",
             "neg_test_orders" : [0, -1, -2, -3],
             "pos_test_orders" : [0, -1, -2, -3]

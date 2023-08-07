@@ -32,6 +32,7 @@ print(orig_namelist)
 for each in test_vars:
     var_name = each["var_name"]
     namelist_preface = each["namelist_preface"]
+    
     # read perturb orders in and set as float to ensure consistent formatting
     neg_test_orders = np.array(each["neg_test_orders"], dtype=float)
     pos_test_orders = np.array(each["pos_test_orders"], dtype=float)
