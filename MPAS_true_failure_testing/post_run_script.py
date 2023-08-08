@@ -2,6 +2,7 @@
 import json
 import f90nml
 import numpy as np
+from glob import glob
 
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -52,19 +53,30 @@ def main(argv):
 
             # check if pca values have already been calculated for this variable perturbation combo?
             if os.path.isfile(f"{test_output_dir}/{test_folder}/pca.npy"):
+
                 print(f"Existing PCA file found for {var_name}_perturb_neg{order}")
+
             else:
-                # Create symlinks to history files
-                output_folder = test_output_dir + "/" + test_folder
 
-                command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -s '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
+                # Check and make sure history files were written for all verify runs before trying to copy
+                if len(glob(f"{test_output_dir}/{test_folder}/{test_folder}/**/history_full*")) < verify_runs:
+
+                    print(f"Insufficient output files for {test_folder}, categorized as model failure.")
+
+                    with open(f"{test_output_dir}/{test_folder}/history_files/fail.txt", 'w') as f:
+                        f.write("This variable/perturbation combination did not produce output files for all verify members and is thus categorized as a model failure.")
                 
-                os.system(command)
-                # print(command)
+                else:
 
-                # Run PyCECT
-                args_for_ECT = [f'--sumfile={true_sum_file}', f"--indir={test_output_dir}/{test_folder}/history_files", f"--tslice={t_slice}", f"--nPC={PCA_dims}", "--mpas", f"--eet={verify_runs}", f"--savePCAMat={test_output_dir}/{test_folder}/pca.npy", f"--saveEET={test_output_dir}/{test_folder}/eet.npy", "mpi_enable"]
-                ECT(args_for_ECT)
+                    # Create symlinks to history files
+                    command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -s '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
+                    
+                    os.system(command)
+                    # print(command)
+
+                    # Run PyCECT
+                    args_for_ECT = [f'--sumfile={true_sum_file}', f"--indir={test_output_dir}/{test_folder}/history_files", f"--tslice={t_slice}", f"--nPC={PCA_dims}", "--mpas", f"--eet={verify_runs}", f"--savePCAMat={test_output_dir}/{test_folder}/pca.npy", f"--saveEET={test_output_dir}/{test_folder}/eet.npy", "mpi_enable"]
+                    ECT(args_for_ECT)
 
         for order in pos_test_orders:
             # test folder name (positive)
@@ -72,19 +84,29 @@ def main(argv):
 
             # check if pca values have already been calculated for this variable perturbation combo?
             if os.path.isfile(f"{test_output_dir}/{test_folder}/pca.npy"):
-                print(f"Existing PCA file found for {var_name}_perturb_neg{order}")
-            else:
-                # Create symlinks to history files
-                output_folder = test_output_dir + "/" + test_folder
-
-                command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -s '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
                 
-                os.system(command)
-                # print(command)
+                print(f"Existing PCA file found for {var_name}_perturb_neg{order}")
+            
+            else:
 
-                # Run PyCECT
-                args_for_ECT = [f'--sumfile={true_sum_file}', f"--indir={test_output_dir}/{test_folder}/history_files", f"--tslice={t_slice}", f"--nPC={PCA_dims}", "--mpas", f"--eet={verify_runs}", f"--savePCAMat={test_output_dir}/{test_folder}/pca.npy", f"--saveEET={test_output_dir}/{test_folder}/eet.npy", "mpi_enable"]
-                ECT(args_for_ECT)
+                # Check and make sure history files were written for all verify runs before trying to copy
+                if len(glob(f"{test_output_dir}/{test_folder}/{test_folder}/**/history_full*")) < verify_runs:
+
+                    print(f"Insufficient output files for {test_folder}, categorized as model failure.")
+
+                    with open(f"{test_output_dir}/{test_folder}/history_files/fail.txt", 'w') as f:
+                        f.write("This variable/perturbation combination did not produce output files for all verify members and is thus categorized as a model failure.")
+
+                else:
+                    # Create symlinks to history files
+                    command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -s '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
+                    
+                    os.system(command)
+                    # print(command)
+
+                    # Run PyCECT
+                    args_for_ECT = [f'--sumfile={true_sum_file}', f"--indir={test_output_dir}/{test_folder}/history_files", f"--tslice={t_slice}", f"--nPC={PCA_dims}", "--mpas", f"--eet={verify_runs}", f"--savePCAMat={test_output_dir}/{test_folder}/pca.npy", f"--saveEET={test_output_dir}/{test_folder}/eet.npy", "mpi_enable"]
+                    ECT(args_for_ECT)
 
 
 
