@@ -59,7 +59,7 @@ def main(argv):
             else:
 
                 # Check and make sure history files were written for all verify runs before trying to copy
-                if len(glob(f"{test_output_dir}/{test_folder}/{test_folder}/**/history_full*")) < verify_runs:
+                if len(glob(f"{test_output_dir}/{test_folder}/**/history_full*")) < verify_runs:
 
                     print(f"Insufficient output files for {test_folder}, categorized as model failure.")
 
@@ -90,7 +90,7 @@ def main(argv):
             else:
 
                 # Check and make sure history files were written for all verify runs before trying to copy
-                if len(glob(f"{test_output_dir}/{test_folder}/{test_folder}/**/history_full*")) < verify_runs:
+                if len(glob(f"{test_output_dir}/{test_folder}/**/history_full*")) < verify_runs:
 
                     print(f"Insufficient output files for {test_folder}, categorized as model failure.")
 
