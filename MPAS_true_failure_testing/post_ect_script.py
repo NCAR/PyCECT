@@ -137,26 +137,25 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
 
     file_path = file_path + "/plots"
 
-    # remove indices of tests where model failed to complete test run
-    filtered_pca_failure_rate = np.delete(pca_failure_rate, model_run_failures)
-    filtered_eet_failure_rate = np.delete(eet_failure_rate, model_run_failures)
-    filtered_perturbations = np.delete(perturbations, model_run_failures)
-    filtered_test_vals = np.delete(test_vals, model_run_failures)
-
     if plot_pca:
-        y = filtered_pca_failure_rate
+        y = pca_failure_rate
     else:
-        y = filtered_eet_failure_rate
+        y = eet_failure_rate
 
     if plot_perturbations:
-        x = filtered_perturbations
+        x = perturbations
         linthresh = np.min(np.abs(perturbations))
     else:
-        x = filtered_test_vals - default_val
+        x = test_vals - default_val
         linthresh = np.min(np.abs(perturbations)) * default_val
 
+    # remove indices of tests where model failed to complete test run
+    filtered_x = np.delete(x, model_run_failures)
+    filtered_y = np.delete(y, model_run_failures)
+
     # plt.plot(x, y)
-    plt.scatter(x, y)
+
+    plt.scatter(filtered_x, filtered_y)
     plt.axvline(x=0, color='b', label="Default Variable Value")
 
     for i, model_failure in enumerate(model_run_failures):
