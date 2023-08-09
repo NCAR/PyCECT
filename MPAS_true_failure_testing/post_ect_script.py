@@ -53,13 +53,15 @@ def main(argv):
 
         avg_eet_fails = np.empty(len(perturbations))
 
+        model_run_failures = np.full(len(perturbations), False)
+
         for i, order in enumerate(neg_test_orders):
             # test folder name (change from negative to positive)
             test_folder = f"{var_name}_perturb_neg{order}"
 
             # check if pca file exists and read in pca and eet files if so
             if os.path.isfile(f"{test_output_dir}/{test_folder}/pca.npy"):
-                print(f"PCA fail file found for {var_name}_perturb_neg{order}")
+                print(f"PCA failure file found for {var_name}_perturb_neg{order}")
 
                 pca_fail_file = np.load(f"{test_output_dir}/{test_folder}/pca.npy")
 
@@ -73,8 +75,14 @@ def main(argv):
                 avg_eet_fails[i] = (eet_file[1] - eet_file[0])/eet_file[1]
 
 
+            # check if fail file is found
+            elif os.path.isfile(f"{test_output_dir}/{test_folder}/fail.txt"):
+                print(f"Model fail file found for {var_name}_perturb_neg{order}")
+                model_run_failures[i] = 1
+
             else:
-                print(f"PCA fail file not found for {var_name}_perturb_neg{order}")
+                print(f'''Neither PCA failure file nor Model run failure file found found for {var_name}_perturb_neg{order} \n
+                      Did you run the post_run_script.py?''')
 
         for i, order in enumerate(pos_test_orders):
             # test folder name (positive)
@@ -92,9 +100,14 @@ def main(argv):
 
                 avg_eet_fails[i + len(neg_test_orders)] = (eet_file[1] - eet_file[0])/eet_file[1]
 
+            # check if fail file is found
+            elif os.path.isfile(f"{test_output_dir}/{test_folder}/fail.txt"):
+                print(f"Model fail file found for {var_name}_perturb_neg{order}")
+                model_run_failures[i + len(neg_test_orders)] = 1
 
             else:
-                print(f"PCA fail file not found for {var_name}_perturb_{order}")
+                print(f'''Neither PCA failure file nor Model run failure file found found for {var_name}_perturb_{order} \n
+                      Did you run the post_run_script.py?''')
 
         # sort outputs in order so they plot correctly
         perturbations, test_vals, avg_pca_fails, avg_eet_fails = map(np.array, zip(*sorted(zip(perturbations, test_vals, avg_pca_fails, avg_eet_fails))))
@@ -106,7 +119,7 @@ def main(argv):
         print(f"EET rate: {avg_eet_fails}")
 
         # plot perturbation outputs
-        plot_data = (var_name, avg_pca_fails/PCA_dims, avg_eet_fails, perturbations, test_vals, default_var_value)
+        plot_data = (var_name, model_run_failures, len(neg_test_orders), avg_pca_fails/PCA_dims, avg_eet_fails, perturbations, test_vals, default_var_value)
         for pca_arg in [True, False]:
             for perturb_arg in [True, False]:
                 for log_arg in ["log", "linear"]:
@@ -115,7 +128,7 @@ def main(argv):
 
 
 def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_perturbations = True):
-    var_name, pca_failure_rate, eet_failure_rate, perturbations, test_vals, default_val = plot_data
+    var_name, model_run_failures, num_neg_test_orders, pca_failure_rate, eet_failure_rate, perturbations, test_vals, default_val = plot_data
 
     plot_dir_exists = os.path.exists(f"{file_path}/plots")
     if not plot_dir_exists:
@@ -123,6 +136,12 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
         os.makedirs(f"{file_path}/plots")
 
     file_path = file_path + "/plots"
+
+    # remove indices of tests where model failed to complete test run
+    filtered_pca_failure_rate = np.delete(pca_failure_rate, model_run_failures)
+    filtered_eet_failure_rate = np.delete(eet_failure_rate, model_run_failures)
+    filtered_perturbations = np.delete(perturbations, model_run_failures)
+    filtered_test_vals = np.delete(test_vals, model_run_failures)
 
     if plot_pca:
         y = pca_failure_rate
@@ -136,16 +155,24 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
         x = test_vals - default_val
         linthresh = np.min(np.abs(perturbations)) * default_val
 
-    plt.plot(x, y)
-    plt.axvline(x=0, color='r', label='axvline - full height')
+    # plt.plot(x, y)
+    plt.scatter(x, y)
+    plt.axvline(x=0, color='b', label="Default Variable Value")
+
+    for i, model_failure in enumerate(model_run_failures):
+        if model_failure:
+            plt.axvline(x=x[i], color='r', label="Model Run Failure")
+
 
     if scale == "log":
         plt.xscale("symlog", linthresh=linthresh)
 
     if plot_perturbations:
-        plt.xticks(perturbations, rotation = 50)
+        perturbations_with_zero = np.insert(perturbations, num_neg_test_orders, 0)
+        plt.xticks(perturbations_with_zero, rotation = 50)
     else:
-        plt.xticks(x, labels = ["%.5f" % x for x in test_vals], rotation = 50)
+        test_vals_with_default = np.insert(test_vals, num_neg_test_orders, default_val)
+        plt.xticks(test_vals_with_default - default_val, labels = ["%.5f" % z for z in test_vals_with_default], rotation = 50)
     
     if plot_pca and plot_perturbations:
         title = f"MPAS UF-ECT PCA Failure Rate vs\n{var_name} Perturbation"
@@ -172,6 +199,7 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
         file_name = file_name + "_log"
 
     plt.title(title)
+    plt.legend()
     plt.savefig(file_path + "/" + file_name, bbox_inches="tight")
 
     plt.clf()
