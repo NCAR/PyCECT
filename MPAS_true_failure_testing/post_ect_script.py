@@ -144,15 +144,15 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
     filtered_test_vals = np.delete(test_vals, model_run_failures)
 
     if plot_pca:
-        y = pca_failure_rate
+        y = filtered_pca_failure_rate
     else:
-        y = eet_failure_rate
+        y = filtered_eet_failure_rate
 
     if plot_perturbations:
-        x = perturbations
+        x = filtered_perturbations
         linthresh = np.min(np.abs(perturbations))
     else:
-        x = test_vals - default_val
+        x = filtered_test_vals - default_val
         linthresh = np.min(np.abs(perturbations)) * default_val
 
     # plt.plot(x, y)
