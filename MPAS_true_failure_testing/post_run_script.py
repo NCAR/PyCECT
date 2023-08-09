@@ -63,7 +63,7 @@ def main(argv):
 
                     print(f"Insufficient output files for {test_folder}, categorized as model failure.")
 
-                    with open(f"{test_output_dir}/{test_folder}/history_files/fail.txt", 'w') as f:
+                    with open(f"{test_output_dir}/{test_folder}/fail.txt", 'w') as f:
                         f.write("This variable/perturbation combination did not produce output files for all verify members and is thus categorized as a model failure.")
                 
                 else:
@@ -94,7 +94,7 @@ def main(argv):
 
                     print(f"Insufficient output files for {test_folder}, categorized as model failure.")
 
-                    with open(f"{test_output_dir}/{test_folder}/history_files/fail.txt", 'w') as f:
+                    with open(f"{test_output_dir}/{test_folder}/fail.txt", 'w') as f:
                         f.write("This variable/perturbation combination did not produce output files for all verify members and is thus categorized as a model failure.")
 
                 else:
