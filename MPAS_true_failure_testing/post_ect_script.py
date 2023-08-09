@@ -155,7 +155,8 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
 
     # plt.plot(x, y)
 
-    plt.scatter(filtered_x, filtered_y)
+    plt.scatter(filtered_x, filtered_y, label="Test Locations")
+    plt.plot(filtered_x, filtered_y, alpha = .2, linestyle="dashed")
     plt.axvline(x=0, color='b', label="Default Variable Value")
 
     for i, model_failure in enumerate(model_run_failures):
