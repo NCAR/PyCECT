@@ -31,8 +31,8 @@ def main(argv):
 
     orig_namelist = f90nml.read(f"{init_dir}/{namelist_name}")
 
-    print("Original Namelist:")
-    print(orig_namelist)
+    # print("Original Namelist:")
+    # print(orig_namelist)
 
     for each in test_vars:
         print(f'Test type: {each["test_type"]}')
