@@ -42,7 +42,7 @@ def main(argv):
         init_dir = test_params["file_paths"]["init_dir"]
 
         # binary test
-        if each["test_type"] == "binary test":
+        if each["test_type"] == "binary_test":
             # set test specific directories
             if len(each["mod_mpas_src"]) > 0:
                 mpas_src = each["mod_mpas_src"]
