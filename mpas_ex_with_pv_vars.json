@@ -1,0 +1,30 @@
+{
+  "ExcludedVar": [
+    "i_rainc",
+    "i_rainnc",
+    "xice",
+    "xtime",
+    "xland",
+    "vegfra",
+    "depv_dt_diab",
+    "kpbl",
+    "iLev_DT",
+    "u",
+    "sst",
+    "u_pv",
+    "v_pv",
+    "theta_pv",
+    "vort_pv",
+    "depv_dt_lw",
+    "depv_dt_lw",
+    "depv_dt_sw",
+    "depv_dt_bl",
+    "depv_dt_cu",
+    "depv_dt_mix",
+    "dtheta_dt_mp",
+    "depv_dt_mp",
+    "depv_dt_fric",
+    "depv_dt_diab_pv",
+    "depv_dt_fric_pv"
+  ]
+}
