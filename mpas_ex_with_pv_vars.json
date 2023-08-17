@@ -25,6 +25,7 @@
     "depv_dt_mp",
     "depv_dt_fric",
     "depv_dt_diab_pv",
-    "depv_dt_fric_pv"
+    "depv_dt_fric_pv",
+    "ertel_pv"
   ]
 }
