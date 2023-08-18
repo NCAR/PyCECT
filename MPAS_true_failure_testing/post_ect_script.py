@@ -172,7 +172,7 @@ def plot_test_results(plot_data, file_path, scale="log", plot_pca = True, plot_p
         plt.xticks(perturbations_with_zero, rotation = 50)
     else:
         test_vals_with_default = np.insert(test_vals, num_neg_test_orders, default_val)
-        plt.xticks(test_vals_with_default - default_val, labels = ["%.5f" % z for z in test_vals_with_default], rotation = 50)
+        plt.xticks(test_vals_with_default - default_val, labels = ["%.5g" % z for z in test_vals_with_default], rotation = 50)
     
     if plot_pca and plot_perturbations:
         title = f"MPAS UF-ECT PCA Failure Rate vs\n{var_name} Perturbation"
