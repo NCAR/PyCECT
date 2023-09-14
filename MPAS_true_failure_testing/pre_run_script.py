@@ -56,7 +56,7 @@ def main(argv):
             print(f"Creating directories for {test_name} test")
 
             init_copy_folder = f"{init_copy_dir}/{test_name}"
-            command = f"cp -a {init_dir}/ {init_copy_folder}"
+            command = f"cp -aT {init_dir}/ {init_copy_folder}"
             os.system(command)
 
             # create empty directories for outputs
