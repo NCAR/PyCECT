@@ -49,6 +49,9 @@ def main(argv):
             if len(each["mod_mpas_init_dir"]) > 0:
                 init_dir = each["mod_mpas_init_dir"]
 
+            print(f"MPAS source: {mpas_src}")
+            print(f"MPAS Init Directory: {init_dir}")
+
             test_name = each["test_name"]
             print(f"Creating directories for {test_name} test")
 
