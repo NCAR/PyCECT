@@ -1,0 +1,23 @@
+{
+    "test_vars": [
+        {
+            "test_type": "binary_test",
+            "test_name" : "derecho",
+            "test_title": "Derecho",
+            "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_derecho",
+            "mod_mpas_init_dir": ""
+        }
+    ],
+    "file_paths" : {
+        "mpas_src" : "/glade/work/teopb/MPAS-Model",
+        "init_dir" : "/glade/work/teopb/mpas_init_large_files_linked",
+        "namelist_name" : "namelist.atmosphere",
+        "init_copy_dir": "/glade/scratch/teopb/mpas_test_mod_dirs",
+        "test_output_dir": "/glade/scratch/teopb/mpas_test_run_dirs",
+        "true_sum_file": "/glade/work/teopb/PyCECT/mpas_sum_t18_base.nc"
+    },
+    "verify_runs": 30,
+    "output_timestep": 0,
+    "ect_pca_dims": 40
+
+}
