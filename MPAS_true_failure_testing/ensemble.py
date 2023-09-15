@@ -175,17 +175,20 @@ def main(argv):
             all_lines = f.readlines()
 
             for line in all_lines:
+                print(line)
                 # find job name
                 if line.find("#PBS -N") >= 0:
                     old_name = line
 
                 # find execute mpt line
                 if line.find("mpiexec_mpt") >= 0:
+                    print("version1")
                     old_execute_line = line
                     execute_line = execute_line_1
 
                 # find execute mpt line
                 elif line.find("mpiexec") >= 0:
+                    print("version2")
                     old_execute_line = line
                     execute_line = execute_line_2
 
