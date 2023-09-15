@@ -77,7 +77,7 @@ def main(argv):
                     # print(command)
 
                     # Run PyCECT
-                    args_for_ECT = [f'--sumfile={true_sum_file}', f"--indir={test_output_dir}/{test_name}/history_files", f"--tslice={t_slice}", f"--nPC={PCA_dims}", "--mpas", f"--eet={verify_runs}", f"--savePCAMat={test_output_dir}/{test_name}/pca.npy", f"--saveEET={test_output_dir}/{test_name}/eet.npy", "mpi_enable"]
+                    args_for_ECT = [f'--sumfile={true_sum_file}', f"--indir={test_output_dir}/{test_name}/history_files", f"--tslice={t_slice}", f"--nPC={PCA_dims}", "--mpas", f"--eet={verify_runs}", f"--savePCAMat={test_output_dir}/{test_name}/pca.npy", f"--saveEET={test_output_dir}/{test_name}/eet.npy", "--mpi_enable", "--printVars"]
                     ECT(args_for_ECT)
 
         # Namelist Float test
