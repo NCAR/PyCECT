@@ -169,7 +169,8 @@ def main(argv):
 
         #modify the run script for cheyenne
         new_name = "#PBS -N  mpas." + iens + "\n"
-        execute_line = f"mpiexec_mpt {stat_dir}/atmosphere_model"
+        execute_line_1 = f"mpiexec_mpt {stat_dir}/atmosphere_model"
+        execute_line_2 = f"mpiexec {stat_dir}/atmosphere_model"
         with open(run_script, "r") as f:
             all_lines = f.readlines()
 
@@ -178,9 +179,15 @@ def main(argv):
                 if line.find("#PBS -N") >= 0:
                     old_name = line
 
-                # find execute line
+                # find execute mpt line
                 if line.find("mpiexec_mpt") >= 0:
                     old_execute_line = line
+                    execute_line = execute_line_1
+
+                # find execute mpt line
+                elif line.find("mpiexec") >= 0:
+                    old_execute_line = line
+                    execute_line = execute_line_2
 
         with open(run_script, 'r') as r:
             text = r.read().replace(old_name, new_name)
