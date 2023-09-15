@@ -5,7 +5,7 @@
             "test_name" : "derecho",
             "test_title": "Derecho",
             "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_derecho",
-            "mod_mpas_init_dir": ""
+            "mod_mpas_init_dir": "/glade/work/teopb/MPAS_changed_init_dirs/MPAS_derecho"
         }
     ],
     "file_paths" : {
