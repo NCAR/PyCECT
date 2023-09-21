@@ -508,6 +508,7 @@ def pre_PCA(gm_orig, all_var_names, whole_list, me):
             # need to exit
             b_exit = True
 
+    # COMPUTE PCA
     if not b_exit:
         # find principal components
         loadings_gm = princomp(standardized_global_mean)
@@ -1512,28 +1513,8 @@ def standardized(gm, mu_gm, sigma_gm, loadings_gm, all_var_names, opts_dict, me)
     new_scores = np.dot(loadings_gm.T.astype(np.float64), standardized_mean)
 
     var_list = []
-    sorted_sum_std_mean = np.argsort(sum_std_mean)[::-1]
-    if opts_dict['printStdMean']:
-        if me.get_rank() == 0:
-            print(' ')
-            print('************************************************************************')
-            print(' Sum of standardized mean of all variables in decreasing order')
-            print('************************************************************************')
-        for var in range(nvar):
-            var_list.append(all_var_names[sorted_sum_std_mean[var]])
-            vname = all_var_names[sorted_sum_std_mean[var]]
-            if me.get_rank() == 0:
+    # sorted_sum_std_mean = np.argsort(sum_std_mean)[::-1]
 
-                if isinstance(vname, str):
-                    vname_d = vname
-                else:
-                    vname_d = vname.decode('utf-8')
-
-                print(
-                    '{:>15}'.format(vname_d),
-                    '{0:9.2e}'.format(sum_std_mean[sorted_sum_std_mean[var]]),
-                )
-                print(' ')
     return new_scores, var_list, standardized_mean
 
 
@@ -1581,7 +1562,7 @@ def printsummary(results, key, name, namerange, thefilecount, variables, label):
                     if temp < 1:
                         print(' ')
                         print(
-                            f' {strname}: {v[name][thefile]:.2e} outside of of [{variables[k][namerange][0]:2e}, {variables[k][namerange][1]}]'
+                            f' {strname}: {v[name][thefile]:2e} outside of [{variables[k][namerange][0]:2e}, {variables[k][namerange][1]:2e}]'
                         )
 
 
@@ -1672,8 +1653,8 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
 
     # save comp_array if filepath is provided
     if me.get_rank() == 0:
-        if len(opts_dict["savePCAMat"]) > 0:
-            np.save(opts_dict["savePCAMat"], comp_array)
+        if len(opts_dict['savePCAMat']) > 0:
+            np.save(opts_dict['savePCAMat'], comp_array)
 
     # false_positive=check_falsepositive(opts_dict,sum_index)
 
@@ -1751,8 +1732,8 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
                 decision = 'PASSED'
 
             # save eet if filepath is provided
-            if len(opts_dict["saveEET"]) > 0:
-                np.save(opts_dict["saveEET"], np.array([passes, passes+failures]))
+            if len(opts_dict['saveEET']) > 0:
+                np.save(opts_dict['saveEET'], np.array([passes, passes + failures]))
 
     else:
         for j in range(comp_array.shape[1]):
@@ -1804,9 +1785,6 @@ def CECT_usage():
     print('   --numRunFile <num>      : total number of runs to include in test (default = 3)')
     print(
         '   --printVars             : print out variables that fall outside of the global mean ensemble distribution (off by default)'
-    )
-    print(
-        '   --printStdMean          : print out sum of standardized mean of all variables in decreasing order.  If test returns a FAIL, '
     )
     print(
         '                             then output associated box plots (off by default) - requires Python seaborn package'

@@ -19,8 +19,6 @@ from pyTools import Duplicate, EqualLength, EqualStride
 
 def main(argv):
 
-    # cumul is not being used currently
-
     # Get command line stuff and store in a dictionary
     s = 'tag= compset= esize= tslice= res= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm gmonly popens regx= startMon= endMon= fIndex= mpi_disable'
     optkeys = s.split()
@@ -50,7 +48,6 @@ def main(argv):
     opts_dict['maxnorm'] = False
     opts_dict['gmonly'] = True
     opts_dict['popens'] = False
-    opts_dict['cumul'] = False
     opts_dict['regx'] = 'test'
     opts_dict['startMon'] = 1
     opts_dict['endMon'] = 1
@@ -149,13 +146,6 @@ def main(argv):
         if me.get_rank() == 0:
             print('ERROR: Input directory: ', input_dir, ' not found')
         sys.exit(2)
-
-    if opts_dict['cumul']:
-        if opts_dict['regx']:
-            in_files_list = get_cumul_filelist(opts_dict, opts_dict['indir'], opts_dict['regx'])
-        in_files = me.partition(in_files_list, func=EqualLength(), involved=True)
-        if me.get_rank() == 0 and verbose:
-            print('VERBOSE: in_files  = ', in_files)
 
     # Check full file names in input directory (don't open yet)
     full_in_files = []
@@ -430,13 +420,8 @@ def main(argv):
 
     # All:
     # tslice = opts_dict['tslice']
-    if not opts_dict['cumul']:
-        # Partition the var list
-        var3_list_loc = me.partition(d3_var_names, func=EqualStride(), involved=True)
-        var2_list_loc = me.partition(d2_var_names, func=EqualStride(), involved=True)
-    else:
-        var3_list_loc = d3_var_names
-        var2_list_loc = d2_var_names
+    var3_list_loc = me.partition(d3_var_names, func=EqualStride(), involved=True)
+    var2_list_loc = me.partition(d2_var_names, func=EqualStride(), involved=True)
 
     # close first_file
     first_file.close()
@@ -444,47 +429,35 @@ def main(argv):
     # Calculate global means #
     if me.get_rank() == 0 and verbose:
         print('VERBOSE: Calculating global means .....')
-    if not opts_dict['cumul']:
-        gm3d, gm2d, var_list = pyEnsLib.generate_global_mean_for_summary(
-            full_in_files, var3_list_loc, var2_list_loc, is_SE, False, opts_dict
-        )
+
+    gm3d, gm2d, var_list = pyEnsLib.generate_global_mean_for_summary(
+        full_in_files, var3_list_loc, var2_list_loc, is_SE, False, opts_dict
+    )
+
     if me.get_rank() == 0 and verbose:
         print('VERBOSE: Finished calculating global means .....')
 
     # gather to rank = 0
     if opts_dict['mpi_enable']:
 
-        if not opts_dict['cumul']:
-            # Gather the 3d variable results from all processors to the master processor
-            slice_index = get_stride_list(len(d3_var_names), me)
+        # Gather the 3d variable results from all processors to the master processor
+        slice_index = get_stride_list(len(d3_var_names), me)
 
-            # Gather global means 3d results
-            gm3d = gather_npArray(gm3d, me, slice_index, (len(d3_var_names), len(full_in_files)))
+        # Gather global means 3d results
+        gm3d = gather_npArray(gm3d, me, slice_index, (len(d3_var_names), len(full_in_files)))
 
-            # Gather 2d variable results from all processors to the master processor
-            slice_index = get_stride_list(len(d2_var_names), me)
+        # Gather 2d variable results from all processors to the master processor
+        slice_index = get_stride_list(len(d2_var_names), me)
 
-            # Gather global means 2d results
-            gm2d = gather_npArray(gm2d, me, slice_index, (len(d2_var_names), len(full_in_files)))
+        # Gather global means 2d results
+        gm2d = gather_npArray(gm2d, me, slice_index, (len(d2_var_names), len(full_in_files)))
 
-            # gather variables ro exclude (in pre_pca)
-            var_list = gather_list(var_list, me)
-
-        else:
-            # cumul is not being used and temp1 and temp2 are undefined
-            # gmall = np.concatenate((temp1, temp2), axis=0)
-            # gmall = pyEnsLib.gather_npArray_pop(
-            #    gmall, me, (me.get_size(), len(d3_var_names) + len(d2_var_names))
-            # )
-            print('Warning: cumul not supported')
+        # gather variables ro exclude (in pre_pca)
+        var_list = gather_list(var_list, me)
 
     # rank =0 : complete calculations for summary file
     if me.get_rank() == 0:
-        if not opts_dict['cumul']:
-            gmall = np.concatenate((gm3d, gm2d), axis=0)
-        else:
-            gmall_temp = np.transpose(gmall[:, :])
-            gmall = gmall_temp
+        gmall = np.concatenate((gm3d, gm2d), axis=0)
 
         # PCA prep and calculation
         (
@@ -530,8 +503,7 @@ def get_cumul_filelist(opts_dict, indir, regx):
                 res = [f for f in os.listdir(indir) if re.search(regx, f)]
                 in_files = sorted(res)
                 all_files.extend(in_files)
-    # print "all_files=",all_files
-    # in_files=res
+
     return all_files
 
 

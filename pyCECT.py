@@ -88,7 +88,7 @@ def main(argv):
     pop = opts_dict['pop']
     mpas = opts_dict['mpas']
 
-    print(f"!test mpas:{mpas}")
+    print(f'!test mpas:{mpas}')
 
     if pop or popens:
         ens = 'pop'
@@ -519,6 +519,9 @@ def main(argv):
             v_ens_sigma_scores = nc_savefile.createVariable('ens_sigma_scores', 'f8', ('nvars',))
             v_ens_std_gm = nc_savefile.createVariable('ens_std_gm', 'f8', ('nvars', 'ens_size'))
 
+            # v_ens_loadings = nc_savefile.createVariable('ens_loadings', 'f8', ('nvars', 'nvars'))
+            v_gm = nc_savefile.createVariable('gm', 'f8', ('nvars', 'test_size'))
+
             # hard-coded size
             ssize = 'S' + str(str_size)
             str_out = nc.stringtochar(np.array(ens_var_name, ssize))
@@ -528,6 +531,9 @@ def main(argv):
             v_scores[:, :] = new_scores[:, :]
             v_ens_sigma_scores[:] = sigma_scores_gm[:]
             v_ens_std_gm[:, :] = std_gm_array[:, :]
+
+            # v_ens_loadings[:,:] = loadings_gm[:,:]
+            v_gm[:, :] = means[:, :]
 
             nc_savefile.close()
 
