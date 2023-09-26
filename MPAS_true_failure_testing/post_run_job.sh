@@ -1,6 +1,6 @@
 #!/bin/bash
 ### Job Name 
-#PBS -N ect_postrun_v1
+#PBS -N ect_postrun_xnutr
 ### Project Code
 #PBS -A NTDD0005
 #PBS -l walltime=01:00:00
@@ -12,4 +12,4 @@
 module load conda
 conda activate npl
 
-python /glade/work/teopb/PyCECT/MPAS_true_failure_testing/post_run_script.py /glade/work/teopb/PyCECT/MPAS_true_failure_testing/test_params.json
+python /glade/work/teopb/PyCECT/MPAS_true_failure_testing/post_run_script.py /glade/work/teopb/PyCECT/MPAS_true_failure_testing/test_params_xnutr.json
