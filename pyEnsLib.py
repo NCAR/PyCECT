@@ -348,8 +348,8 @@ def search_sumfile(opts_dict, ifiles):
 # Create some variables and call a function to calculate PCA
 # now gm comes in at 64 bits...
 
-
-def pre_PCA(gm_orig, all_var_names, whole_list, me):
+# pas in exclude list in case we have to add to id
+def pre_PCA(gm_orig, all_var_names, ex_list, me):
 
     # initialize
     b_exit = False
@@ -361,56 +361,33 @@ def pre_PCA(gm_orig, all_var_names, whole_list, me):
     else:
         gm = gm_orig[:]
 
-    mu_gm = np.average(gm, axis=1)
     sigma_gm = np.std(gm, axis=1, ddof=1)
 
-    standardized_global_mean = np.zeros(gm.shape, dtype=np.float64)
-    scores_gm = np.zeros(gm.shape, dtype=np.float64)
+    # keep track of orig vars in exclude file
+    new_ex_list = ex_list.copy()
+    orig_len = len(ex_list)
 
-    # AB: 4/19: whole list contains variables to be removed due to very small global means (calc elsewhere), but this is not currently  needed
-    # and whole_list will be len = 0
-    orig_len = len(whole_list)
-    if orig_len > 0:
-        if me.get_rank() == 0:
-            print('\n')
-            print(
-                '***************************************************************************************'
-            )
-            print(
-                (
-                    'Warning: these ',
-                    orig_len,
-                    ' variables have ~0 means (< O(e-15)) for each ensemble member, please exclude them via the json file (--jsonfile) :',
-                )
-            )
-            print((','.join(['"{0}"'.format(item) for item in whole_list])))
-            print(
-                '***************************************************************************************'
-            )
-            print('\n')
-
-    # check for constants across ensemble
+    ##### check for constants across ensemble
+    print('STATUS: checking for constant values across ensemble')
     for var in range(nvar):
         for file in range(nfile):
-            if np.any(sigma_gm[var] == 0.0) and all_var_names[var] not in set(whole_list):
-                # keep track of zeros standard deviations
-                whole_list.append(all_var_names[var])
+            if np.any(sigma_gm[var] == 0.0) and all_var_names[var] not in set(new_ex_list):
+                # keep track of zeros standard deviations and append
+                new_ex_list.append(all_var_names[var])
 
-    # print list
-    new_len = len(whole_list)
+    # did we add vars to exclude?
+    new_len = len(new_ex_list)
     if new_len > orig_len:
-        sub_list = whole_list[orig_len:]
+        sub_list = new_ex_list[orig_len:]
         if me.get_rank() == 0:
             print('\n')
             print(
                 '*************************************************************************************'
             )
             print(
-                (
-                    'Warning: these ',
-                    new_len - orig_len,
-                    ' variables are constant across ensemble members, please exclude them via the json file (--jsonfile): ',
-                )
+                'Warning: these ',
+                new_len - orig_len,
+                ' variables are constant across ensemble members, and will be excluded and added to a copy of the json file (--jsonfile): ',
             )
             print('\n')
             print((','.join(['"{0}"'.format(item) for item in sub_list])))
@@ -419,83 +396,28 @@ def pre_PCA(gm_orig, all_var_names, whole_list, me):
             )
             print('\n')
 
-    # exit if non-zero length whole_list
-    if new_len > 0:
-        print('=> Exiting ...')
-        b_exit = True
-
-    # check for linear dependent vars
-    if not b_exit:
-
-        for var in range(nvar):
-            for file in range(nfile):
-                standardized_global_mean[var, file] = (gm[var, file] - mu_gm[var]) / sigma_gm[var]
-
-        eps = np.finfo(np.float32).eps
-        norm = np.linalg.norm(standardized_global_mean, ord=2)
-        sh = max(standardized_global_mean.shape)
-        mytol = sh * norm * eps
-
-        standardized_rank = np.linalg.matrix_rank(standardized_global_mean, mytol)
-        print('STATUS: checking for dependent vars using QR...')
-        print(('STATUS: standardized_global_mean rank = ', standardized_rank))
-
-        dep_var_list = get_dependent_vars_index(standardized_global_mean, standardized_rank)
-        num_dep = len(dep_var_list)
-        orig_len = len(whole_list)
-
-        for i in dep_var_list:
-            whole_list.append(all_var_names[i])
-
-        if num_dep > 0:
-            sub_list = whole_list[orig_len:]
-
-            print('\n')
-            print(
-                '********************************************************************************************'
-            )
-            print(
-                (
-                    'Warning: these ',
-                    num_dep,
-                    ' variables are linearly dependent, please exclude them via the json file (--jsonfile): ',
-                )
-            )
-            print('\n')
-            print((','.join(['"{0}"'.format(item) for item in sub_list])))
-            print(
-                '********************************************************************************************'
-            )
-            print('\n')
-            print('=> EXITING....')
-
-            # need to exit
-            b_exit = True
-
-    # now check for any variables that have less than 3% (of the ensemble size) unique values
-    if not b_exit:
-        print('STATUS: checking for unique values across ensemble')
-
-        cts = np.count_nonzero(np.diff(np.sort(standardized_global_mean)), axis=1) + 1
-        #        thresh = .02* standardized_global_mean.shape[1]
-        thresh = 0.03 * standardized_global_mean.shape[1]
-        result = np.where(cts < thresh)
-        indices = result[0]
-        if len(indices) > 0:
-            nu_list = []
-            for i in indices:
+    #### now check for any variables that have less than 3% (of the ensemble size) unique values
+    print('STATUS: checking for unique values across ensemble')
+    cts = np.count_nonzero(np.diff(np.sort(gm)), axis=1) + 1
+    thresh = 0.03 * gm.shape[1]
+    result = np.where(cts < thresh)
+    indices = result[0]
+    if len(indices) > 0:
+        nu_list = []
+        for i in indices:
+            # only add if not in ex_list already
+            if all_var_names[i] not in set(new_ex_list):
                 nu_list.append(all_var_names[i])
 
+        if len(nu_list) > 0:
             print('\n')
             print(
                 '********************************************************************************************'
             )
             print(
-                (
-                    'Warning: these ',
-                    len(indices),
-                    ' variables contain fewer than 3% unique values across the ensemble, please exclude them via the json file (--jsonfile): ',
-                )
+                'Warning: these ',
+                len(nu_list),
+                ' variables contain fewer than 3% unique values across the ensemble, and will be excluded and added to a copy of thee json file (--jsonfile): ',
             )
             print('\n')
             print((','.join(['"{0}"'.format(item) for item in nu_list])))
@@ -503,25 +425,106 @@ def pre_PCA(gm_orig, all_var_names, whole_list, me):
                 '********************************************************************************************'
             )
             print('\n')
-            print('=> EXITING....')
 
-            # need to exit
-            b_exit = True
+            new_ex_list.extend(nu_list)
+
+    ### REMOVE newly excluded stuff before the check for linear dependence
+    # remove var from nvar, all_var_names, gm, and recalculate: mu_gm, sigma_gm
+    new_len = len(new_ex_list)
+    indx = []
+    if new_len > orig_len:
+        print('Updating ...')
+        sub_list = new_ex_list[orig_len:]
+        for i in sub_list:
+            indx.append(all_var_names.index(i))
+        # now delete the rows from gm and names from list
+        gm_del = np.delete(gm, indx, axis=0)
+        all_var_names_del = np.delete(all_var_names, indx).tolist()
+
+        gm = gm_del
+        all_var_names = all_var_names_del
+        nvar = gm.shape[0]
+
+    mu_gm = np.average(gm, axis=1)
+    sigma_gm = np.std(gm, axis=1, ddof=1)
+    standardized_global_mean = np.zeros(gm.shape, dtype=np.float64)
+
+    ####### check for linear dependent vars
+    print('STATUS: checking for linear dependence across ensemble')
+    for var in range(nvar):
+        for file in range(nfile):
+            standardized_global_mean[var, file] = (gm[var, file] - mu_gm[var]) / sigma_gm[var]
+
+    eps = np.finfo(np.float32).eps
+    norm = np.linalg.norm(standardized_global_mean, ord=2)
+    sh = max(standardized_global_mean.shape)
+    mytol = sh * norm * eps
+
+    standardized_rank = np.linalg.matrix_rank(standardized_global_mean, mytol)
+    print('STATUS: using QR...')
+    print(('STATUS: standardized_global_mean rank = ', standardized_rank))
+
+    dep_var_list = get_dependent_vars_index(standardized_global_mean, standardized_rank)
+    num_dep = len(dep_var_list)
+    new_len = len(new_ex_list)
+
+    for i in dep_var_list:
+        new_ex_list.append(all_var_names[i])
+
+    if num_dep > 0:
+        sub_list = new_ex_list[new_len:]
+
+        print('\n')
+        print(
+            '********************************************************************************************'
+        )
+        print(
+            'Warning: these ',
+            num_dep,
+            ' variables are linearly dependent, and will be excluded and added to a copy of the json file (--jsonfile): ',
+        )
+        print('\n')
+        print((','.join(['"{0}"'.format(item) for item in sub_list])))
+        print(
+            '********************************************************************************************'
+        )
+        print('\n')
+
+        # REMOVE FROM gm, standardized gm and names
+        indx = []
+        for i in sub_list:
+            indx.append(all_var_names.index(i))
+        # now delete the rows in index from gm, std gm, and names from list
+        gm_del = np.delete(gm, indx, axis=0)
+        sgm_del = np.delete(standardized_global_mean, indx, axis=0)
+        all_var_names_del = np.delete(all_var_names, indx).tolist()
+
+        gm = gm_del
+        standardized_global_mean = sgm_del
+        all_var_names = all_var_names_del
+        nvar = gm.shape[0]
+
+        mu_gm = np.average(gm, axis=1)
+        sigma_gm = np.std(gm, axis=1, ddof=1)
 
     # COMPUTE PCA
-    if not b_exit:
-        # find principal components
-        loadings_gm = princomp(standardized_global_mean)
-        # now do coord transformation on the standardized means to get the scores
-        scores_gm = np.dot(loadings_gm.T, standardized_global_mean)
-        sigma_scores_gm = np.std(scores_gm, axis=1, ddof=1)
-    else:
-        loadings_gm = np.zeros(gm.shape, dtype=np.float64)
-        sigma_scores_gm = np.zeros(gm.shape, dtype=np.float64)
+    scores_gm = np.zeros(gm.shape, dtype=np.float64)
+    # find principal components
+    loadings_gm = princomp(standardized_global_mean)
+    # now do coord transformation on the standardized means to get the scores
+    scores_gm = np.dot(loadings_gm.T, standardized_global_mean)
+    sigma_scores_gm = np.std(scores_gm, axis=1, ddof=1)
 
-    #    return mu_gm.astype(np.float32),sigma_gm.astype(np.float32),standardized_global_mean.astype(np.float32),loadings_gm.astype(np.float32),sigma_scores_gm.astype(np.float32),b_exit
-
-    return mu_gm, sigma_gm, standardized_global_mean, loadings_gm, sigma_scores_gm, b_exit
+    return (
+        mu_gm,
+        sigma_gm,
+        standardized_global_mean,
+        loadings_gm,
+        sigma_scores_gm,
+        new_ex_list,
+        gm,
+        b_exit,
+    )
 
 
 #
@@ -573,13 +576,14 @@ def calc_Z(val, avg, stddev, count, flag):
 
 
 #
-# Read a json file for the excluded/included list of variables
-#
+# Read a json file for the excluded list of variables
+# (no longer allowing include files)
 def read_jsonlist(metajson, method_name):
 
     # method_name = ES for ensemble summary (CAM, MPAS)
     #            = ESP for POP ensemble summary
 
+    exclude = True
     if not os.path.exists(metajson):
         print('\n')
         print(
@@ -591,7 +595,6 @@ def read_jsonlist(metajson, method_name):
         )
         print('\n')
         varList = []
-        exclude = True
         return varList, exclude
     else:
         fd = open(metajson)
@@ -603,12 +606,9 @@ def read_jsonlist(metajson, method_name):
             exclude = []
             return varList, exclude
         if method_name == 'ES':  # CAM or MPAS
-            exclude = False
+            exclude = True
             if 'ExcludedVar' in metainfo:
-                exclude = True
                 varList = metainfo['ExcludedVar']
-            elif 'IncludedVar' in metainfo:
-                varList = metainfo['IncludedVar']
             return varList, exclude
         elif method_name == 'ESP':  # POP
             var2d = metainfo['Var2d']
@@ -907,7 +907,7 @@ def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, va
 # compute area_wgts, and then loop through all files to call calc_global_means_for_onefile
 # o_files are not open for CAM
 # 12/19 - summary file will now be double precision
-def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pepsi_gm, opts_dict):
+def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, opts_dict):
 
     tslice = opts_dict['tslice']
     popens = opts_dict['popens']
@@ -958,10 +958,7 @@ def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, pep
 
         fname.close()
 
-    var_list = []
-    # some valid CAM vars are all small entries(e.g. DTWR_H2O2 and DTWR_H2O4), so we no longer exclude them via var_list
-
-    return gm3d, gm2d, var_list
+    return gm3d, gm2d
 
 
 # Calculate global means for one OCN input file

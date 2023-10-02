@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import configparser
 import getopt
+import json
 import os
 import re
 import sys
@@ -20,7 +21,7 @@ from pyTools import Duplicate, EqualLength, EqualStride
 def main(argv):
 
     # Get command line stuff and store in a dictionary
-    s = 'tag= compset= esize= tslice= res= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm gmonly popens regx= startMon= endMon= fIndex= mpi_disable'
+    s = 'tag= compset= esize= tslice= res= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm  popens regx= startMon= endMon= fIndex= mpi_disable'
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
@@ -41,12 +42,11 @@ def main(argv):
     opts_dict['sumfile'] = 'ens.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['sumfiledir'] = './'
-    opts_dict['jsonfile'] = 'exclude_empty.json'
+    opts_dict['jsonfile'] = 'empty_excluded.json'
     opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = True
     opts_dict['mpi_disable'] = False
     opts_dict['maxnorm'] = False
-    opts_dict['gmonly'] = True
     opts_dict['popens'] = False
     opts_dict['regx'] = 'test'
     opts_dict['startMon'] = 1
@@ -76,7 +76,6 @@ def main(argv):
     input_dir = opts_dict['indir']
     # The var list that will be excluded
     ex_varlist = []
-    inc_varlist = []
 
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:
@@ -91,26 +90,17 @@ def main(argv):
         print(opts_dict)
         print('STATUS: Ensemble size for summary = ', esize)
 
-    exclude = False
     if me.get_rank() == 0:
         if opts_dict['jsonfile']:
-            inc_varlist = []
-            # Read in the excluded or included var list
+            # Read in the excluded var list
             ex_varlist, exclude = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES')
             if len(ex_varlist) > 0:
                 if ex_varlist[0] == 'JSONERROR':
                     me.abort()
-            if exclude is False:
-                inc_varlist = ex_varlist
-                ex_varlist = []
 
     # Broadcast the excluded var list to each processor
     if opts_dict['mpi_enable']:
-        exclude = me.partition(exclude, func=Duplicate(), involved=True)
-        if exclude:
-            ex_varlist = me.partition(ex_varlist, func=Duplicate(), involved=True)
-        else:
-            inc_varlist = me.partition(inc_varlist, func=Duplicate(), involved=True)
+        ex_varlist = me.partition(ex_varlist, func=Duplicate(), involved=True)
 
     in_files = []
     if os.path.exists(input_dir):
@@ -215,21 +205,18 @@ def main(argv):
             print('nlat = ', nlat)
             print('nlon = ', nlon)
 
+    # invarient metadata  (will write to sum file later)
+    lev_data = first_file.variables['lev']
+    lev_data_copy = lev_data[:]  # doesn't go away when close first_file
+
     # Get 2d vars, 3d vars and all vars (For now include all variables)
     vars_dict_all = first_file.variables
 
     # Remove the excluded variables (specified in json file) from variable dictionary
-    if exclude:
-        vars_dict = vars_dict_all
-        for i in ex_varlist:
-            if i in vars_dict:
-                del vars_dict[i]
-    # Given an included var list, remove all the variables that are not on the list
-    else:
-        vars_dict = vars_dict_all.copy()
-        for k, v in vars_dict_all.items():
-            if (k not in inc_varlist) and (vars_dict_all[k].typecode() == 'f'):
-                del vars_dict[k]
+    vars_dict = vars_dict_all.copy()
+    for i in ex_varlist:
+        if i in vars_dict:
+            del vars_dict[i]
 
     # num_vars = len(vars_dict)
 
@@ -302,7 +289,6 @@ def main(argv):
     # All vars is 3d vars first (sorted), the 2d vars
     all_var_names = list(d3_var_names)
     all_var_names += d2_var_names
-    # n_all_var_names = len(all_var_names)
 
     # Rank 0 - Create new summary ensemble file
     this_sumfile = opts_dict['sumfile']
@@ -318,8 +304,96 @@ def main(argv):
 
     this_sumfile = sum_dir + '/' + this_sumfile
 
-    if me.get_rank() == 0:
+    # All:
+    var3_list_loc = me.partition(d3_var_names, func=EqualStride(), involved=True)
+    var2_list_loc = me.partition(d2_var_names, func=EqualStride(), involved=True)
 
+    # close first_file
+    first_file.close()
+
+    # Calculate global means #
+    if me.get_rank() == 0 and verbose:
+        print('VERBOSE: Calculating global means .....')
+
+    gm3d, gm2d = pyEnsLib.generate_global_mean_for_summary(
+        full_in_files, var3_list_loc, var2_list_loc, is_SE, opts_dict
+    )
+
+    if me.get_rank() == 0 and verbose:
+        print('VERBOSE: Finished calculating global means .....')
+
+    # gather to rank = 0
+    if opts_dict['mpi_enable']:
+
+        # Gather the 3d variable results from all processors to the master processor
+        slice_index = get_stride_list(len(d3_var_names), me)
+
+        # Gather global means 3d results
+        gm3d = gather_npArray(gm3d, me, slice_index, (len(d3_var_names), len(full_in_files)))
+
+        # Gather 2d variable results from all processors to the master processor
+        slice_index = get_stride_list(len(d2_var_names), me)
+
+        # Gather global means 2d results
+        gm2d = gather_npArray(gm2d, me, slice_index, (len(d2_var_names), len(full_in_files)))
+
+    # rank =0 : complete calculations for summary file
+    if me.get_rank() == 0:
+        gmall = np.concatenate((gm3d, gm2d), axis=0)
+
+        # PCA prep and calculation
+        (
+            mu_gm,
+            sigma_gm,
+            standardized_global_mean,
+            loadings_gm,
+            scores_gm,
+            new_ex_varlist,
+            new_gmall,
+            b_exit,
+        ) = pyEnsLib.pre_PCA(gmall, all_var_names, ex_varlist, me)
+
+        # if PCA calc encounters an error, then remove the summary file and exit
+        if b_exit:
+            print('STATUS: Summary could not be created.')
+            sys.exit(2)
+
+        # update json file?  update var 2d and 3d var lists?
+
+        # print('ex_varlist len = ', len(ex_varlist))
+        # print('new ex_varlist len = ', len(new_ex_varlist))
+        # print(new_ex_varlist)
+
+        if len(ex_varlist) < len(new_ex_varlist):
+            print('STATUS: Creating an updated JSON file (with prefix "NEW.")')
+            new_name = 'NEW.' + opts_dict['jsonfile']
+            print(
+                'STATUS: Adding ', len(new_ex_varlist) - len(ex_varlist), ' variables to ', new_name
+            )
+            jdict = {}
+            jdict['ExcludedVar'] = new_ex_varlist
+            with open(new_name, 'w') as outfile:
+                json.dump(jdict, outfile)
+
+            # update num_2d, num_3d => by removing vars from  d3_var_names and d2_var_names
+            for i in new_ex_varlist:
+                if i in all_var_names:
+                    all_var_names.remove(i)
+                if i in d3_var_names:
+                    d3_var_names.remove(i)
+                elif i in d2_var_names:
+                    d2_var_names.remove(i)
+
+            num_2d = len(d2_var_names)
+            num_3d = len(d3_var_names)
+
+            nvars = loadings_gm.shape[0]
+            if nvars != (num_2d + num_3d):
+                print('DIMENSION ERROR!')
+                print('STATUS: Summary could not be created.')
+                sys.exit(2)
+
+        # create the summary file  (still rank 0)
         if verbose:
             print('VERBOSE: Creating ', this_sumfile, '  ...')
 
@@ -411,72 +485,9 @@ def main(argv):
         v_var3d[:] = eq_d3_var_names[:]
         v_var2d[:] = eq_d2_var_names[:]
 
-        # Time-invarient metadata
-        if verbose:
-            print('VERBOSE: Assigning time invariant metadata .....')
-        lev_data = first_file.variables['lev']
-        v_lev[:] = lev_data[:]
-    # end of rank=0 work
-
-    # All:
-    # tslice = opts_dict['tslice']
-    var3_list_loc = me.partition(d3_var_names, func=EqualStride(), involved=True)
-    var2_list_loc = me.partition(d2_var_names, func=EqualStride(), involved=True)
-
-    # close first_file
-    first_file.close()
-
-    # Calculate global means #
-    if me.get_rank() == 0 and verbose:
-        print('VERBOSE: Calculating global means .....')
-
-    gm3d, gm2d, var_list = pyEnsLib.generate_global_mean_for_summary(
-        full_in_files, var3_list_loc, var2_list_loc, is_SE, False, opts_dict
-    )
-
-    if me.get_rank() == 0 and verbose:
-        print('VERBOSE: Finished calculating global means .....')
-
-    # gather to rank = 0
-    if opts_dict['mpi_enable']:
-
-        # Gather the 3d variable results from all processors to the master processor
-        slice_index = get_stride_list(len(d3_var_names), me)
-
-        # Gather global means 3d results
-        gm3d = gather_npArray(gm3d, me, slice_index, (len(d3_var_names), len(full_in_files)))
-
-        # Gather 2d variable results from all processors to the master processor
-        slice_index = get_stride_list(len(d2_var_names), me)
-
-        # Gather global means 2d results
-        gm2d = gather_npArray(gm2d, me, slice_index, (len(d2_var_names), len(full_in_files)))
-
-        # gather variables ro exclude (in pre_pca)
-        var_list = gather_list(var_list, me)
-
-    # rank =0 : complete calculations for summary file
-    if me.get_rank() == 0:
-        gmall = np.concatenate((gm3d, gm2d), axis=0)
-
-        # PCA prep and calculation
-        (
-            mu_gm,
-            sigma_gm,
-            standardized_global_mean,
-            loadings_gm,
-            scores_gm,
-            b_exit,
-        ) = pyEnsLib.pre_PCA(gmall, all_var_names, var_list, me)
-
-        # if PCA calc encounters an error, then remove the summary file and exit
-        if b_exit:
-            nc_sumfile.close()
-            os.unlink(this_sumfile)
-            print('STATUS: Summary could not be created.')
-            sys.exit(2)
-
-        v_gm[:, :] = gmall[:, :]
+        # populate variables
+        v_lev[:] = lev_data_copy[:]
+        v_gm[:, :] = new_gmall[:, :]
         v_standardized_gm[:, :] = standardized_global_mean[:, :]
         v_mu_gm[:] = mu_gm[:]
         v_sigma_gm[:] = sigma_gm[:]
