@@ -10,4 +10,4 @@
 module load conda
 conda activate npl
 
-mpiexec python pyEnsSumMPAS.py --esize 100 --indir /glade/p/cisl/asap/abaker/mpas/large_ens  --sumfile mpas_sumt4.nc  --tslice 4 --tag v7.1 --model mpas  --mach cheyenne --verbose --jsonfile empty_excluded.json
+mpiexec -n 36 -ppn 36 python pyEnsSumMPAS.py --esize 100 --indir /glade/p/cisl/asap/abaker/mpas/large_ens  --sumfile mpas_sumt4.nc  --tslice 4 --tag v7.1 --model mpas  --mach cheyenne --verbose --jsonfile empty_excluded.json
