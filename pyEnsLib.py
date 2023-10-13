@@ -1784,9 +1784,6 @@ def CECT_usage():
         '   --printVars             : print out variables that fall outside of the global mean ensemble distribution (off by default)'
     )
     print(
-        '                             then output associated box plots (off by default) - requires Python seaborn package'
-    )
-    print(
         '   --saveResults           : save a netcdf file with scores and std global means from the test runs (savefile.nc). '
     )
     print(
