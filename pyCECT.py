@@ -354,40 +354,38 @@ def main(argv):
 
         # NOW this the same for MPAS and CAM
 
+        # extra info
         # Add the new run global mean to the dictionary "results"
         for i in range(means.shape[1]):
             for j in range(means.shape[0]):
                 pyEnsLib.addresults(results, 'means', means[j][i], ens_var_name[j], 'f' + str(i))
-
-        # Evaluate the new run global mean if it is in the range of the ensemble summary global mean range
+        # Evaluate the new run global mean if it is in the range of the ensemble summary global mea?n range
         for fcount, fid in enumerate(ifiles):
             countgm[fcount] = pyEnsLib.evaluatestatus(
                 'means', 'gmRange', variables, 'gm', results, 'f' + str(fcount)
             )
+        # end extra
 
         # Calculate the PCA scores of the new run
-        new_scores, var_list, comp_std_gm = pyEnsLib.standardized(
+        new_scores, sum_std_mean, comp_std_gm = pyEnsLib.standardized(
             means, mu_gm, sigma_gm, loadings_gm, ens_var_name, opts_dict, me
         )
         run_index, decision = pyEnsLib.comparePCAscores(
             ifiles, new_scores, sigma_scores_gm, opts_dict, me
         )
 
-        # If there is failure, plot out standardized mean and compared standardized mean in box plots
-        #        if opts_dict['printStdMean'] and decision == 'FAILED':
+        # which vars are most outside the standardize mean (should be zero)
+        sort_index = np.argsort(sum_std_mean)[::-1]
+        sorted_sum = sum_std_mean[sort_index]
+        sorted_name = np.array(ens_var_name)[sort_index]
+
+        # If there is failure, which means are off....
+        #        if decision == 'FAILED':
         if opts_dict['printStdMean']:
-
-            import matplotlib
-            import seaborn as sns
-
-            matplotlib.use('Agg')  # don't display figures
-            import matplotlib.pyplot as plt
 
             print(' ')
             print('***************************************************************************** ')
-            print(
-                'Test run variable standardized means (for reference only - not used to determine pass/fail)'
-            )
+            print('Test run variable standardized mean information')
             print('***************************************************************************** ')
             print(' ')
 
@@ -395,42 +393,29 @@ def main(argv):
                 'all_outside99': [],
                 'two_outside99': [],
                 'one_outside99': [],
-                'all_oneside_outside1QR': [],
             }
             b = list(pyEnsLib.chunk(ens_var_name, 10))
             for f, alist in enumerate(b):
                 for fc, avar in enumerate(alist):
                     dist_995 = np.percentile(std_gm[avar], 99.5)
-                    dist_75 = np.percentile(std_gm[avar], 75)
-                    dist_25 = np.percentile(std_gm[avar], 25)
                     dist_05 = np.percentile(std_gm[avar], 0.5)
                     c = 0
                     d = 0
-                    p = 0
-                    q = 0
                     for i in range(comp_std_gm[f + fc].size):
                         if comp_std_gm[f + fc][i] > dist_995:
                             c = c + 1
                         elif comp_std_gm[f + fc][i] < dist_05:
                             d = d + 1
-                        elif comp_std_gm[f + fc][i] < dist_995 and comp_std_gm[f + fc][i] > dist_75:
-                            p = p + 1
-                        elif comp_std_gm[f + fc][i] > dist_05 and comp_std_gm[f + fc][i] < dist_25:
-                            q = q + 1
                     if c == 3 or d == 3:
                         category['all_outside99'].append((avar, f + fc))
                     elif c == 2 or d == 2:
                         category['two_outside99'].append((avar, f + fc))
                     elif c == 1 or d == 1:
                         category['one_outside99'].append((avar, f + fc))
-                    if p == 3 or q == 3:
-                        category['all_oneside_outside1QR'].append((avar, f + fc))
-            part_name = opts_dict['indir'].split('/')[-1]
-            if not part_name:
-                part_name = opts_dict['indir'].split('/')[-2]
+
+            # print(category)
+
             for key in sorted(category):
-                list_array = []
-                list_array2 = []
                 list_var = []
                 value = category[key]
 
@@ -438,52 +423,37 @@ def main(argv):
                     print(
                         '*** ',
                         len(value),
-                        ' variables have 3 test run global means outside of the 99th percentile.',
+                        ' variable(s) have 3 test run global means outside of the 99th percentile.',
                     )
                 elif key == 'two_outside99':
                     print(
                         '*** ',
                         len(value),
-                        ' variables have 2 test run global means outside of the 99th percentile.',
+                        ' variable(s) have 2 test run global means outside of the 99th percentile.',
                     )
                 elif key == 'one_outside99':
                     print(
                         '*** ',
                         len(value),
-                        ' variables have 1 test run global mean outside of the 99th percentile.',
-                    )
-                elif key == 'all_oneside_outside1QR':
-                    print(
-                        '*** ',
-                        len(value),
-                        ' variables have all test run global means outside of the first quartile (but not outside the 99th percentile).',
+                        ' variable(s) have 1 test run global mean outside of the 99th percentile.',
                     )
 
                 if len(value) > 0:
-                    print(' => generating plot ...')
-                    if len(value) > 20:
-                        print('    NOTE: truncating to only plot the first 20 variables.')
-                        value = value[0:20]
+                    for each_var in value:
+                        name = each_var[0]
+                        if isinstance(name, str) is False:
+                            name = name.decode('utf-8')
+                        list_var.append(name)
 
-                for each_var in value:
-                    list_array.append(std_gm[each_var[0]])
-                    list_array2.append(comp_std_gm[each_var[1]])
-                    name = each_var[0]
-                    if isinstance(name, str) is False:
-                        name = name.decode('utf-8')
+                    print(list_var)
 
-                    list_var.append(name)
-
-                if len(value) != 0:
-                    # ax = sns.boxplot(data=list_array, whis=[0.5, 99.5], fliersize=0.0)
-                    sns.stripplot(data=list_array2, jitter=True, color='r')
-                    plt.xticks(list(range(len(list_array))), list_var, fontsize=8, rotation=-45)
-
-                    if decision == 'FAILED':
-                        plt.savefig(part_name + '_' + key + '_fail.png')
-                    else:
-                        plt.savefig(part_name + '_' + key + '_pass.png')
-                    plt.close()
+            print('***************************************************************************** ')
+            print(
+                'Variables in descreasing order of std mean sum (should have been close to 0 for each run)'
+            )
+            for i in range(means.shape[0]):
+                print(sorted_name[i], sorted_sum[i])
+            print('***************************************************************************** ')
 
         ##
         # Print file with info about new test runs....to a netcdf file
@@ -538,32 +508,6 @@ def main(argv):
             nc_savefile.close()
 
         # end of CAM and MPAS
-
-        # Print variables (optional)
-        if opts_dict['printVars']:
-            print(' ')
-            print('***************************************************************************** ')
-            print(
-                'Variable global mean information (for reference only - not used to determine pass/fail)'
-            )
-            print('***************************************************************************** ')
-            for fcount, fid in enumerate(ifiles):
-                print(' ')
-                print('Run ' + str(fcount + 1) + ':')
-                print(' ')
-                print(
-                    '***' + str(countgm[fcount]),
-                    ' of '
-                    + str(len(ens_var_name))
-                    + ' variables are outside of ensemble global mean distribution***',
-                )
-                pyEnsLib.printsummary(
-                    results, 'gm', 'means', 'gmRange', fcount, variables, 'global mean'
-                )
-                print(' ')
-                print(
-                    '----------------------------------------------------------------------------'
-                )
 
     if me.get_rank() == 0:
         print(' ')

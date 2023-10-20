@@ -1509,10 +1509,7 @@ def standardized(gm, mu_gm, sigma_gm, loadings_gm, all_var_names, opts_dict, me)
             sum_std_mean[var] = sum_std_mean[var] + np.abs(standardized_mean[var, file])
     new_scores = np.dot(loadings_gm.T.astype(np.float64), standardized_mean)
 
-    var_list = []
-    # sorted_sum_std_mean = np.argsort(sum_std_mean)[::-1]
-
-    return new_scores, var_list, standardized_mean
+    return new_scores, sum_std_mean, standardized_mean
 
 
 #
