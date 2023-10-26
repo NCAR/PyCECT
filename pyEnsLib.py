@@ -1622,6 +1622,7 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
     totalcount = 0
     sum_index = []
     if me.get_rank() == 0:
+        print('')
         print('*********************************************** ')
         print('PCA Test Results')
         print('*********************************************** ')
@@ -1670,7 +1671,9 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
                 sum_index,
             )
             print(' ')
-            print('These runs ' + decision + ' according to our testing criterion.')
+            print('These runs ****' + decision + '**** according to our testing criterion.')
+            print(' ')
+
         elif me.get_rank() == 0:
             print(' ')
             print(

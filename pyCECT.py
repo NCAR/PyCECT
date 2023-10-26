@@ -378,10 +378,9 @@ def main(argv):
         sort_index = np.argsort(sum_std_mean)[::-1]
         sorted_sum = sum_std_mean[sort_index]
         sorted_name = np.array(ens_var_name)[sort_index]
+        sorted_comp_std_gm = comp_std_gm[sort_index]
 
-        # If there is failure, which means are off....
-        #        if decision == 'FAILED':
-        if opts_dict['printStdMean']:
+        if opts_dict['printStdMean'] or decision == 'FAILED':
 
             print(' ')
             print('***************************************************************************** ')
@@ -389,70 +388,70 @@ def main(argv):
             print('***************************************************************************** ')
             print(' ')
 
-            category = {
-                'all_outside99': [],
-                'two_outside99': [],
-                'one_outside99': [],
-            }
-            b = list(pyEnsLib.chunk(ens_var_name, 10))
-            for f, alist in enumerate(b):
-                for fc, avar in enumerate(alist):
-                    dist_995 = np.percentile(std_gm[avar], 99.5)
-                    dist_05 = np.percentile(std_gm[avar], 0.5)
-                    c = 0
-                    d = 0
-                    for i in range(comp_std_gm[f + fc].size):
-                        if comp_std_gm[f + fc][i] > dist_995:
-                            c = c + 1
-                        elif comp_std_gm[f + fc][i] < dist_05:
-                            d = d + 1
-                    if c == 3 or d == 3:
-                        category['all_outside99'].append((avar, f + fc))
-                    elif c == 2 or d == 2:
-                        category['two_outside99'].append((avar, f + fc))
-                    elif c == 1 or d == 1:
-                        category['one_outside99'].append((avar, f + fc))
+            all_outside99 = []
+            two_outside99 = []
+            one_outside99 = []
 
-            # print(category)
+            # std_gm is a dictionary
+            tsize = comp_std_gm.shape[1]
+            b = list(ens_var_name)
+            for f, avar in enumerate(b):
+                dist_995 = np.percentile(std_gm[avar], 99.5)
+                dist_005 = np.percentile(std_gm[avar], 0.5)
+                # print(avar, " = ", dist_005, dist_995)
+                count = 0
+                for i in range(tsize):
+                    if comp_std_gm[f, i] > dist_995 or comp_std_gm[f, i] < dist_005:
+                        count = count + 1
+                if count == 1:
+                    one_outside99.append(avar)
+                elif count == 2:
+                    two_outside99.append(avar)
+                elif count == tsize:
+                    all_outside99.append(avar)
 
-            for key in sorted(category):
-                list_var = []
-                value = category[key]
+            if len(all_outside99) > 0:
+                print(
+                    '*** ',
+                    len(all_outside99),
+                    ' variable(s) have all test run global means outside of the 99th percentile.',
+                )
+                print(all_outside99)
+            if len(two_outside99) > 0:
+                print(
+                    '*** ',
+                    len(two_outside99),
+                    ' variable(s) have 2 test run global means outside of the 99th percentile.',
+                )
+                print(two_outside99)
+            if len(one_outside99) > 0:
+                print(
+                    '*** ',
+                    len(one_outside99),
+                    ' variable(s) have 1 test run global means outside of the 99th percentile.',
+                )
+                print(one_outside99)
 
-                if key == 'all_outside99':
-                    print(
-                        '*** ',
-                        len(value),
-                        ' variable(s) have 3 test run global means outside of the 99th percentile.',
-                    )
-                elif key == 'two_outside99':
-                    print(
-                        '*** ',
-                        len(value),
-                        ' variable(s) have 2 test run global means outside of the 99th percentile.',
-                    )
-                elif key == 'one_outside99':
-                    print(
-                        '*** ',
-                        len(value),
-                        ' variable(s) have 1 test run global mean outside of the 99th percentile.',
-                    )
+            # count = len(all_outside99) + len(two_outside99) + len(one_outside99)
+            # count = max(10, count)
+            count = 20
+            count = min(count, means.shape[0])
 
-                if len(value) > 0:
-                    for each_var in value:
-                        name = each_var[0]
-                        if isinstance(name, str) is False:
-                            name = name.decode('utf-8')
-                        list_var.append(name)
-
-                    print(list_var)
-
+            print('')
             print('***************************************************************************** ')
             print(
-                'Variables in descreasing order of std mean sum (should have been close to 0 for each run)'
+                'Top 20 test run variables in decreasing order of (abs) standardized mean sum (note: ensemble is standardized such that mean = 0 and std_dev = 1)'
             )
-            for i in range(means.shape[0]):
-                print(sorted_name[i], sorted_sum[i])
+            for i in range(count):
+                print(
+                    sorted_name[i],
+                    ': ',
+                    'sum =',
+                    sorted_sum[i],
+                    '  (indiv. test run values = ',
+                    sorted_comp_std_gm[i, :],
+                    ')',
+                )
             print('***************************************************************************** ')
 
         ##
