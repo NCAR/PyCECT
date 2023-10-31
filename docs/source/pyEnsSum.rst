@@ -60,7 +60,7 @@ To use pyEnsSum:
        --tslice <num>       : the index into the time dimension (default = 1)
        --mach <name>        : Machine name used in the metadata (default = cheyenne)
        --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be excluded
-                               or included  (default = exclude_empty.json)
+                               (default = exclude_empty.json)
        --mpi_disable        : Disable mpi mode to run in serial (off by default)
        --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so
                               ensembles with numbers less than <num> are excluded from summary file)
@@ -98,21 +98,20 @@ Notes:
 
 7. You must specify a json file (via ``--jsonfile``) that indicates
    the variables in the ensemble
-   output files that you want to include or exclude from the summary file
-   statistics (see the example json files).  We recommend excluding variables, as
-   this is typically less work and pyEnsSum will let you know if you have not
+   output files that you want to exclude from the summary file
+   statistics (see the example json files).  The pyEnsSum routine
+   will let you know if you have not
    listed variables that need to be excluded (see next note).  Keep in mind that
    you must have *fewer* variables included than ensemble members.
 
 8. *IMPORTANT:* If there are variables that need to be excluded (that are not in
-   the .json file  already), pyEnsSum will exit early and provide a list of the
-   variables to exclude in the output.  These should be added to your exclude
-   variable list  (or removed from an include list), and then pyEnsSum can
-   be re-run.  Note that additional problematic variables may be found by
-   pyEnsSum as variables are detected in three stages. (First any variables that
-   are constant across the ensemble are identified.  Once these are removed,
-   linearly dependant variables are indentified for removal. Finally, variables
-   that are not constant but have very few unique values are identified.)
+   the .json file  already) for the summary to be generated, pyEnsSum will list these
+   variables in the output.  These variables will also be added to a copy of
+   your exclude variable list (prefixed with "NEW.") for future reference and use.
+   The summary file will be geberated with all listed variables excluded.
+   Note that the following types of variables will be removed:  any variables that
+   are constant across the ensemble, are not floating-point (e.g., integer),
+   are linearly dependant, or have very few (< 3%) unique values.
 
 
 Example:

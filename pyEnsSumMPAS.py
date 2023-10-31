@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import configparser
 import getopt
+import json
 import os
 import re
 import sys
@@ -75,7 +76,6 @@ def main(argv):
     input_dir = opts_dict['indir']
     # The var list that will be excluded
     ex_varlist = []
-    inc_varlist = []
 
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:
@@ -93,23 +93,15 @@ def main(argv):
     exclude = False
     if me.get_rank() == 0:
         if opts_dict['jsonfile']:
-            inc_varlist = []
-            # Read in the excluded or included var list
+            # Read in the excluded var list
             ex_varlist, exclude = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES')
             if len(ex_varlist) > 0:
                 if ex_varlist[0] == 'JSONERROR':
                     me.abort()
-            if exclude is False:
-                inc_varlist = ex_varlist
-                ex_varlist = []
 
     # Broadcast the excluded var list to each processor
     if opts_dict['mpi_enable']:
-        exclude = me.partition(exclude, func=Duplicate(), involved=True)
-        if exclude:
-            ex_varlist = me.partition(ex_varlist, func=Duplicate(), involved=True)
-        else:
-            inc_varlist = me.partition(inc_varlist, func=Duplicate(), involved=True)
+        ex_varlist = me.partition(ex_varlist, func=Duplicate(), involved=True)
 
     in_files = []
     if os.path.exists(input_dir):
@@ -214,17 +206,10 @@ def main(argv):
     vars_dict_all = first_file.variables
 
     # Remove the excluded variables (specified in json file) from variable dictionary
-    if exclude:
-        vars_dict = vars_dict_all.copy()
-        for i in ex_varlist:
-            if i in vars_dict:
-                del vars_dict[i]
-    # Given an included var list, remove all the variables that are not on the list
-    else:
-        vars_dict = vars_dict_all.copy()
-        for k, v in vars_dict_all.items():
-            if (k not in inc_varlist) and (vars_dict_all[k].typecode() == 'f'):
-                del vars_dict[k]
+    vars_dict = vars_dict_all.copy()
+    for i in ex_varlist:
+        if i in vars_dict:
+            del vars_dict[i]
 
     # We have cell vars and edge vars and vertex vars (and only want time-dependent vars)
     str_size = 0  # longest var name
@@ -237,28 +222,52 @@ def main(argv):
     v_dim = 'nVertices'
 
     # CHECK FOR edge variable u (horizontal wind velocity vector)
-
+    extra_exclude = 0
     # sort to cell, edge, and vertex (and grab max str_size)
     for k, v in vars_dict.items():
         # var = k
+        # get var type
+        dd = vars_dict[k][:].dtype
         vd = v.dimensions  # all the variable's dimensions (names)
+        # only car about time dependent vars
         if t_dim in vd:
+            # no integers
+            if dd == 'int32':
+                ex_varlist.append(k)
+                extra_exclude = extra_exclude + 1
+                if me.get_rank() == 0:
+                    print(
+                        'WARNING: Variable ',
+                        k,
+                        ' is an integer and should be excluded.  Added to json file.',
+                    )
+                continue
             if c_dim in vd:
                 cell_names.append(k)
             elif e_dim in vd:
-                edge_names.append(k)
                 if k == 'u':
-                    print(
-                        'Note: We suggest that variable u (Horizontal normal velocity at edges) be excluded from the summary file in favor of uReconstructZonal and uReconstructMeridional (cell variables).'
-                    )
+                    # check for uReconstructZonal and uReconstructMeridional
+                    if 'uReconstructZonal' in vars_dict and 'uReconstructMeridional' in vars_dict:
+                        ex_varlist.append(k)
+                        extra_exclude = extra_exclude + 1
+                        if me.get_rank() == 0:
+                            print(
+                                'WARNING: We suggest that variable u (Horizontal normal velocity at edges) be excluded from the summary file in favor of uReconstructZonal and uReconstructMeridional (cell variables) Added to json file.'
+                            )
+                        continue
+                edge_names.append(k)
             elif v_dim in vd:
                 vertex_names.append(k)
             else:
-                print(
-                    'Note: variable ',
-                    k,
-                    ' contains time but not cells, edges, or vertices (and will be excluded).',
-                )
+                # add to exclude list
+                ex_varlist.append(k)
+                extra_exclude = extra_exclude + 1
+                if me.get_rank() == 0:
+                    print(
+                        'WARNING: variable ',
+                        k,
+                        ' contains time but not cells, edges, or vertices (and will be excluded and added to a new jsonfile).',
+                    )
                 continue
             str_size = max(str_size, len(k))
 
@@ -268,7 +277,7 @@ def main(argv):
     total = num_cell + num_edge + num_vertex
 
     if me.get_rank() == 0 and verbose:
-        print('VERBOSE: Number of variables found:  ', total)
+        print('VERBOSE: Number of variables (after exclusions) found:  ', total)
         print(
             'VERBOSE: Cell variables: ',
             num_cell,
@@ -286,6 +295,7 @@ def main(argv):
 
     if esize < total:
         if me.get_rank() == 0:
+
             print(
                 '**************************************************************************************************'
             )
@@ -315,6 +325,7 @@ def main(argv):
     sum_dir = os.path.dirname(this_sumfile)
     if len(sum_dir) == 0:
         sum_dir = '.'
+
     if os.path.exists(sum_dir) is False:
         if me.get_rank() == 0:
             print('ERROR: Summary file directory: ', sum_dir, ' not found')
@@ -322,8 +333,107 @@ def main(argv):
 
     this_sumfile = sum_dir + '/' + this_sumfile
 
-    if me.get_rank() == 0:
+    varCell_list_loc = me.partition(cell_names, func=EqualStride(), involved=True)
+    varEdge_list_loc = me.partition(edge_names, func=EqualStride(), involved=True)
+    varVertex_list_loc = me.partition(vertex_names, func=EqualStride(), involved=True)
 
+    # close first_file
+    first_file.close()
+
+    # Calculate global means #
+    if me.get_rank() == 0 and verbose:
+        print('VERBOSE: Calculating global means .....')
+
+    gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
+        full_in_files, varCell_list_loc, varEdge_list_loc, varVertex_list_loc, opts_dict
+    )
+
+    if me.get_rank() == 0 and verbose:
+        print('VERBOSE: Finished calculating global means .....')
+
+    # gather to rank = 0
+    if opts_dict['mpi_enable']:
+
+        # Gather the cell variable results from all processors to the master processor
+        slice_index = get_stride_list(len(cell_names), me)
+        # Gather global means cell results
+
+        # print("MYRANK = ", me.get_rank(), slice_index)
+        gmCell = gather_npArray(gmCell, me, slice_index, (len(cell_names), len(full_in_files)))
+        # print(gmCell)
+
+        # Gather the edge variable results from all processors to the master processor
+        slice_index = get_stride_list(len(edge_names), me)
+        # Gather global means edge results
+        gmEdge = gather_npArray(gmEdge, me, slice_index, (len(edge_names), len(full_in_files)))
+
+        # Gather the vertex variable results from all processors to the master processor
+        slice_index = get_stride_list(len(vertex_names), me)
+        # Gather global means vertex results
+        gmVertex = gather_npArray(
+            gmVertex, me, slice_index, (len(vertex_names), len(full_in_files))
+        )
+
+    # rank =0 : complete calculations for summary file
+    if me.get_rank() == 0:
+        gmall = np.concatenate((gmCell, gmEdge, gmVertex), axis=0)
+
+        # PCA prep and calculation
+        (
+            mu_gm,
+            sigma_gm,
+            standardized_global_mean,
+            loadings_gm,
+            scores_gm,
+            new_ex_varlist,
+            new_gmall,
+            b_exit,
+        ) = pyEnsLib.pre_PCA(gmall, all_var_names, ex_varlist, me)
+
+        # if PCA calc encounters an error, then remove the summary file and exit
+        if b_exit:
+            print('STATUS: Summary could not be created.')
+            sys.exit(2)
+
+        # update json file?
+        if len(ex_varlist) < len(new_ex_varlist) or extra_exclude > 0:
+            print('STATUS: Creating an updated JSON file (with prefix "NEW.")')
+            new_name = 'NEW.' + opts_dict['jsonfile']
+            print(
+                'STATUS: Adding ',
+                len(new_ex_varlist) - len(ex_varlist) + extra_exclude,
+                ' variables to ',
+                new_name,
+            )
+            jdict = {}
+            jdict['ExcludedVar'] = new_ex_varlist
+
+            with open(new_name, 'w') as outfile:
+                json.dump(jdict, outfile)
+
+            # update ncell, nedge, and nvertex => by removing vars from corresponding names
+            for i in new_ex_varlist:
+                if i in all_var_names:
+                    all_var_names.remove(i)
+                if i in cell_names:
+                    cell_names.remove(i)
+                elif i in edge_names:
+                    edge_names.remove(i)
+                elif i in vertex_names:
+                    vertex_names.remove(i)
+
+            num_cell = len(cell_names)
+            num_edge = len(edge_names)
+            num_vertex = len(vertex_names)
+            total = num_cell + num_edge + num_vertex
+
+            nvars = loadings_gm.shape[0]
+            if nvars != (total):
+                print('DIMENSION ERROR!')
+                print('STATUS: Summary could not be created.')
+                sys.exit(2)
+
+        # create the summary file (still rank 0)
         if verbose:
             print('VERBOSE: Creating ', this_sumfile, '  ...')
 
@@ -365,8 +475,6 @@ def main(argv):
         # Create variables
         if verbose:
             print('VERBOSE: Creating variables .....')
-        # TO DO - any time invarient data that we want?
-        # v_lev = nc_sumfile.createVariable('lev', 'f8', ('nlev',))
 
         v_vars = nc_sumfile.createVariable('vars', 'S1', ('nvars', 'str_size'))
         v_varCell = nc_sumfile.createVariable('varCell', 'S1', ('nvarsCell', 'str_size'))
@@ -433,91 +541,8 @@ def main(argv):
         v_varEdge[:] = eq_edge_names[:]
         v_varVertex[:] = eq_vertex_names[:]
 
-        # Time-invarient metadata
-        # TO DO
-        if verbose:
-            print('VERBOSE: Assigning time invariant metadata .....')
-        # lev_data = first_file.variables['lev']
-        # v_lev[:] = lev_data[:]
-
-    # end of rank=0 work
-
-    # All:
-
-    varCell_list_loc = me.partition(cell_names, func=EqualStride(), involved=True)
-    varEdge_list_loc = me.partition(edge_names, func=EqualStride(), involved=True)
-    varVertex_list_loc = me.partition(vertex_names, func=EqualStride(), involved=True)
-
-    # close first_file
-    first_file.close()
-
-    # Calculate global means #
-    if me.get_rank() == 0 and verbose:
-        print('VERBOSE: Calculating global means .....')
-
-    gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
-        full_in_files, varCell_list_loc, varEdge_list_loc, varVertex_list_loc, opts_dict
-    )
-
-    if me.get_rank() == 0 and verbose:
-        print('VERBOSE: Finished calculating global means .....')
-
-    # empty - not excluding any vars due to global means at this time
-    var_list = []
-
-    # gather to rank = 0
-    if opts_dict['mpi_enable']:
-
-        # Gather the cell variable results from all processors to the master processor
-        slice_index = get_stride_list(len(cell_names), me)
-        # Gather global means cell results
-
-        # print("MYRANK = ", me.get_rank(), slice_index)
-        gmCell = gather_npArray(gmCell, me, slice_index, (len(cell_names), len(full_in_files)))
-        # print(gmCell)
-
-        # Gather the edge variable results from all processors to the master processor
-        slice_index = get_stride_list(len(edge_names), me)
-        # Gather global means edge results
-        gmEdge = gather_npArray(gmEdge, me, slice_index, (len(edge_names), len(full_in_files)))
-
-        # Gather the vertex variable results from all processors to the master processor
-        slice_index = get_stride_list(len(vertex_names), me)
-        # Gather global means vertex results
-        gmVertex = gather_npArray(
-            gmVertex, me, slice_index, (len(vertex_names), len(full_in_files))
-        )
-
-        #################
-        # gather variables to exclude (for pre_pca - currently will be empty)
-        var_list = gather_list(var_list, me)
-
-    # rank =0 : complete calculations for summary file
-    if me.get_rank() == 0:
-        gmall = np.concatenate((gmCell, gmEdge, gmVertex), axis=0)
-        # save to summary file
-        v_gm[:, :] = gmall[:, :]
-
-        # print("gmall = ", gmall)
-
-        # PCA prep and calculation
-        (
-            mu_gm,
-            sigma_gm,
-            standardized_global_mean,
-            loadings_gm,
-            scores_gm,
-            b_exit,
-        ) = pyEnsLib.pre_PCA(gmall, all_var_names, var_list, me)
-
-        # if PCA calc encounters an error, then remove the summary file and exit
-        if b_exit:
-            nc_sumfile.close()
-
-            os.unlink(this_sumfile)
-            print('STATUS: Summary could not be created.')
-            sys.exit(2)
-
+        # populate variables
+        v_gm[:, :] = new_gmall[:, :]
         v_standardized_gm[:, :] = standardized_global_mean[:, :]
         v_mu_gm[:] = mu_gm[:]
         v_sigma_gm[:] = sigma_gm[:]
