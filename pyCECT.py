@@ -396,8 +396,12 @@ def main(argv):
             tsize = comp_std_gm.shape[1]
             b = list(ens_var_name)
             for f, avar in enumerate(b):
-                dist_995 = np.percentile(std_gm[avar], 99.5)
-                dist_005 = np.percentile(std_gm[avar], 0.5)
+                if np.ma.is_masked(std_gm[avar]):
+                    tempa = std_gm[avar]
+                else:
+                    tempa = np.array(std_gm[avar])
+                dist_995 = np.percentile(tempa, 99.5)
+                dist_005 = np.percentile(tempa, 0.5)
                 # print(avar, " = ", dist_005, dist_995)
                 count = 0
                 for i in range(tsize):
