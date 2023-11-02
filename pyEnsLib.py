@@ -1621,6 +1621,7 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
     eachruncount = np.zeros(new_scores.shape[1], dtype=np.int32)
     totalcount = 0
     sum_index = []
+
     if me.get_rank() == 0:
         print('')
         print('*********************************************** ')
@@ -1781,7 +1782,7 @@ def CECT_usage():
     )
     print('   --numRunFile <num>      : total number of runs to include in test (default = 3)')
     print(
-        '   --printVars             : print out variables that fall outside of the global mean ensemble distribution (off by default)'
+        '   --printStdMean          : print out variables that fall outside of the global mean ensemble distribution (off by default for a pass)'
     )
     print(
         '   --saveResults           : save a netcdf file with scores and std global means from the test runs (savefile.nc). '

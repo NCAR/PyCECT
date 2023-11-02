@@ -25,7 +25,7 @@ def main(argv):
 
     # Get command line stuff and store in a dictionary
     s = """verbose sumfile= indir= input_globs= tslice= nPC= sigMul=
-         minPCFail= minRunFail= numRunFile= printVars popens mpas pop cam
+         minPCFail= minRunFail= numRunFile= popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
          casejson= npick= pepsi_gm pop_tol= web_enabled
          base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= savePCAMat= saveEET="""
@@ -47,7 +47,6 @@ def main(argv):
     opts_dict['minPCFail'] = 3
     opts_dict['minRunFail'] = 2
     opts_dict['numRunFile'] = 3
-    opts_dict['printVars'] = False
     opts_dict['popens'] = False
     opts_dict['mpas'] = False
     opts_dict['cam'] = True
@@ -278,6 +277,9 @@ def main(argv):
                 ens_gm,
             ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
 
+            # total vars
+            total_vars = len(ens_var_name)
+
             # Add global mean to the dictionary "variables"
             variables = {}
             for k, v in ens_gm.items():
@@ -318,6 +320,9 @@ def main(argv):
                 str_size,
             ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
 
+            # total vars
+            total_vars = len(ens_var_name)
+
             # Add global mean to the dictionary "variables"
             variables = {}
 
@@ -353,6 +358,23 @@ def main(argv):
             # end cam
 
         # NOW this the same for MPAS and CAM
+
+        # check nPC
+
+        if opts_dict['nPC'] > total_vars:
+
+            new_pc = int(total_vars * 0.8)
+            print(
+                'Warning: please note the number of PCs specified (option --nPC) is set to ',
+                opts_dict['nPC'],
+                ', which exceeds the number of PC scores in the summary file (',
+                total_vars,
+                '). Instead using --nPC ',
+                new_pc,
+                '.',
+            )
+
+            opts_dict['nPC'] = new_pc
 
         # extra info
         # Add the new run global mean to the dictionary "results"
@@ -435,6 +457,9 @@ def main(argv):
                     ' variable(s) have 1 test run global means outside of the 99th percentile.',
                 )
                 print(one_outside99)
+
+            if len(all_outside99) + len(two_outside99) + len(one_outside99) == 0:
+                print('*** No variables have test run global means outside of the 99th percentile.')
 
             # count = len(all_outside99) + len(two_outside99) + len(one_outside99)
             # count = max(10, count)
