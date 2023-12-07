@@ -1509,10 +1509,7 @@ def standardized(gm, mu_gm, sigma_gm, loadings_gm, all_var_names, opts_dict, me)
             sum_std_mean[var] = sum_std_mean[var] + np.abs(standardized_mean[var, file])
     new_scores = np.dot(loadings_gm.T.astype(np.float64), standardized_mean)
 
-    var_list = []
-    # sorted_sum_std_mean = np.argsort(sum_std_mean)[::-1]
-
-    return new_scores, var_list, standardized_mean
+    return new_scores, sum_std_mean, standardized_mean
 
 
 #
@@ -1625,6 +1622,7 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
     totalcount = 0
     sum_index = []
     if me.get_rank() == 0:
+        print('')
         print('*********************************************** ')
         print('PCA Test Results')
         print('*********************************************** ')
@@ -1673,7 +1671,9 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
                 sum_index,
             )
             print(' ')
-            print('These runs ' + decision + ' according to our testing criterion.')
+            print('These runs ****' + decision + '**** according to our testing criterion.')
+            print(' ')
+
         elif me.get_rank() == 0:
             print(' ')
             print(
@@ -1784,9 +1784,6 @@ def CECT_usage():
         '   --printVars             : print out variables that fall outside of the global mean ensemble distribution (off by default)'
     )
     print(
-        '                             then output associated box plots (off by default) - requires Python seaborn package'
-    )
-    print(
         '   --saveResults           : save a netcdf file with scores and std global means from the test runs (savefile.nc). '
     )
     print(
@@ -1841,7 +1838,7 @@ def EnsSum_usage():
     print('   --mach <name>         : Machine name used in the metadata (default = cheyenne)')
     print('   --tslice <num>       : the index into the time dimension (default = 1)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
-    print('                          be excluded or included  (default = exclude_empty.json)')
+    print('                          be excluded (default = exclude_empty.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
     #    print(
     #        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
@@ -1870,7 +1867,7 @@ def EnsSumMPAS_usage():
     print('   --mach <name>        : Machine name used in the metadata (default = cheyenne)')
     print('   --tslice <num>       : the index into the time dimension (default = 0)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
-    print('                          be excluded or included  (default = empty_excluded.json)')
+    print('                          be excluded  (default = empty_excluded.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (mpi is enabled by default)')
     print('   ')
 
