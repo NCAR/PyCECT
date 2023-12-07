@@ -22,7 +22,6 @@ from pyTools import EqualStride
 
 
 def main(argv):
-
     # Get command line stuff and store in a dictionary
     s = """verbose sumfile= indir= input_globs= tslice= nPC= sigMul=
          minPCFail= minRunFail= numRunFile= popens mpas pop cam
@@ -258,9 +257,7 @@ def main(argv):
 
     # mpas and cam
     else:
-
         if ens == 'mpas':
-
             # Read all variables from the ensemble summary file
             (
                 ens_var_name,
@@ -301,7 +298,6 @@ def main(argv):
             # end mpas
 
         else:  # cam
-
             # Read all variables from the ensemble summary file
             (
                 ens_var_name,
@@ -362,7 +358,6 @@ def main(argv):
         # check nPC
 
         if opts_dict['nPC'] > total_vars:
-
             new_pc = int(total_vars * 0.8)
             print(
                 'Warning: please note the number of PCs specified (option --nPC) is set to ',
@@ -403,7 +398,6 @@ def main(argv):
         sorted_comp_std_gm = comp_std_gm[sort_index]
 
         if opts_dict['printStdMean'] or decision == 'FAILED':
-
             print(' ')
             print('***************************************************************************** ')
             print('Test run variable standardized mean information')
@@ -487,7 +481,6 @@ def main(argv):
         # Print file with info about new test runs....to a netcdf file
         ##
         if opts_dict['saveResults']:
-
             num_vars = comp_std_gm.shape[0]
             tsize = comp_std_gm.shape[1]
             esize = std_gm_array.shape[1]

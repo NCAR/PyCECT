@@ -304,7 +304,6 @@ class SimpleCommMPI(SimpleComm):
             op = func if func else lambda *x: x[0][x[1] :: x[2]]
             j = 1 if not involved else 0
             for i in range(1, self.get_size()):
-
                 # Get the part of the data to send to rank i
                 part = op(data, i - j, self.get_size() - j)
 
@@ -340,7 +339,6 @@ class SimpleCommMPI(SimpleComm):
             else:
                 return None
         else:
-
             # Get the data message from the manager
             msg_tag = self._tag_offset(self.PART_TAG, self.MSG_TAG, tag)
             msg = self._comm.recv(source=0, tag=msg_tag)
@@ -399,7 +397,6 @@ class SimpleCommMPI(SimpleComm):
         """
         if self.get_size() > 1:
             if self.is_manager():
-
                 # Listen for a requesting worker rank
                 req_tag = self._tag_offset(self.RATN_TAG, self.REQ_TAG, tag)
                 rank = self._comm.recv(source=self._mpi.ANY_SOURCE, tag=req_tag)
@@ -430,7 +427,6 @@ class SimpleCommMPI(SimpleComm):
                     pyt_tag = self._tag_offset(self.RATN_TAG, self.PYT_TAG, tag)
                     self._comm.send(data, dest=rank, tag=pyt_tag)
             else:
-
                 # Send a request for data to the manager
                 req_tag = self._tag_offset(self.RATN_TAG, self.REQ_TAG, tag)
                 self._comm.send(self.get_rank(), dest=0, tag=req_tag)
@@ -496,7 +492,6 @@ class SimpleCommMPI(SimpleComm):
         """
         if self.get_size() > 1:
             if self.is_manager():
-
                 # Receive the message from the worker
                 msg_tag = self._tag_offset(self.CLCT_TAG, self.MSG_TAG, tag)
                 msg = self._comm.recv(source=self._mpi.ANY_SOURCE, tag=msg_tag)
@@ -525,7 +520,6 @@ class SimpleCommMPI(SimpleComm):
                 return msg['rank'], recvd
 
             else:
-
                 # Create the handshake message
                 msg = {}
                 msg['rank'] = self.get_rank()
