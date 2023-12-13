@@ -1,6 +1,7 @@
 {
     "test_vars": [
         {
+            "test_type": "continuous_test",
             "var_name" : "config_xnutr",
             "namelist_preface": "damping",
             "neg_test_orders" : [0, -1, -2, -3],

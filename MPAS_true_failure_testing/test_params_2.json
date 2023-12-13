@@ -1,6 +1,7 @@
 {
     "test_vars": [
         {
+            "test_type": "continuous_test",
             "var_name" : "config_epssm",
             "namelist_preface": "nhyd_model",
             "neg_test_orders" : [0, -1, -2, -3],
