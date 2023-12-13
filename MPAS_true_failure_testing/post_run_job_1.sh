@@ -3,7 +3,7 @@
 #PBS -N ect_postrun_1
 ### Project Code
 #PBS -A NTDD0005
-#PBS -l walltime=08:00:00
+#PBS -l walltime=00:30:00
 #PBS -q regular
 #PBS -l select=4:ncpus=4:mpiprocs=4:mem=45GB
 #PBS -M teo.pricebroncucia@colorado.edu
