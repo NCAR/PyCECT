@@ -29,6 +29,6 @@
     },
     "verify_runs": 30,
     "output_timestep": 0,
-    "ect_pca_dims": 40
+    "ect_pca_dims": 26
 
 }
