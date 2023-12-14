@@ -45,6 +45,7 @@ def main(argv):
 
         # binary test
         if each["test_type"] == "binary_test":
+            print(f'Test name: {each["test_name"]}')
             # set test specific directories
             if len(each["mod_mpas_src"]) > 0:
                 mpas_src = each["mod_mpas_src"]
@@ -82,7 +83,7 @@ def main(argv):
 
         # Namelist Float test
         else:
-
+            print(f'Test name: {each["var_name"]}')
             var_name = each["var_name"]
             namelist_preface = each["namelist_preface"]
 
