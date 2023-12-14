@@ -9,6 +9,7 @@ import os, sys
 import f90nml
 import numpy as np
 import copy
+import shutil
 
 def main(argv):
 
@@ -61,6 +62,13 @@ def main(argv):
 
             # create empty directories for outputs
             output_folder = test_output_dir + f"/{test_name}"
+
+            if os.path.exists(output_folder):
+                try:
+                    shutil.rmtree(output_folder)
+                except OSError as e:
+                    print("Error: %s - %s." % (e.filename, e.strerror))
+
             os.mkdir(output_folder)
             os.mkdir(output_folder + "/history_files")
 
@@ -93,9 +101,15 @@ def main(argv):
 
                 # create empty directories for outputs
                 output_folder = test_output_dir + f"/{var_name}_perturb_neg{order}"
-                if not os.path.exists(output_folder):
-                    os.mkdir(output_folder)
-                    os.mkdir(output_folder + "/history_files")
+                
+                if os.path.exists(output_folder):
+                    try:
+                        shutil.rmtree(output_folder)
+                    except OSError as e:
+                        print("Error: %s - %s." % (e.filename, e.strerror))
+
+                os.mkdir(output_folder)
+                os.mkdir(output_folder + "/history_files")
 
                 # modify namelist params
                 mod_nml[namelist_preface][var_name] = default_var_value * (1 - 10.**order)
@@ -119,9 +133,15 @@ def main(argv):
 
                 # create empty directories for outputs
                 output_folder = test_output_dir + f"/{var_name}_perturb_{order}"
-                if not os.path.exists(output_folder):
-                    os.mkdir(output_folder)
-                    os.mkdir(output_folder + "/history_files")
+
+                if os.path.exists(output_folder):
+                    try:
+                        shutil.rmtree(output_folder)
+                    except OSError as e:
+                        print("Error: %s - %s." % (e.filename, e.strerror))
+
+                os.mkdir(output_folder)
+                os.mkdir(output_folder + "/history_files")
 
                 # modify namelist params
                 mod_nml[namelist_preface][var_name] = default_var_value * (1 + 10.**order)
