@@ -93,8 +93,9 @@ def main(argv):
 
                 # create empty directories for outputs
                 output_folder = test_output_dir + f"/{var_name}_perturb_neg{order}"
-                os.mkdir(output_folder)
-                os.mkdir(output_folder + "/history_files")
+                if not os.path.exists(output_folder):
+                    os.mkdir(output_folder)
+                    os.mkdir(output_folder + "/history_files")
 
                 # modify namelist params
                 mod_nml[namelist_preface][var_name] = default_var_value * (1 - 10.**order)
@@ -118,8 +119,9 @@ def main(argv):
 
                 # create empty directories for outputs
                 output_folder = test_output_dir + f"/{var_name}_perturb_{order}"
-                os.mkdir(output_folder)
-                os.mkdir(output_folder + "/history_files")
+                if not os.path.exists(output_folder):
+                    os.mkdir(output_folder)
+                    os.mkdir(output_folder + "/history_files")
 
                 # modify namelist params
                 mod_nml[namelist_preface][var_name] = default_var_value * (1 + 10.**order)
