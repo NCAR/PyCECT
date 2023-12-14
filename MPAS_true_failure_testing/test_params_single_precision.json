@@ -4,9 +4,10 @@
             "test_type": "binary_test",
             "test_name" : "single_precision",
             "test_title": "Single Precision",
-            "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_openmp",
+            "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_single_precision",
             "mod_mpas_init_dir": ""
         }
+
     ],
     "file_paths" : {
         "mpas_src" : "/glade/work/teopb/MPAS-Model",
