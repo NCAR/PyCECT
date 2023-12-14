@@ -57,7 +57,7 @@ def main(argv):
             print(f"Creating directories for {test_name} test")
 
             init_copy_folder = f"{init_copy_dir}/{test_name}"
-            command = f"cp -aT {init_dir}/ {init_copy_folder}"
+            command = f"cp -aTf {init_dir}/ {init_copy_folder}"
             os.system(command)
 
             # create empty directories for outputs
@@ -96,7 +96,7 @@ def main(argv):
             for order in neg_test_orders:
                 # create initial conditions copy directories (helpful if initial directory restart files are absolute symlinks for size)
                 init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_neg{order}"
-                command = f"cp -a {init_dir}/ {init_copy_folder}"
+                command = f"cp -af {init_dir}/ {init_copy_folder}"
                 os.system(command)
 
                 # create empty directories for outputs
@@ -128,7 +128,7 @@ def main(argv):
             for order in pos_test_orders:
                 # create initial conditions copy directories (helpful if initial directory restart files are absolute symlinks for size)
                 init_copy_folder = f"{init_copy_dir}/{var_name}_perturb_{order}"
-                command = f"cp -a {init_dir}/ {init_copy_folder}"
+                command = f"cp -af {init_dir}/ {init_copy_folder}"
                 os.system(command)
 
                 # create empty directories for outputs
