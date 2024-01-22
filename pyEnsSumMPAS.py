@@ -331,7 +331,10 @@ def main(argv):
             print('ERROR: Summary file directory: ', sum_dir, ' not found')
         sys.exit(2)
 
-    this_sumfile = sum_dir + '/' + this_sumfile
+    if sum_dir == ".":
+        this_sumfile = sum_dir + '/' + this_sumfile
+    else:
+        this_sumfile = this_sumfile
 
     varCell_list_loc = me.partition(cell_names, func=EqualStride(), involved=True)
     varEdge_list_loc = me.partition(edge_names, func=EqualStride(), involved=True)

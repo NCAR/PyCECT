@@ -302,7 +302,11 @@ def main(argv):
             print('ERROR: Summary file directory: ', sum_dir, ' not found')
         sys.exit(2)
 
-    this_sumfile = sum_dir + '/' + this_sumfile
+    # Enable placing output file somewhere other than current directory
+    if sum_dir == ".":
+        this_sumfile = sum_dir + '/' + this_sumfile
+    else:
+        this_sumfile = this_sumfile
 
     # All:
     var3_list_loc = me.partition(d3_var_names, func=EqualStride(), involved=True)
