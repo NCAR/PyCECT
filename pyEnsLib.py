@@ -767,7 +767,7 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     weights['vertex'] = vertex_wgt
 
     # loop through the input file list to calculate global means
-    print('Examining data from files ...')
+    #print('Examining data from files ...')
     for fcount, in_file in enumerate(o_files):
         fname = nc.Dataset(in_file, 'r')
         (
@@ -2100,7 +2100,7 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
         nbin = 1
     Zscore = np.zeros((len(Var3d) + len(Var2d), len(ifiles), (nbin)), dtype=np.float32)
 
-    failure_count = np.zeros((len(ifiles)), dtype=np.int)
+    failure_count = np.zeros((len(ifiles)), dtype=np.int32)
     sum_file = nc.Dataset(opts_dict['sumfile'], 'r')
     for k, v in sum_file.variables.items():
         if k == 'ens_stddev2d':

@@ -40,7 +40,7 @@ def main(argv):
     opts_dict = {}
     opts_dict['input_globs'] = ''
     opts_dict['indir'] = ''
-    opts_dict['tslice'] = 1
+    opts_dict['tslice'] = 0
     opts_dict['nPC'] = 50
     opts_dict['sigMul'] = 2
     opts_dict['verbose'] = False
