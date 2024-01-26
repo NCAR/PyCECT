@@ -32,6 +32,7 @@ To use pyEnsSum:
    Note that the python environment is loaded in the script:
 
    ``module load conda``
+
    ``conda activate npl``
 
 2.  Otherwise you need these packages (see ``requirements.txt``):
@@ -71,7 +72,7 @@ Notes:
 ------------------
 
 1. CAM-ECT uses yearly average files, which by default (in the ensemble.py
-   generation script in CESM) also contains the initial conditions.  Therefore,
+   generation script in CESM) also contain the initial conditions.  Therefore,
    one typically needs to set ``--tslice 1`` to use the yearly average (because
    slice 0 is the initial conditions.)
 
@@ -87,9 +88,8 @@ Notes:
    condition and would require ``--tslice 0``.
 
 4. The ``--esize``  (the ensemble size) can be less than or equal to the number of files
-   in ``--indir``.  Ensembles numbered 0000-(esize-1) will be included unless ``--fIndex``
-   is specified.  UF-CAM-ECT typically uses at least 350 members,
-   whereas CAM-ECT does not require as many.
+   in ``--indir``.  Ensembles numbered 0000-(esize-1) will be included.  UF-CAM-ECT
+   typically uses at least 350 members, whereas CAM-ECT does not require as many.
 
 5. Note that ``--res``, ``--tag``, ``--compset``, and ``--mach``
    parameters only affect the metadata written to the summary file.
