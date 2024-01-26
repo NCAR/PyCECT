@@ -30,10 +30,11 @@ To use pyEnsSum:
    ``qsub test_pyEnsSum.sh``
 
    Note that the python environment is loaded in the script:
+
    ``module load conda``
    ``conda activate npl``
 
-2.  Otherwise you need these packages (see ``requirements.txt`):
+2.  Otherwise you need these packages (see ``requirements.txt``):
 
          * numpy
          * scipy
