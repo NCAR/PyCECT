@@ -15,7 +15,7 @@ via MPAS-A, https://github.com/MPAS-Dev/MPAS-Model).
 or PyEnsSumMPAS.py, respectively, each of which have their own corresponding instructions.)
 
 
-o use pyEnsSumMPAS:
+To use pyEnsSumMPAS:
 --------------------
 
 1. On NCAR's Derecho machine:
