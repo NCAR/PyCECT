@@ -20,7 +20,6 @@ be generated in CIME via $CIME/tools/statistical_ensemble_test/ensemble.py).
 (Note: to generate a summary file for UF-CAM-ECT/CAM-ECT or MPAS-ECT, you must use
 pyEnsSum.py or PyEnsSUmMPAS.py, each of which have their own corresponding instructions.)
 
-
 To use pyEnsSumPop:
 --------------------------
 
