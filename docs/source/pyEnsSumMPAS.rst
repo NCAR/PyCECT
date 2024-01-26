@@ -39,6 +39,29 @@ o use pyEnsSumMPAS:
 
    ``python pyEnsSumMPAS.py -h*``::
 
+        Creates the summary file for an ensemble of MPAS data. 
+
+	------------------------
+	Args for pyEnsSumMPAS : 
+	------------------------
+	pyEnsSumMPAS.py
+	-h                   : prints out this usage message
+	--verbose            : prints out in verbose mode (off by default)
+	--sumfile <ofile>    : the output summary data file (default = mpas.ens.summary.nc)
+	--indir <path>       : directory containing all of the ensemble runs (default = ./)
+	--esize  <num>       : Number of ensemble members (default = 200)
+	--tag <name>         : Tag name for the summary metadata (default = tag)
+	--core <name>        : Core name for the summary metadata (default = atmosphere)
+	--mesh <name>        : Mesh name for the summary metadata (default = mesh)
+	--model <name>       : Model name for the summary metadata (default = mpas)
+	--mach <name>        : Machine name used in the metadata (default = derecho)
+	--tslice <num>       : the index into the time dimension (default = 0)
+	--jsonfile <fname>   : Jsonfile to provide that a list of variables that will 
+                        	be excluded  (default = empty_excluded.json)
+        --mpi_disable        : Disable mpi mode to run in serial (mpi is enabled by default)
+   
+
+     
 
 Notes:
 ------------------

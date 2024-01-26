@@ -73,20 +73,6 @@ def main(argv):
     opts_dict['base_year'] = 1
     opts_dict['saveEET'] = ''
 
-
-   # some more specific defaults                                                                                                                                                      
-   if ens =='mpas':
-       if opts_dict['nPC'] < 0:
-            opts_dict['nPC'] = 26
-        if opts_dict['sigMul'] < 0:
-            opts_dict['sigMul'] = 2
-    elif ens == 'cam':
-        if opts_dict['nPC'] < 0:
-            opts_dict['nPC'] = 128
-        if opts_dict['sigMul']	< 0:
-            opts_dict['sigMul'] = 2.23
-
-    
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
     caller = 'CECT'
@@ -112,11 +98,16 @@ def main(argv):
         opts_dict['numRunFile'] = 1
 
     # some more specific defaults (if not specified)   
-   if ens =='mpas':
-        opts_dict['nPC'] = 50
-        opts_dict['sigMul'] = 2
+    if ens =='mpas':
+        if opts_dict['nPC'] < 0:
+            opts_dict['nPC'] = 26
+        if opts_dict['sigMul'] < 0:
+            opts_dict['sigMul'] = 2
     elif ens == 'cam':
-
+        if opts_dict['nPC'] < 0:
+            opts_dict['nPC'] = 128
+        if opts_dict['sigMul']  < 0:
+            opts_dict['sigMul'] = 2.23
 
     print('Parameter values:')    
     print(opts_dict)    

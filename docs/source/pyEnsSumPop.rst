@@ -45,6 +45,29 @@ To use pyEnsSumPop:
 
    ``python pyEnsSumPop.py -h``
 
+         Creates the summary file for an ensemble of POP data. 
+
+	------------------------
+	 Args for pyEnsSumPop : 
+	------------------------
+	 pyEnsSumPop.py
+	 -h                   : prints out this usage message
+	 --verbose            : prints out in verbose mode (off by default)
+	 --sumfile    <ofile> : the output summary data file (default = pop.ens.summary.nc)
+	 --indir      <path>  : directory containing all of the ensemble runs (default = ./)
+	 --esize <num>        : Number of ensemble members (default = 40)
+	                        (Note: backwards compatible with --npert)
+         --tag <name>         : Tag name used in metadata (default = tag)
+	 --compset <name>     : Compset used in metadata (default = G)
+	 --res <name>         : Resolution (used in metadata) (default = T62_g17)
+	 --mach <name>        : Machine name used in the metadata (default = derecho)
+	 --tslice <num>       : the time slice of the variable that we will use (default = 0)
+	 --nyear  <num>       : Number of years (default = 1)
+	 --nmonth  <num>      : Number of months (default = 12)
+	 --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be
+                            	 included  (RECOMMENDED: default = pop_ensemble.json)
+	 --mpi_disable        : Disable mpi mode to run in serial (off by default)
+   
 
 Notes:
 ----------------

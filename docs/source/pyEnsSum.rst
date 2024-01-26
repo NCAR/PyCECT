@@ -42,9 +42,30 @@ To use pyEnsSum:
 
 3. To see all options (and defaults):
 
-   ``python pyEnsSum.py -h*``::
+   ``python pyEnsSum.py -h``::
 
+       Creates the summary file for an ensemble of CAM data. 
 
+       ------------------------
+        Args for pyEnsSum : 
+       ------------------------
+        pyEnsSum.py
+        -h                   : prints out this usage message
+        --verbose            : prints out in verbose mode (off by default)
+        --sumfile <ofile>    : the output summary data file (default = ens.summary.nc)
+        --indir <path>       : directory containing all of the ensemble runs (default = ./)
+        --esize  <num>       : Number of ensemble members (default = 1800)
+        --tag <name>         : Tag name used in metadata (default = cesm_version)
+        --compset <name>     : Compset used in metadata (default = compset)
+        --res <name>         : Resolution used in metadata (default = res)
+        --mach <name>        : Machine name used in the metadata (default = derecho)
+        --tslice <num>       : the index into the time dimension (default = 0)
+        --jsonfile <fname>   : Jsonfile to provide that a list of variables that will 
+                               be excluded (default = exclude_empty.json)
+        --mpi_disable        : Disable mpi mode to run in serial (off by default)
+   
+
+     
 Notes:
 ------------------
 
