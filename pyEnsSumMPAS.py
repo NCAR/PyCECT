@@ -37,9 +37,9 @@ def main(argv):
     opts_dict['model'] = 'mpas'
     opts_dict['core'] = 'atmosphere'
     opts_dict['mesh'] = 'mesh'
-    opts_dict['tag'] = 'v.7.1'
-    opts_dict['mach'] = 'cheyenne'
-    opts_dict['esize'] = 10
+    opts_dict['tag'] = 'tag'
+    opts_dict['mach'] = 'derecho'
+    opts_dict['esize'] = 200
     opts_dict['tslice'] = 0
     opts_dict['sumfile'] = 'mpas.ens.summary.nc'
     opts_dict['indir'] = './'

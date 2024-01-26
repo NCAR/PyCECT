@@ -21,7 +21,7 @@ from pyTools import Duplicate, EqualLength, EqualStride
 def main(argv):
 
     # Get command line stuff and store in a dictionary
-    s = 'tag= compset= esize= tslice= res= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm  popens regx= startMon= endMon= fIndex= mpi_disable'
+    s = 'tag= compset= esize= tslice= res= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm  popens mpi_disable'
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
@@ -33,12 +33,12 @@ def main(argv):
     opts_dict = {}
 
     # Defaults
-    opts_dict['tag'] = 'cesm2_0'
-    opts_dict['compset'] = 'F2000climo'
-    opts_dict['mach'] = 'cheyenne'
-    opts_dict['esize'] = 350
-    opts_dict['tslice'] = 1
-    opts_dict['res'] = 'f19_f19'
+    opts_dict['tag'] = 'cesm_version'
+    opts_dict['compset'] = 'compset'
+    opts_dict['mach'] = 'derecho'
+    opts_dict['esize'] = 1800
+    opts_dict['tslice'] = 0
+    opts_dict['res'] = 'res'
     opts_dict['sumfile'] = 'ens.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['sumfiledir'] = './'
@@ -48,10 +48,6 @@ def main(argv):
     opts_dict['mpi_disable'] = False
     opts_dict['maxnorm'] = False
     opts_dict['popens'] = False
-    opts_dict['regx'] = 'test'
-    opts_dict['startMon'] = 1
-    opts_dict['endMon'] = 1
-    opts_dict['fIndex'] = 151
 
     # This creates the dictionary of input arguments
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ES', opts_dict)
@@ -501,25 +497,6 @@ def main(argv):
         print('STATUS: Summary file is complete.')
 
         nc_sumfile.close()
-
-
-def get_cumul_filelist(opts_dict, indir, regx):
-    if not opts_dict['indir']:
-        print('input dir is not specified')
-        sys.exit(2)
-    regx_list = ['mon', 'gnu', 'pgi']
-    all_files = []
-    for prefix in regx_list:
-        for i in range(opts_dict['fIndex'], opts_dict['fIndex'] + opts_dict['esize'] / 3):
-            for j in range(opts_dict['startMon'], opts_dict['endMon'] + 1):
-                mon_str = str(j).zfill(2)
-                regx = '(^' + prefix + '(.)*' + str(i) + '(.)*-(' + mon_str + '))'
-                # print 'regx=',regx
-                res = [f for f in os.listdir(indir) if re.search(regx, f)]
-                in_files = sorted(res)
-                all_files.extend(in_files)
-
-    return all_files
 
 
 #
