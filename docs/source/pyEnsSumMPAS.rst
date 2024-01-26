@@ -25,10 +25,12 @@ o use pyEnsSumMPAS:
    ``qsub test_pyEnsSumMPAS.sh``
 
    Note that the python environment is loaded in the script:
+
    ``module load conda``
+
    ``conda activate npl``
 
-2.  Otherwise you need these packages (see ``requirements.txt`):
+2.  Otherwise you need these packages (see ``requirements.txt``):
 
          * numpy
          * scipy
@@ -37,7 +39,7 @@ o use pyEnsSumMPAS:
 
 3. To see all options (and defaults):
 
-   ``python pyEnsSumMPAS.py -h*``::
+   ``python pyEnsSumMPAS.py -h``::
 
         Creates the summary file for an ensemble of MPAS data. 
 
@@ -70,7 +72,7 @@ Notes:
    multiple timeslice and may or may not
    contain initial conditions.   Therefore, just be aware when choosing which time to use
    to generate the summary that this same time slice is used for testing with pyCECT. Specify
-   the time slice with ``--tslice 0`, for example.
+   the time slice with ``--tslice 0``, for example.
 
 2. The ``--esize``  (the ensemble size) can be less than or equal to the number of files
    in ``--indir``.  Ensembles numbered 0000-(esize-1) will be included unless ``--fIndex``
@@ -83,7 +85,7 @@ Notes:
    for each 3D variable. The default is to run in parallel (recommended).
 
 5. You must specify a json file (via ``--jsonfile``) that indicates
-   the variables in the ensembleoutput files that you want to exclude from the summary file
+   the variables in the ensemble output files that you want to exclude from the summary file
    statistics (see the example json files).  The default is the provided
    empty_excluded,json, which is does not contain any variables.
    The pyEnsSumMPAS routine will let you know if you have not
@@ -118,7 +120,7 @@ Example:
 * Since the ensemble files could contain more than one time steps (in this example,
   starting a 3 and output every 3), then we specify a timeslice corresponding to timestep 12 with:
 
-``--tslice 3``
+  ``--tslice 3``
 
 * We can also specify the MPAS tag, model, mesh, core and machine of our ensemble data so that it can be written to the metadata of the summary file:
 
