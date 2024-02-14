@@ -30,28 +30,26 @@ def main(argv):
 
     test_vars = test_params["test_vars"]
 
-    orig_namelist = f90nml.read(f"{init_dir}/{namelist_name}")
-
-    # print("Original Namelist:")
-    # print(orig_namelist)
-
     for each in test_vars:
         print(f'Test type: {each["test_type"]}')
 
-        # reset directories in case they has been changed by a test
+        # reset directories in case they have been changed by a test
         mpas_src = test_params["file_paths"]["mpas_src"]
         init_dir = test_params["file_paths"]["init_dir"]
 
+        # set test specific directories
+        if len(each["mod_mpas_src"]) > 0:
+            mpas_src = each["mod_mpas_src"]
+        if len(each["mod_mpas_init_dir"]) > 0:
+            init_dir = each["mod_mpas_init_dir"]
+
+        print(f"MPAS source: {mpas_src}")
+        print(f"MPAS Init Directory: {init_dir}")
+
+        orig_namelist = f90nml.read(f"{init_dir}/{namelist_name}")
+
         # binary test
         if each["test_type"] == "binary_test":
-            # set test specific directories
-            if len(each["mod_mpas_src"]) > 0:
-                mpas_src = each["mod_mpas_src"]
-            if len(each["mod_mpas_init_dir"]) > 0:
-                init_dir = each["mod_mpas_init_dir"]
-
-            print(f"MPAS source: {mpas_src}")
-            print(f"MPAS Init Directory: {init_dir}")
 
             test_name = each["test_name"]
             print(f"Creating directories for {test_name} test")
