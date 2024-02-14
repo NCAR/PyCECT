@@ -18,7 +18,7 @@
     "file_paths" : {
         "mpas_src" : "",
         "init_dir" : "",
-        "namelist_name" : "",
+        "namelist_name" : "namelist.atmosphere",
         "init_copy_dir": "/glade/derecho/scratch/teopb/UFECT_MPAS_dirs/init_copy_dir",
         "test_output_dir": "/glade/derecho/scratch/teopb/UFECT_MPAS_dirs/test_output_dir",
         "true_sum_file": "/glade/work/teopb/PyCECT/mpas_example_bug_sum.nc"
