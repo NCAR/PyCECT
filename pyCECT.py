@@ -27,7 +27,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
          casejson= npick= pepsi_gm pop_tol= web_enabled
-         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= savePCAMat= saveEET="""
+         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case=  saveEET="""
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
@@ -39,9 +39,9 @@ def main(argv):
     opts_dict = {}
     opts_dict['input_globs'] = ''
     opts_dict['indir'] = ''
-    opts_dict['tslice'] = 1
-    opts_dict['nPC'] = 50
-    opts_dict['sigMul'] = 2
+    opts_dict['tslice'] = 0
+    opts_dict['nPC'] = -1
+    opts_dict['sigMul'] = -2
     opts_dict['verbose'] = False
     opts_dict['minPCFail'] = 3
     opts_dict['minRunFail'] = 2
@@ -70,7 +70,6 @@ def main(argv):
     opts_dict['web_enabled'] = False
     opts_dict['saveResults'] = False
     opts_dict['base_year'] = 1
-    opts_dict['savePCAMat'] = ''
     opts_dict['saveEET'] = ''
 
     # Call utility library getopt_parseconfig to parse the option keys
@@ -78,15 +77,13 @@ def main(argv):
     caller = 'CECT'
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, caller, opts_dict)
 
-    print(opts_dict)
-
     # ens type
     # cam = opts_dict['cam']
     popens = opts_dict['popens']
     pop = opts_dict['pop']
     mpas = opts_dict['mpas']
 
-    print(f'!test mpas:{mpas}')
+    # print(f'!test mpas:{mpas}')
 
     if pop or popens:
         ens = 'pop'
@@ -95,12 +92,24 @@ def main(argv):
     else:
         ens = 'cam'
 
-    # some mods for POP-ECT
+    # for POP-ECT only take one file
     if ens == 'pop':
-        opts_dict['tslice'] = 0
         opts_dict['numRunFile'] = 1
-        opts_dict['eet'] = 0
-        opts_dict['mpi_enable'] = False
+
+    # some more specific defaults (if not specified)
+    if ens == 'mpas':
+        if opts_dict['nPC'] < 0:
+            opts_dict['nPC'] = 26
+        if opts_dict['sigMul'] < 0:
+            opts_dict['sigMul'] = 2
+    elif ens == 'cam':
+        if opts_dict['nPC'] < 0:
+            opts_dict['nPC'] = 128
+        if opts_dict['sigMul'] < 0:
+            opts_dict['sigMul'] = 2.23
+
+    print('Parameter values:')
+    print(opts_dict)
 
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:

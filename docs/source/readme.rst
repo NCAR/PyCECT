@@ -8,22 +8,23 @@ alternative to requiring bitwise identical output for quality
 assurance. This objective test provides a statistical measurement
 of consistency between an accepted ensemble created
 by small initial temperature perturbations and a test set of
-CESM simulations.
+CESM simulations.  Recently the CECT framework has been extended to work
+with MPAS-A (https://mpas-dev.github.io/atmosphere/atmosphere.html).
 
 The pyCECT  package, or *python CESM Ensemble Consistency Test*
 package contains the necessary tools to to compare the results of a set of new (modified)
-CESM simulations against the accepted ensemble (pyCECT) as well as the tools to
-create the ensemble summary files (pyEnsSum and pyEnsSumPop). These
-three modules will be explained in more detail.
+CESM (or MPAS-A) simulations against the accepted ensemble (pyCECT) as well as the tools to
+create the ensemble summary files (pyEnsSum, pyEnsSumPop, and pyEnsMPAS). These
+modules will be explained in more detail.
 
-CESM/CIME notes:
+CESM notes:
 ---------------------
-1. The pyCECT package is also included in CIME (Common Infrastructure for
-    Modeling the Earth).  See:
+1. The pyCECT package is also (optionally) included in CESM (Community Earth System
+   Model) via Externals.cfg.  See:
 
-    https://github.com/ESMCI/cime
+    https://github.com/ESCOMP/CESM/
 
-2. Creating the ensemble summaries (via pyEnsSum and pyEnsSumPop) is
+2. Creating the ensemble summaries (via pyEnsSum or pyEnsSumPop) is
     typically done by the CESM software developers.  See:
 
     http://www.cesm.ucar.edu/models/cesm2/python-tools/
@@ -31,6 +32,14 @@ CESM/CIME notes:
 3. A web-based interface to this tool is available here:
 
    http://www.cesm.ucar.edu/models/cesm2/verification/
+
+MPAS notes:
+---------------------
+
+1. MPAS-A summary files may be generated via pyEnsSumMPAS.  As this functionality
+   is new, summary files are not yet available in the MPAS-A repo.
+
+2. Please contact us with any questions/issues.  (MPAS publication is in preparation.)
 
 
 Relevant publications:

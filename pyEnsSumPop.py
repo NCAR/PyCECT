@@ -29,9 +29,9 @@ def main(argv):
     opts_dict = {}
 
     # Defaults
-    opts_dict['tag'] = 'cesm2_1_0'
+    opts_dict['tag'] = 'tag'
     opts_dict['compset'] = 'G'
-    opts_dict['mach'] = 'cheyenne'
+    opts_dict['mach'] = 'derecho'
     opts_dict['tslice'] = 0
     opts_dict['nyear'] = 1
     opts_dict['nmonth'] = 12

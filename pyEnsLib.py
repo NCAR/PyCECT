@@ -757,7 +757,7 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     weights['vertex'] = vertex_wgt
 
     # loop through the input file list to calculate global means
-    print('Examining data from files ...')
+    # print('Examining data from files ...')
     for fcount, in_file in enumerate(o_files):
         fname = nc.Dataset(in_file, 'r')
         (
@@ -1735,7 +1735,7 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
 def CECT_usage():
     print('\n Compare test runs to an ensemble summary file. \n')
     print('  ----------------------------')
-    print('   Args for pyCECT :')
+    print('   Args for pyCECT (all models):')
     print('  ----------------------------')
     print('   pyCECT.py')
     print('   -h                      : prints out this usage message')
@@ -1745,14 +1745,15 @@ def CECT_usage():
         '   --indir    <path>       : directory containing the input run files (at least 3 files)'
     )
     print('   --tslice   <num>        : which time slice to use from input run files (default = 1)')
+    print('   NOTE: Runs for CAM by default (see below to specify POP or MPAS instead)')
     print('  ----------------------------')
-    print('   Args for CAM-CECT and UF-CAM-ECT and MPAS-ECT:')
+    print('   Args relevant to CAM-CECT/UF-CAM-ECT and MPAS-ECT only:')
     print('  ----------------------------')
     print(
-        '   --nPC <num>             : number of principal components (PCs) to check (default = 50, but can\'t be greater than the number of variables)'
+        '   --nPC <num>             : number of principal components (PCs) to check (can\'t be greater than the number of variables)'
     )
     print(
-        '   --sigMul   <num>        : number of standard deviations away from the mean defining the "acceptance region" (default = 2)'
+        '   --sigMul   <num>        : number of standard deviations away from the mean defining the "acceptance region"'
     )
     print(
         '   --minPCFail <num>       : minimum number of PCs that must fail the specified number of runs for a FAILURE (default = 3)'
@@ -1772,14 +1773,14 @@ def CECT_usage():
     )
 
     print('  ----------------------------')
-    print('   Args for MPAS-CECT (in addition to CAM args):')
+    print('   Args relevant to MPAS-CECT only:')
     print('  ----------------------------')
     print('   --mpas                  : indicate MPAS-ECT (required!)')
 
     print('  ----------------------------')
-    print('   Args for POP-CECT :')
+    print('   Args relevant to POP-CECT only :')
     print('  ----------------------------')
-    print('   --popens or --pop       : indicate POP-ECT (required!) (tslice will bet set to 0)')
+    print('   --popens or --pop       : indicate POP-ECT (required!)')
     print(
         '   --jsonfile  <file>      : list the json file that specifies variables to test (required!), e.g. pop_ensemble.json'
     )
@@ -1793,7 +1794,7 @@ def CECT_usage():
     )
 
     print(
-        '   --base_year <num>       :We assume the pop test files names start in year 0001. Ube this option to specify a different start year.'
+        '   --base_year <num>       :We assume the pop test files names start in year 0001. Use this option to specify a different start year.'
     )
 
 
@@ -1813,26 +1814,20 @@ def EnsSum_usage():
     print('   --verbose            : prints out in verbose mode (off by default)')
     print('   --sumfile <ofile>    : the output summary data file (default = ens.summary.nc)')
     print('   --indir <path>       : directory containing all of the ensemble runs (default = ./)')
-    print('   --esize  <num>       : Number of ensemble members (default = 350)')
-    print('   --tag <name>         : Tag name used in metadata (default = cesm2_0)')
-    print('   --compset <name>     : Compset used in metadata (default = F2000climo)')
-    print('   --res <name>         : Resolution used in metadata (default = f19_f19)')
-    print('   --mach <name>         : Machine name used in the metadata (default = cheyenne)')
-    print('   --tslice <num>       : the index into the time dimension (default = 1)')
+    print('   --esize  <num>       : Number of ensemble members (default = 1800)')
+    print('   --tag <name>         : Tag name used in metadata (default = cesm_version)')
+    print('   --compset <name>     : Compset used in metadata (default = compset)')
+    print('   --res <name>         : Resolution used in metadata (default = res)')
+    print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
+    print('   --tslice <num>       : the index into the time dimension (default = 0)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded (default = exclude_empty.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
-    #    print(
-    #        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
-    #    )
-    #    print(
-    #        '                          ensembles with numbers less than <num> are excluded from summary file) '
-    #    )
     print('   ')
 
 
 def EnsSumMPAS_usage():
-    print('\n Creates the summary file for an ensemble of CAM data. \n')
+    print('\n Creates the summary file for an ensemble of MPAS data. \n')
     print('  ------------------------')
     print('   Args for pyEnsSumMPAS : ')
     print('  ------------------------')
@@ -1841,12 +1836,12 @@ def EnsSumMPAS_usage():
     print('   --verbose            : prints out in verbose mode (off by default)')
     print('   --sumfile <ofile>    : the output summary data file (default = mpas.ens.summary.nc)')
     print('   --indir <path>       : directory containing all of the ensemble runs (default = ./)')
-    print('   --esize  <num>       : Number of ensemble members (default = 10)')
-    print('   --tag <name>         : Tag name for the summary metadata (default = v7.1)')
+    print('   --esize  <num>       : Number of ensemble members (default = 200)')
+    print('   --tag <name>         : Tag name for the summary metadata (default = tag)')
     print('   --core <name>        : Core name for the summary metadata (default = atmosphere)')
     print('   --mesh <name>        : Mesh name for the summary metadata (default = mesh)')
     print('   --model <name>       : Model name for the summary metadata (default = mpas)')
-    print('   --mach <name>        : Machine name used in the metadata (default = cheyenne)')
+    print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
     print('   --tslice <num>       : the index into the time dimension (default = 0)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded  (default = empty_excluded.json)')
@@ -1867,13 +1862,12 @@ def EnsSumPop_usage():
     print('   --verbose            : prints out in verbose mode (off by default)')
     print('   --sumfile    <ofile> : the output summary data file (default = pop.ens.summary.nc)')
     print('   --indir      <path>  : directory containing all of the ensemble runs (default = ./)')
-    #    print '   --npert <num>        : Number of ensemble members (default = 40)'
     print('   --esize <num>        : Number of ensemble members (default = 40)')
     print('                          (Note: backwards compatible with --npert)')
-    print('   --tag <name>         : Tag name used in metadata (default = cesm2_0_0)')
+    print('   --tag <name>         : Tag name used in metadata (default = tag)')
     print('   --compset <name>     : Compset used in metadata (default = G)')
     print('   --res <name>         : Resolution (used in metadata) (default = T62_g17)')
-    print('   --mach <name>         : Machine name used in the metadata (default = cheyenne)')
+    print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
     print('   --tslice <num>       : the time slice of the variable that we will use (default = 0)')
     print('   --nyear  <num>       : Number of years (default = 1)')
     print('   --nmonth  <num>      : Number of months (default = 12)')
@@ -2079,7 +2073,7 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
         nbin = 1
     Zscore = np.zeros((len(Var3d) + len(Var2d), len(ifiles), (nbin)), dtype=np.float32)
 
-    failure_count = np.zeros((len(ifiles)), dtype=np.int)
+    failure_count = np.zeros((len(ifiles)), dtype=np.int32)
     sum_file = nc.Dataset(opts_dict['sumfile'], 'r')
     for k, v in sum_file.variables.items():
         if k == 'ens_stddev2d':

@@ -36,9 +36,9 @@ def main(argv):
     opts_dict['model'] = 'mpas'
     opts_dict['core'] = 'atmosphere'
     opts_dict['mesh'] = 'mesh'
-    opts_dict['tag'] = 'v.7.1'
-    opts_dict['mach'] = 'cheyenne'
-    opts_dict['esize'] = 10
+    opts_dict['tag'] = 'tag'
+    opts_dict['mach'] = 'derecho'
+    opts_dict['esize'] = 200
     opts_dict['tslice'] = 0
     opts_dict['sumfile'] = 'mpas.ens.summary.nc'
     opts_dict['indir'] = './'
@@ -329,7 +329,10 @@ def main(argv):
             print('ERROR: Summary file directory: ', sum_dir, ' not found')
         sys.exit(2)
 
-    this_sumfile = sum_dir + '/' + this_sumfile
+    if sum_dir == '.':
+        this_sumfile = sum_dir + '/' + this_sumfile
+    else:
+        this_sumfile = this_sumfile
 
     varCell_list_loc = me.partition(cell_names, func=EqualStride(), involved=True)
     varEdge_list_loc = me.partition(edge_names, func=EqualStride(), involved=True)

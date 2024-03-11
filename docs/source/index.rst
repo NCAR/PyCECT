@@ -14,6 +14,7 @@ Welcome to pyCECT's documentation!
    source/installation.rst
    source/pyEnsSum.rst
    source/pyEnsSumPop.rst
+   source/pyEnsSumMPAS.rst
    source/pyCECT.rst
 
 
