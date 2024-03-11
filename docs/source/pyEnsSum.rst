@@ -1,4 +1,4 @@
-
+  
 pyEnsSum
 ==============
 
@@ -114,7 +114,7 @@ Notes:
    are constant across the ensemble, are not floating-point (e.g., integer),
    are linearly dependant, or have very few (< 3%) unique values.
 
-
+   
 Example:
 --------------------------------------
 (Note: This example is in test_pyEnsSum.sh)
