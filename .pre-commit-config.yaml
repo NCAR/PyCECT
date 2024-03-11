@@ -14,7 +14,7 @@ repos:
       - id: double-quote-string-fixer
 
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 23.10.1
     hooks:
       - id: black-jupyter
 
@@ -29,9 +29,10 @@ repos:
       - id: flake8
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.10.1
+    rev: 5.12.0
     hooks:
       - id: isort
+        args: ["--profile=black", "--filter-files"]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.5.1
@@ -43,5 +44,5 @@ repos:
     hooks:
       - id: nbqa-pyupgrade
         additional_dependencies: [pyupgrade==2.7.3]
-      - id: nbqa-isort
-        additional_dependencies: [isort==5.6.4]
+      #- id: nbqa-isort
+      #  additional_dependencies: [isort==5.12.0]

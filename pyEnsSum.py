@@ -19,7 +19,6 @@ from pyTools import Duplicate, EqualLength, EqualStride
 
 
 def main(argv):
-
     # Get command line stuff and store in a dictionary
     s = 'tag= compset= esize= tslice= res= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable maxnorm  popens mpi_disable'
     optkeys = s.split()
@@ -324,7 +323,6 @@ def main(argv):
 
     # gather to rank = 0
     if opts_dict['mpi_enable']:
-
         # Gather the 3d variable results from all processors to the master processor
         slice_index = get_stride_list(len(d3_var_names), me)
 
@@ -538,7 +536,6 @@ def gather_list(var_list, me):
 # Gather arrays from each processor by the var_list to the master processor and make it an array
 #
 def gather_npArray(npArray, me, slice_index, array_shape):
-
     the_array = np.zeros(array_shape, dtype=np.float64)
     if me.get_rank() == 0:
         k = 0

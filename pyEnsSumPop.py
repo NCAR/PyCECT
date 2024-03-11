@@ -15,7 +15,6 @@ from pyTools import Duplicate, EqualStride
 
 
 def main(argv):
-
     # Get command line stuff and store in a dictionary
     s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable mpi_disable nrand= rand seq= jsondir= esize='
     optkeys = s.split()
@@ -359,7 +358,6 @@ def main(argv):
 
     # Assign to summary file:
     if me.get_rank() == 0:
-
         v_RMSZ[:, :, :, :] = zmall[:, :, :, :]
         v_ens_avg3d[:, :, :, :, :] = ens_avg3d[:, :, :, :, :]
         v_ens_stddev3d[:, :, :, :, :] = ens_stddev3d[:, :, :, :, :]
