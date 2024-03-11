@@ -1,4 +1,4 @@
-  
+
 pyEnsSum
 ==============
 
@@ -46,10 +46,10 @@ To use pyEnsSum:
 
    ``python pyEnsSum.py -h``::
 
-       Creates the summary file for an ensemble of CAM data. 
+       Creates the summary file for an ensemble of CAM data.
 
        ------------------------
-        Args for pyEnsSum : 
+        Args for pyEnsSum :
        ------------------------
         pyEnsSum.py
         -h                   : prints out this usage message
@@ -62,12 +62,12 @@ To use pyEnsSum:
         --res <name>         : Resolution used in metadata (default = res)
         --mach <name>        : Machine name used in the metadata (default = derecho)
         --tslice <num>       : the index into the time dimension (default = 0)
-        --jsonfile <fname>   : Jsonfile to provide that a list of variables that will 
+        --jsonfile <fname>   : Jsonfile to provide that a list of variables that will
                                be excluded (default = exclude_empty.json)
         --mpi_disable        : Disable mpi mode to run in serial (off by default)
-   
 
-     
+
+
 Notes:
 ------------------
 
@@ -80,7 +80,7 @@ Notes:
     generation script in CESM) the ouput file no longer contains the initial conditions.
     Therefore, one typically needs to set ``--tslice 0`, assuming that only one timestep
     is written to the file.
-   
+
 3. There is no need to indicate UF-CAM-ECT vs. CAM-ECT to this routine.  It
    simply creates statistics for the supplied history files at the specified
    time slice. For example, if you want to look at monthly files, simply
@@ -104,7 +104,7 @@ Notes:
    empty_excluded,json, which is does not contain any variables.
    The pyEnsSum routine will let you know if you have not
    listed variables that need to be excluded (see more in next note).
-   
+
 8. *IMPORTANT:* If there are variables that need to be excluded (that are not in
    the .json file  already) for the summary to be generated, pyEnsSum will list these
    variables in the output.  These variables will also be added to a copy of
@@ -114,7 +114,7 @@ Notes:
    are constant across the ensemble, are not floating-point (e.g., integer),
    are linearly dependant, or have very few (< 3%) unique values.
 
-   
+
 Example:
 --------------------------------------
 (Note: This example is in test_pyEnsSum.sh)

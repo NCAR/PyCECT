@@ -27,6 +27,7 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
+        exclude: MPAS_true_failure_testing/
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0

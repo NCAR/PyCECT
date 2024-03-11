@@ -1,23 +1,22 @@
 {
-    "test_vars": [
-        {
-            "test_type": "continuous_test",
-            "var_name" : "config_coef_3rd_order",
-            "namelist_preface": "nhyd_model",
-            "neg_test_orders" : [0, -1, -2, -3],
-            "pos_test_orders" : [0.477, 0, -1, -2, -3]
-        }
-    ],
-    "file_paths" : {
-        "mpas_src" : "/glade/work/teopb/MPAS-Model",
-        "init_dir" : "/glade/work/teopb/mpas_init_large_files_linked",
-        "namelist_name" : "namelist.atmosphere",
-        "init_copy_dir": "/glade/scratch/teopb/mpas_test_mod_dirs",
-        "test_output_dir": "/glade/scratch/teopb/mpas_test_run_dirs",
-        "true_sum_file": "/glade/work/teopb/PyCECT/MPAS_paper_rec_sumfile_chey_e200_t12.nc"
-    },
-    "verify_runs": 30,
-    "output_timestep": 0,
-    "ect_pca_dims": 26
-
+  "test_vars": [
+    {
+      "test_type": "continuous_test",
+      "var_name": "config_coef_3rd_order",
+      "namelist_preface": "nhyd_model",
+      "neg_test_orders": [0, -1, -2, -3],
+      "pos_test_orders": [0.477, 0, -1, -2, -3]
+    }
+  ],
+  "file_paths": {
+    "mpas_src": "/glade/work/teopb/MPAS-Model",
+    "init_dir": "/glade/work/teopb/mpas_init_large_files_linked",
+    "namelist_name": "namelist.atmosphere",
+    "init_copy_dir": "/glade/scratch/teopb/mpas_test_mod_dirs",
+    "test_output_dir": "/glade/scratch/teopb/mpas_test_run_dirs",
+    "true_sum_file": "/glade/work/teopb/PyCECT/MPAS_paper_rec_sumfile_chey_e200_t12.nc"
+  },
+  "verify_runs": 30,
+  "output_timestep": 0,
+  "ect_pca_dims": 26
 }

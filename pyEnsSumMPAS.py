@@ -329,7 +329,7 @@ def main(argv):
             print('ERROR: Summary file directory: ', sum_dir, ' not found')
         sys.exit(2)
 
-    if sum_dir == ".":
+    if sum_dir == '.':
         this_sumfile = sum_dir + '/' + this_sumfile
     else:
         this_sumfile = this_sumfile

@@ -35,12 +35,12 @@ CESM notes:
 
 MPAS notes:
 ---------------------
-   
+
 1. MPAS-A summary files may be generated via pyEnsSumMPAS.  As this functionality
    is new, summary files are not yet available in the MPAS-A repo.
 
 2. Please contact us with any questions/issues.  (MPAS publication is in preparation.)
-   
+
 
 Relevant publications:
 ----------------------

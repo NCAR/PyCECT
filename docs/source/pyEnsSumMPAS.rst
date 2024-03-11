@@ -41,10 +41,10 @@ To use pyEnsSumMPAS:
 
    ``python pyEnsSumMPAS.py -h``::
 
-        Creates the summary file for an ensemble of MPAS data. 
+        Creates the summary file for an ensemble of MPAS data.
 
 	------------------------
-	Args for pyEnsSumMPAS : 
+	Args for pyEnsSumMPAS :
 	------------------------
 	pyEnsSumMPAS.py
 	-h                   : prints out this usage message
@@ -58,12 +58,12 @@ To use pyEnsSumMPAS:
 	--model <name>       : Model name for the summary metadata (default = mpas)
 	--mach <name>        : Machine name used in the metadata (default = derecho)
 	--tslice <num>       : the index into the time dimension (default = 0)
-	--jsonfile <fname>   : Jsonfile to provide that a list of variables that will 
+	--jsonfile <fname>   : Jsonfile to provide that a list of variables that will
                         	be excluded  (default = empty_excluded.json)
         --mpi_disable        : Disable mpi mode to run in serial (mpi is enabled by default)
-   
 
-     
+
+
 
 Notes:
 ------------------
@@ -90,7 +90,7 @@ Notes:
    empty_excluded,json, which is does not contain any variables.
    The pyEnsSumMPAS routine will let you know if you have not
    listed variables that need to be excluded (see more in next note).
-   
+
 6. *IMPORTANT:* If there are variables that need to be excluded (that are not in
    the .json file  already) for the summary to be generated, pyEnsSumMPAS will list these
    variables in the output.  These variables will also be added to a copy of

@@ -44,10 +44,10 @@ To use pyEnsSumPop:
 
    ``python pyEnsSumPop.py -h``
 
-         Creates the summary file for an ensemble of POP data. 
+         Creates the summary file for an ensemble of POP data.
 
 	------------------------
-	 Args for pyEnsSumPop : 
+	 Args for pyEnsSumPop :
 	------------------------
 	 pyEnsSumPop.py
 	 -h                   : prints out this usage message
@@ -66,7 +66,7 @@ To use pyEnsSumPop:
 	 --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be
                             	 included  (RECOMMENDED: default = pop_ensemble.json)
 	 --mpi_disable        : Disable mpi mode to run in serial (off by default)
-   
+
 
 Notes:
 ----------------
