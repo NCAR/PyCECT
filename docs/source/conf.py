@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../'))
 
 project = 'pyCECT'
 copyright = u'2015-2024, University Corporation for Atmospheric Research'
-author = u'Haiying Xu, Allison Baker, Dorit Hammerling, Daniel Milroy'
+author = u'Haiying Xu, Allison Baker, Dorit Hammerling, Daniel Milroy, Teo Price-Broncucia'
 
 
 # -- General configuration ---------------------------------------------------
