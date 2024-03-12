@@ -9,7 +9,6 @@ pyCECT: Tools to support and run the CESM Ensemble Consistency Test
     :target: https://pycect.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://github.com/github/docs/actions/workflows/linting.yaml/badge.svg
 
 Overview:
 --------
