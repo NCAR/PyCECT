@@ -33,7 +33,7 @@ To use pyEnsSumPop:
    ``module load conda``
    ``conda activate npl``
 
-2.  Otherwise you need these packages (see ``requirements.txt`):
+2.  Otherwise you need these packages (see ``requirements.txt``):
 
          * numpy
          * scipy

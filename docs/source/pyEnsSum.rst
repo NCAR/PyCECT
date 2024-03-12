@@ -78,7 +78,7 @@ Notes:
 
 2.  UF-CAM-ECT uses an early timestep such as 7 or 9.  By default (in the ensemble.py
     generation script in CESM) the ouput file no longer contains the initial conditions.
-    Therefore, one typically needs to set ``--tslice 0`, assuming that only one timestep
+    Therefore, one typically needs to set ``--tslice 0``, assuming that only one timestep
     is written to the file.
 
 3. There is no need to indicate UF-CAM-ECT vs. CAM-ECT to this routine.  It
