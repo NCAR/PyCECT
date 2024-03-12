@@ -9,6 +9,9 @@ pyCECT: Tools to support and run the CESM Ensemble Consistency Test
     :target: https://pycect.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://img.shields.io/github/workflow/status/NCAR/pycect/code-style?label=Code%20Style&style=for-the-badge
+    :target: https://github.com/NCAR/pycect/actions
+    :alt: GitHub Workflow Code Style Status
 
 Overview:
 --------
