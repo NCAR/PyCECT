@@ -5,6 +5,11 @@ pyCECT: Tools to support and run the CESM Ensemble Consistency Test
 .. image:: https://zenodo.org/badge/37948321.svg
    :target: https://zenodo.org/badge/latestdoi/37948321
 
+.. image:: https://readthedocs.org/projects/pycect/badge/?version=latest
+    :target: https://pycect.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+
 Overview:
 --------
 
