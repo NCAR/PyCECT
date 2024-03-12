@@ -26,7 +26,7 @@ def main(argv):
     s = """verbose sumfile= indir= input_globs= tslice= nPC= sigMul=
          minPCFail= minRunFail= numRunFile= popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
-         casejson= npick= pepsi_gm pop_tol= web_enabled
+         casejson= npick=  pop_tol= web_enabled
          base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case=  saveEET="""
     optkeys = s.split()
     try:
@@ -58,7 +58,6 @@ def main(argv):
     opts_dict['outfile'] = 'testcase.result'
     opts_dict['casejson'] = ''
     opts_dict['npick'] = 10
-    opts_dict['pepsi_gm'] = False
     opts_dict['test_failure'] = True
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
@@ -132,6 +131,10 @@ def main(argv):
             print('Ensemble summary file = ' + opts_dict['sumfile'])
         print(' ')
         print('Testcase file directory = ' + opts_dict['indir'])
+        if (ens == 'cam') or (ens == 'mpas'):
+            print(' ')
+            print('nPC = ', +opts_dict['nPC'])
+            print('sigMul = ', +opts_dict['sigMul'])
         print(' ')
         print(' ')
 
@@ -368,8 +371,9 @@ def main(argv):
 
         if opts_dict['nPC'] > total_vars:
             new_pc = int(total_vars * 0.8)
+            print('')
             print(
-                'Warning: please note the number of PCs specified (option --nPC) is set to ',
+                'WARNING: please note the number of PCs specified (option --nPC) is set to ',
                 opts_dict['nPC'],
                 ', which exceeds the number of PC scores in the summary file (',
                 total_vars,
@@ -377,7 +381,7 @@ def main(argv):
                 new_pc,
                 '.',
             )
-
+            print('')
             opts_dict['nPC'] = new_pc
 
         # extra info
