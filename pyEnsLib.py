@@ -1628,9 +1628,9 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
             sum_index.append(i + 1)
 
     # save comp_array if filepath is provided
-    if me.get_rank() == 0:
-        if len(opts_dict['savePCAMat']) > 0:
-            np.save(opts_dict['savePCAMat'], comp_array)
+    # if me.get_rank() == 0:
+    #    if len(opts_dict['savePCAMat']) > 0:
+    #        np.save(opts_dict['savePCAMat'], comp_array)
 
     # false_positive=check_falsepositive(opts_dict,sum_index)
 

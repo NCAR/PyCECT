@@ -138,7 +138,16 @@ Notes and examples:
       annual average (CAM-ECT) or ninth timestep(CAM-UF-ECT) as timeslice 1.  The example
       MPAS-ECT given int test_mpas_CECT.py uses timeslice 3, for example.
 
-     ``--tslice <num}``
+     ``--tslice <num>``
+
+
+   * To modify the number of PCs (principal components) used for the test.  (The default is typically recommended.)
+
+     ``--nPC <num>``
+
+   * To modify the number of standard deviations away from the mean for the acceptance region.  (The default is typically recommended.)
+
+     ``--sigMul <num>``
 
    * To enable printing a sorted list of variables that fall outside of the global mean ensemble distribution
      in the case of a passing result (on by default for a failure):
@@ -154,11 +163,13 @@ Notes and examples:
 
    *   *Example for CAM-ECT and CAM-UF-ECT*
 
-    ``python pyCECT.py --sumfile /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/summary_files/uf.ens.c1.2.2.1_fc5.ne30.nc --indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_test_files --tslice 1``
+       (Here we are modifying nPC and sigMul as this is from an older version of CAM than the current default.)
+
+    ``python pyCECT.py --sumfile /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/summary_files/uf.ens.c1.2.2.1_fc5.ne30.nc --indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_test_files --tslice 1 --nPC 50 --sigMul 2.0``
 
   *  *Example using EET* (note that EET takes longer to run - especially for a large number of tests):
 
-   ``python pyCECT.py --sumfile /glade/p/cisl/asap/pycect_sample_data/cam_c1.2.2.1/summary_files/uf.ens.c1.2.2.1_fc5.ne30.nc --indir /glade/p/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_test_files --tslice 1 --eet 10``
+   ``python pyCECT.py --sumfile /glade/p/cisl/asap/pycect_sample_data/cam_c1.2.2.1/summary_files/uf.ens.c1.2.2.1_fc5.ne30.nc --indir /glade/p/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_test_files --tslice 1 --eet 10  --nPC 50 --sigMul 2.0``
 
   *  *Example for MPAS-ECT*
 
