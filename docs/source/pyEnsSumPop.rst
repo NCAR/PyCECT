@@ -42,13 +42,13 @@ To use pyEnsSumPop:
 
 3. To see all options (and defaults):
 
-   ``python pyEnsSumPop.py -h``
+   ``python pyEnsSumPop.py -h``::
 
          Creates the summary file for an ensemble of POP data.
 
-	------------------------
+         ------------------------
 	 Args for pyEnsSumPop :
-	------------------------
+         ------------------------
 	 pyEnsSumPop.py
 	 -h                   : prints out this usage message
 	 --verbose            : prints out in verbose mode (off by default)
