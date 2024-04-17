@@ -22,50 +22,62 @@ def random_pick(num_pick, end):
 
 # get the pertlim corressponding to the random int
 # modified 10/23 to go to 2000 (previously only 1st 900 unique)
-
-
+# modified 3/24 to go to 3996 (previously 1998 unique)
 def get_pertlim_uf(rand_num):
     i = rand_num
     if i == 0:
-        ptlim = 0
-    elif i > 2000:
-        print("don't support sizes > 2000")
-    elif i <= 1800:  # [1 - 1800]
-        if i <= 900:  # [1-900]
-            j = 2 * int((i - 1) / 100) + 101
-        elif i <= 1000:  # [901 - 1000]
-            j = 2 * int((i - 1) / 100) + 100
-        elif i <= 1800:  # [1001-1800]
-            j = 2 * int((i - 1001) / 100) + 102
-        k = (i - 1) % 100  # this is just last 2 digits of i-1
-        if i % 2 != 0:  # odd
-            ll = j + int(k / 2) * 18
-            ippt = str(ll).zfill(3)
-            ptlim = '0.' + ippt + 'd-13'
-        else:  # even
-            ll = j + int((k - 1) / 2) * 18
-            ippt = str(ll).zfill(3)
-            ptlim = '-0.' + ippt + 'd-13'
-    else:  # [1801 - 2000]
-        if i <= 1900:  # [1801-1900]
-            j = 1
-        else:  # [1901-2000]
-            j = 2
-        k = (i - 1) % 100
-        if i % 2 != 0:  # odd
-            ll = j + int(k / 2) * 2
-            ippt = str(ll).zfill(3)
-            ptlim = '0.' + ippt + 'd-13'
-        else:  # even
-            ll = j + int((k - 1) / 2) * 2
-            ippt = str(ll).zfill(3)
-            ptlim = '-0.' + ippt + 'd-13'
+        ptlim = '0'
+    elif i > 3996:
+        print("don't support sizes > 3996")
+    else:  # generate perturbation
+        if i > 1998:
+            orig = i
+            i = orig - 1998
+        else:
+            orig = 0
+
+        if i <= 1800:  # [1 - 1800]
+            if i <= 900:  # [1-900]
+                j = 2 * int((i - 1) / 100) + 101
+            elif i <= 1000:  # [901 - 1000]
+                j = 2 * int((i - 1) / 100) + 100
+            elif i <= 1800:  # [1001-1800]
+                j = 2 * int((i - 1001) / 100) + 102
+            k = (i - 1) % 100  # this is just last 2 digits of i-1
+            if i % 2 != 0:  # odd
+                ll = j + int(k / 2) * 18
+                ippt = str(ll).zfill(3)
+                ptlim = '0.' + ippt + 'd-13'
+            else:  # even
+                ll = j + int((k - 1) / 2) * 18
+                ippt = str(ll).zfill(3)
+                ptlim = '-0.' + ippt + 'd-13'
+        else:  # [1801 - 2000]
+            if i <= 1900:  # [1801-1900]
+                j = 1
+            else:  # [1901-2000]
+                j = 2
+            k = (i - 1) % 100
+            if i % 2 != 0:  # odd
+                ll = j + int(k / 2) * 2
+                ippt = str(ll).zfill(3)
+                ptlim = '0.' + ippt + 'd-13'
+            else:  # even
+                ll = j + int((k - 1) / 2) * 2
+                ippt = str(ll).zfill(3)
+                ptlim = '-0.' + ippt + 'd-13'
+
+        if orig > 0:
+            # adjust
+            if i % 2 != 0:  # odd
+                ptlim = '1.' + ippt + 'd-13'
+            else:  # even
+                ptlim = '-1.' + ippt + 'd-13'
 
     return ptlim
 
 
 def main(argv):
-
     # directory with the executable (where this script is at the moment)
     stat_dir = os.path.dirname(os.path.realpath(__file__))
     print('STATUS: stat_dir = ' + stat_dir)
@@ -165,8 +177,8 @@ def main(argv):
 
     # some parameter checking
     if run_size > 0:
-        if run_size > 2000:
-            print('Error: cannot have an ensemble size greater than 2000.')
+        if run_size > 3996:
+            print('Error: cannot have an ensemble size greater than 3996.')
             sys.exit()
         print('STATUS: ensemble size = ' + str(run_size))
     else:
@@ -187,7 +199,7 @@ def main(argv):
 
     # generate random pertlim(s) for verify
     if run_type == 'verify':
-        end_range = 350
+        end_range = 200
         rand_ints = random_pick(verify_size, end_range)
 
     # assume that the control case has the right run length and output stream settings
@@ -196,12 +208,8 @@ def main(argv):
     base_dir_name = os.path.basename(os.path.normpath(control_run))
     print('STATUS: base_dir_name = ', base_dir_name)
     for i in range(ens_start, run_size):
-
         # run dir name
-        if i > 999:
-            iens = '{0:04d}'.format(i)
-        else:
-            iens = '{0:03d}'.format(i)
+        iens = '{0:04d}'.format(i)
 
         new_run = base_dir_name + '.' + iens
 
@@ -247,7 +255,7 @@ def main(argv):
 
         # set run length and output freq (currently assume correct in the control case)
 
-        # modify the run script for cheyenne
+        # modify the run script for derecho
         new_name = '#PBS -N  mpas.' + iens + '\n'
         execute_line_1 = f'mpiexec_mpt {stat_dir}/atmosphere_model'
         execute_line_2 = f'mpiexec {stat_dir}/atmosphere_model'

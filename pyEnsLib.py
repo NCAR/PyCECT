@@ -38,7 +38,6 @@ def parse_header_file(filename):
 
 
 def calc_rmsz(o_files, var_name3d, var_name2d, opts_dict):
-
     threshold = 1e-12
     popens = opts_dict['popens']
     tslice = opts_dict['tslice']
@@ -154,7 +153,6 @@ def calc_rmsz(o_files, var_name3d, var_name2d, opts_dict):
 def pop_zpdf(
     input_array, nbin, zrange, ens_avg, ens_stddev, FillValue, threshold, rmask, opts_dict
 ):
-
     if 'test_failure' in opts_dict:
         test_failure = opts_dict['test_failure']
     else:
@@ -266,7 +264,6 @@ def calculate_raw_score(
 #
 # ifiles are not open
 def search_sumfile(opts_dict, ifiles):
-
     sumfile_dir = opts_dict['sumfile']
     first_file = nc.Dataset(ifiles[0], 'r')
     machineid = ''
@@ -348,9 +345,9 @@ def search_sumfile(opts_dict, ifiles):
 # Create some variables and call a function to calculate PCA
 # now gm comes in at 64 bits...
 
+
 # pas in exclude list in case we have to add to id
 def pre_PCA(gm_orig, all_var_names, ex_list, me):
-
     # initialize
     b_exit = False
     gm_len = gm_orig.shape
@@ -579,7 +576,6 @@ def calc_Z(val, avg, stddev, count, flag):
 # Read a json file for the excluded list of variables
 # (no longer allowing include files)
 def read_jsonlist(metajson, method_name):
-
     # method_name = ES for ensemble summary (CAM, MPAS)
     #            = ESP for POP ensemble summary
 
@@ -620,7 +616,6 @@ def read_jsonlist(metajson, method_name):
 # Calculate Normalized RMSE metric
 #
 def calc_nrmse(orig_array, comp_array):
-
     orig_size = orig_array.size
     sumsqr = np.sum(np.square(orig_array.astype(np.float64) - comp_array.astype(np.float64)))
     rng = np.max(orig_array) - np.min(orig_array)
@@ -636,7 +631,6 @@ def calc_nrmse(orig_array, comp_array):
 # Calculate weighted global mean for one level of CAM output
 # works in dp
 def area_avg(data_orig, weight, is_SE):
-
     # TO DO: take into account missing values
     if data_orig.dtype == np.float32:
         data = data_orig.astype(np.float64)
@@ -656,7 +650,6 @@ def area_avg(data_orig, weight, is_SE):
 # Calculate weighted global mean for one level of OCN output
 #
 def pop_area_avg(data_orig, weight):
-
     # Take into account missing values
     # weights are for lat
     if data_orig.dtype == np.float32:
@@ -670,7 +663,6 @@ def pop_area_avg(data_orig, weight):
 
 #
 def get_nlev(o_files, popens):
-
     first_file = nc.Dataset(o_files[0], 'r')
     input_dims = first_file.dimensions
 
@@ -688,7 +680,6 @@ def get_nlev(o_files, popens):
 # Calculate area_wgt when processes cam se/cam fv/pop files
 #
 def get_area_wgt(o_files, is_SE, nlev, popens):
-
     z_wgt = {}
     first_file = nc.Dataset(o_files[0], 'r')
     input_dims = first_file.dimensions
@@ -728,7 +719,6 @@ def get_area_wgt(o_files, is_SE, nlev, popens):
 
 # ofiles are not open
 def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_vertex, opts_dict):
-
     tslice = opts_dict['tslice']
 
     nCell = len(var_cell)
@@ -767,7 +757,7 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     weights['vertex'] = vertex_wgt
 
     # loop through the input file list to calculate global means
-    print('Examining data from files ...')
+    # print('Examining data from files ...')
     for fcount, in_file in enumerate(o_files):
         fname = nc.Dataset(in_file, 'r')
         (
@@ -790,7 +780,6 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
 
 # fname is open
 def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, var_vertex, tslice):
-
     nan_flag = False
 
     # how many of each variable to work on
@@ -908,7 +897,6 @@ def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, va
 # o_files are not open for CAM
 # 12/19 - summary file will now be double precision
 def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, opts_dict):
-
     tslice = opts_dict['tslice']
     popens = opts_dict['popens']
 
@@ -924,7 +912,6 @@ def generate_global_mean_for_summary(o_files, var_name3d, var_name2d, is_SE, opt
 
     # loop through the input file list to calculate global means
     for fcount, in_file in enumerate(o_files):
-
         fname = nc.Dataset(in_file, 'r')
 
         if popens:
@@ -976,7 +963,6 @@ def calc_global_mean_for_onefile_pop(
     nlev,
     opts_dict,
 ):
-
     nan_flag = False
 
     n3d = len(var_name3d)
@@ -1025,7 +1011,6 @@ def calc_global_mean_for_onefile_pop(
 def calc_global_mean_for_onefile(
     fname, area_wgt, var_name3d, var_name2d, output3d, output2d, tslice, is_SE, nlev, opts_dict
 ):
-
     nan_flag = False
 
     if 'cumul' in opts_dict:
@@ -1040,7 +1025,6 @@ def calc_global_mean_for_onefile(
 
     # calculate global mean for each 3D variable (note: area_avg casts into dp before computation)
     for count, vname in enumerate(var_name3d):
-
         if isinstance(vname, str):
             vname_d = vname
         else:
@@ -1086,7 +1070,6 @@ def calc_global_mean_for_onefile(
 
     # calculate global mean for each 2D variable
     for count, vname in enumerate(var_name2d):
-
         if isinstance(vname, str):
             vname_d = vname
         else:
@@ -1329,7 +1312,6 @@ def mpas_read_ensemble_summary(ens_file):
 # Get the ncol and nlev value from cam run file
 # (frun is not open)
 def get_ncol_nlev(frun):
-
     o_frun = nc.Dataset(frun, 'r')
     input_dims = o_frun.dimensions
     ncol = -1
@@ -1577,7 +1559,6 @@ def addvariables(variables, var, vrange, thearray):
 # Evaluate if the new run global mean in the range of global mean of the ensemble summary
 #
 def evaluatestatus(name, rangename, variables, key, results, thefile):
-
     # print("thefile = ", thefile)
     # print("vars = ", variables)
     totalcount = 0
@@ -1615,12 +1596,12 @@ def evaluatestatus(name, rangename, variables, key, results, thefile):
 # Evaluate if the new run PCA scores pass or fail by comparing with the PCA scores of the ensemble summary
 # ifiles are open
 def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
-
     comp_array = np.zeros(new_scores.shape, dtype=np.int32)
     sum = np.zeros(new_scores.shape[0], dtype=np.int32)
     eachruncount = np.zeros(new_scores.shape[1], dtype=np.int32)
     totalcount = 0
     sum_index = []
+
     if me.get_rank() == 0:
         print('')
         print('*********************************************** ')
@@ -1647,9 +1628,9 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
             sum_index.append(i + 1)
 
     # save comp_array if filepath is provided
-    if me.get_rank() == 0:
-        if len(opts_dict['savePCAMat']) > 0:
-            np.save(opts_dict['savePCAMat'], comp_array)
+    # if me.get_rank() == 0:
+    #    if len(opts_dict['savePCAMat']) > 0:
+    #        np.save(opts_dict['savePCAMat'], comp_array)
 
     # false_positive=check_falsepositive(opts_dict,sum_index)
 
@@ -1754,7 +1735,7 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
 def CECT_usage():
     print('\n Compare test runs to an ensemble summary file. \n')
     print('  ----------------------------')
-    print('   Args for pyCECT :')
+    print('   Args for pyCECT (all models):')
     print('  ----------------------------')
     print('   pyCECT.py')
     print('   -h                      : prints out this usage message')
@@ -1764,14 +1745,15 @@ def CECT_usage():
         '   --indir    <path>       : directory containing the input run files (at least 3 files)'
     )
     print('   --tslice   <num>        : which time slice to use from input run files (default = 1)')
+    print('   NOTE: Runs for CAM by default (see below to specify POP or MPAS instead)')
     print('  ----------------------------')
-    print('   Args for CAM-CECT and UF-CAM-ECT and MPAS-ECT:')
+    print('   Args relevant to CAM-CECT/UF-CAM-ECT and MPAS-ECT only:')
     print('  ----------------------------')
     print(
-        '   --nPC <num>             : number of principal components (PCs) to check (default = 50, but can\'t be greater than the number of variables)'
+        '   --nPC <num>             : number of principal components (PCs) to check (can\'t be greater than the number of variables)'
     )
     print(
-        '   --sigMul   <num>        : number of standard deviations away from the mean defining the "acceptance region" (default = 2)'
+        '   --sigMul   <num>        : number of standard deviations away from the mean defining the "acceptance region"'
     )
     print(
         '   --minPCFail <num>       : minimum number of PCs that must fail the specified number of runs for a FAILURE (default = 3)'
@@ -1781,7 +1763,7 @@ def CECT_usage():
     )
     print('   --numRunFile <num>      : total number of runs to include in test (default = 3)')
     print(
-        '   --printVars             : print out variables that fall outside of the global mean ensemble distribution (off by default)'
+        '   --printStdMean          : print out variables that fall outside of the global mean ensemble distribution (off by default for a pass)'
     )
     print(
         '   --saveResults           : save a netcdf file with scores and std global means from the test runs (savefile.nc). '
@@ -1791,14 +1773,14 @@ def CECT_usage():
     )
 
     print('  ----------------------------')
-    print('   Args for MPAS-CECT (in addition to CAM args):')
+    print('   Args relevant to MPAS-CECT only:')
     print('  ----------------------------')
     print('   --mpas                  : indicate MPAS-ECT (required!)')
 
     print('  ----------------------------')
-    print('   Args for POP-CECT :')
+    print('   Args relevant to POP-CECT only :')
     print('  ----------------------------')
-    print('   --popens or --pop       : indicate POP-ECT (required!) (tslice will bet set to 0)')
+    print('   --popens or --pop       : indicate POP-ECT (required!)')
     print(
         '   --jsonfile  <file>      : list the json file that specifies variables to test (required!), e.g. pop_ensemble.json'
     )
@@ -1812,11 +1794,12 @@ def CECT_usage():
     )
 
     print(
-        '   --base_year <num>       :We assume the pop test files names start in year 0001. Ube this option to specify a different start year.'
+        '   --base_year <num>       :We assume the pop test files names start in year 0001. Use this option to specify a different start year.'
     )
 
 
 #    print 'Version 3.0.8'
+
 
 #
 # Command options for pyEnsSum.py
@@ -1831,26 +1814,20 @@ def EnsSum_usage():
     print('   --verbose            : prints out in verbose mode (off by default)')
     print('   --sumfile <ofile>    : the output summary data file (default = ens.summary.nc)')
     print('   --indir <path>       : directory containing all of the ensemble runs (default = ./)')
-    print('   --esize  <num>       : Number of ensemble members (default = 350)')
-    print('   --tag <name>         : Tag name used in metadata (default = cesm2_0)')
-    print('   --compset <name>     : Compset used in metadata (default = F2000climo)')
-    print('   --res <name>         : Resolution used in metadata (default = f19_f19)')
-    print('   --mach <name>         : Machine name used in the metadata (default = cheyenne)')
-    print('   --tslice <num>       : the index into the time dimension (default = 1)')
+    print('   --esize  <num>       : Number of ensemble members (default = 1800)')
+    print('   --tag <name>         : Tag name used in metadata (default = cesm_version)')
+    print('   --compset <name>     : Compset used in metadata (default = compset)')
+    print('   --res <name>         : Resolution used in metadata (default = res)')
+    print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
+    print('   --tslice <num>       : the index into the time dimension (default = 0)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded (default = exclude_empty.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
-    #    print(
-    #        '   --fIndex <num>       : Use this to start at ensemble member <num> instead of 000 (so '
-    #    )
-    #    print(
-    #        '                          ensembles with numbers less than <num> are excluded from summary file) '
-    #    )
     print('   ')
 
 
 def EnsSumMPAS_usage():
-    print('\n Creates the summary file for an ensemble of CAM data. \n')
+    print('\n Creates the summary file for an ensemble of MPAS data. \n')
     print('  ------------------------')
     print('   Args for pyEnsSumMPAS : ')
     print('  ------------------------')
@@ -1859,12 +1836,12 @@ def EnsSumMPAS_usage():
     print('   --verbose            : prints out in verbose mode (off by default)')
     print('   --sumfile <ofile>    : the output summary data file (default = mpas.ens.summary.nc)')
     print('   --indir <path>       : directory containing all of the ensemble runs (default = ./)')
-    print('   --esize  <num>       : Number of ensemble members (default = 10)')
-    print('   --tag <name>         : Tag name for the summary metadata (default = v7.1)')
+    print('   --esize  <num>       : Number of ensemble members (default = 200)')
+    print('   --tag <name>         : Tag name for the summary metadata (default = tag)')
     print('   --core <name>        : Core name for the summary metadata (default = atmosphere)')
     print('   --mesh <name>        : Mesh name for the summary metadata (default = mesh)')
     print('   --model <name>       : Model name for the summary metadata (default = mpas)')
-    print('   --mach <name>        : Machine name used in the metadata (default = cheyenne)')
+    print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
     print('   --tslice <num>       : the index into the time dimension (default = 0)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded  (default = empty_excluded.json)')
@@ -1885,13 +1862,12 @@ def EnsSumPop_usage():
     print('   --verbose            : prints out in verbose mode (off by default)')
     print('   --sumfile    <ofile> : the output summary data file (default = pop.ens.summary.nc)')
     print('   --indir      <path>  : directory containing all of the ensemble runs (default = ./)')
-    #    print '   --npert <num>        : Number of ensemble members (default = 40)'
     print('   --esize <num>        : Number of ensemble members (default = 40)')
     print('                          (Note: backwards compatible with --npert)')
-    print('   --tag <name>         : Tag name used in metadata (default = cesm2_0_0)')
+    print('   --tag <name>         : Tag name used in metadata (default = tag)')
     print('   --compset <name>     : Compset used in metadata (default = G)')
     print('   --res <name>         : Resolution (used in metadata) (default = T62_g17)')
-    print('   --mach <name>         : Machine name used in the metadata (default = cheyenne)')
+    print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
     print('   --tslice <num>       : the time slice of the variable that we will use (default = 0)')
     print('   --nyear  <num>       : Number of years (default = 1)')
     print('   --nmonth  <num>      : Number of months (default = 12)')
@@ -1971,7 +1947,6 @@ def Random_pickup_pop(indir, opts_dict, npick):
 # Check the false positive rate
 # (needs updating: this is only for esize 151)
 def check_falsepositive(opts_dict, sum_index):
-
     fp = np.zeros((opts_dict['nPC'],), dtype=np.float32)
     fp[0] = 0.30305
     fp[1] = 0.05069
@@ -2028,7 +2003,6 @@ def get_stride_list(len_of_list, me):
 # Gather arrays from each processor by the file_list to the master processor and make it an array
 #
 def gather_npArray_pop(npArray, me, array_shape):
-
     the_array = np.zeros(array_shape, dtype=np.float32)
 
     if me.get_rank() == 0:
@@ -2099,7 +2073,7 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
         nbin = 1
     Zscore = np.zeros((len(Var3d) + len(Var2d), len(ifiles), (nbin)), dtype=np.float32)
 
-    failure_count = np.zeros((len(ifiles)), dtype=np.int)
+    failure_count = np.zeros((len(ifiles)), dtype=np.int32)
     sum_file = nc.Dataset(opts_dict['sumfile'], 'r')
     for k, v in sum_file.variables.items():
         if k == 'ens_stddev2d':
@@ -2297,7 +2271,6 @@ def get_failure_index(the_array):
 # Alternative method to get the linearly dependent rows (using QR for faster perf)
 #
 def get_dependent_vars_index(a_mat, orig_rank):
-
     # initialize
     dv_index = []
 

@@ -19,7 +19,6 @@ from pyTools import Duplicate, EqualLength, EqualStride
 
 
 def main(argv):
-
     # Get command line stuff and store in a dictionary
     s = 'tag= compset= esize= tslice= core= model= mesh= sumfile= indir= sumfiledir= mach= verbose jsonfile= mpi_enable   mpi_disable'
     optkeys = s.split()
@@ -37,9 +36,9 @@ def main(argv):
     opts_dict['model'] = 'mpas'
     opts_dict['core'] = 'atmosphere'
     opts_dict['mesh'] = 'mesh'
-    opts_dict['tag'] = 'v.7.1'
-    opts_dict['mach'] = 'cheyenne'
-    opts_dict['esize'] = 10
+    opts_dict['tag'] = 'tag'
+    opts_dict['mach'] = 'derecho'
+    opts_dict['esize'] = 200
     opts_dict['tslice'] = 0
     opts_dict['sumfile'] = 'mpas.ens.summary.nc'
     opts_dict['indir'] = './'
@@ -295,7 +294,6 @@ def main(argv):
 
     if esize < total:
         if me.get_rank() == 0:
-
             print(
                 '**************************************************************************************************'
             )
@@ -331,7 +329,7 @@ def main(argv):
             print('ERROR: Summary file directory: ', sum_dir, ' not found')
         sys.exit(2)
 
-    if sum_dir == ".":
+    if sum_dir == '.':
         this_sumfile = sum_dir + '/' + this_sumfile
     else:
         this_sumfile = this_sumfile
@@ -356,7 +354,6 @@ def main(argv):
 
     # gather to rank = 0
     if opts_dict['mpi_enable']:
-
         # Gather the cell variable results from all processors to the master processor
         slice_index = get_stride_list(len(cell_names), me)
         # Gather global means cell results
@@ -596,7 +593,6 @@ def gather_list(var_list, me):
 # Gather arrays from each processor by the var_list to the master processor and make it an array
 #
 def gather_npArray(npArray, me, slice_index, array_shape):
-
     the_array = np.zeros(array_shape, dtype=np.float64)
     if me.get_rank() == 0:
         k = 0

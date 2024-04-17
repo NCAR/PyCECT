@@ -15,7 +15,7 @@ Welcome to pyCECT's documentation!
    source/pyCECT.rst
    source/pyEnsSum.rst
    source/pyEnsSumPop.rst
-
+   source/pyEnsSumMPAS.rst
 
 
 Indices and tables

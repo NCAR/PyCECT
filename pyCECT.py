@@ -22,13 +22,12 @@ from pyTools import EqualStride
 
 
 def main(argv):
-
     # Get command line stuff and store in a dictionary
     s = """verbose sumfile= indir= input_globs= tslice= nPC= sigMul=
-         minPCFail= minRunFail= numRunFile= printVars popens mpas pop cam
+         minPCFail= minRunFail= numRunFile= popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
-         casejson= npick= pepsi_gm pop_tol= web_enabled
-         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case= savePCAMat= saveEET="""
+         casejson= npick=  pop_tol= web_enabled
+         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case=  saveEET="""
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
@@ -40,14 +39,13 @@ def main(argv):
     opts_dict = {}
     opts_dict['input_globs'] = ''
     opts_dict['indir'] = ''
-    opts_dict['tslice'] = 1
-    opts_dict['nPC'] = 50
-    opts_dict['sigMul'] = 2
+    opts_dict['tslice'] = 0
+    opts_dict['nPC'] = -1
+    opts_dict['sigMul'] = -2
     opts_dict['verbose'] = False
     opts_dict['minPCFail'] = 3
     opts_dict['minRunFail'] = 2
     opts_dict['numRunFile'] = 3
-    opts_dict['printVars'] = False
     opts_dict['popens'] = False
     opts_dict['mpas'] = False
     opts_dict['cam'] = True
@@ -60,7 +58,6 @@ def main(argv):
     opts_dict['outfile'] = 'testcase.result'
     opts_dict['casejson'] = ''
     opts_dict['npick'] = 10
-    opts_dict['pepsi_gm'] = False
     opts_dict['test_failure'] = True
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
@@ -72,7 +69,6 @@ def main(argv):
     opts_dict['web_enabled'] = False
     opts_dict['saveResults'] = False
     opts_dict['base_year'] = 1
-    opts_dict['savePCAMat'] = ''
     opts_dict['saveEET'] = ''
 
     # Call utility library getopt_parseconfig to parse the option keys
@@ -80,15 +76,13 @@ def main(argv):
     caller = 'CECT'
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, caller, opts_dict)
 
-    print(opts_dict)
-
     # ens type
     # cam = opts_dict['cam']
     popens = opts_dict['popens']
     pop = opts_dict['pop']
     mpas = opts_dict['mpas']
 
-    print(f'!test mpas:{mpas}')
+    # print(f'!test mpas:{mpas}')
 
     if pop or popens:
         ens = 'pop'
@@ -97,12 +91,24 @@ def main(argv):
     else:
         ens = 'cam'
 
-    # some mods for POP-ECT
+    # for POP-ECT only take one file
     if ens == 'pop':
-        opts_dict['tslice'] = 0
         opts_dict['numRunFile'] = 1
-        opts_dict['eet'] = 0
-        opts_dict['mpi_enable'] = False
+
+    # some more specific defaults (if not specified)
+    if ens == 'mpas':
+        if opts_dict['nPC'] < 0:
+            opts_dict['nPC'] = 26
+        if opts_dict['sigMul'] < 0:
+            opts_dict['sigMul'] = 2
+    elif ens == 'cam':
+        if opts_dict['nPC'] < 0:
+            opts_dict['nPC'] = 128
+        if opts_dict['sigMul'] < 0:
+            opts_dict['sigMul'] = 2.23
+
+    print('Parameter values:')
+    print(opts_dict)
 
     # Create a mpi simplecomm object
     if opts_dict['mpi_enable']:
@@ -125,6 +131,10 @@ def main(argv):
             print('Ensemble summary file = ' + opts_dict['sumfile'])
         print(' ')
         print('Testcase file directory = ' + opts_dict['indir'])
+        if (ens == 'cam') or (ens == 'mpas'):
+            print(' ')
+            print('nPC = ', +opts_dict['nPC'])
+            print('sigMul = ', +opts_dict['sigMul'])
         print(' ')
         print(' ')
 
@@ -259,9 +269,7 @@ def main(argv):
 
     # mpas and cam
     else:
-
         if ens == 'mpas':
-
             # Read all variables from the ensemble summary file
             (
                 ens_var_name,
@@ -277,6 +285,9 @@ def main(argv):
                 str_size,
                 ens_gm,
             ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
+
+            # total vars
+            total_vars = len(ens_var_name)
 
             # Add global mean to the dictionary "variables"
             variables = {}
@@ -299,7 +310,6 @@ def main(argv):
             # end mpas
 
         else:  # cam
-
             # Read all variables from the ensemble summary file
             (
                 ens_var_name,
@@ -317,6 +327,9 @@ def main(argv):
                 std_gm_array,
                 str_size,
             ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
+
+            # total vars
+            total_vars = len(ens_var_name)
 
             # Add global mean to the dictionary "variables"
             variables = {}
@@ -354,6 +367,23 @@ def main(argv):
 
         # NOW this the same for MPAS and CAM
 
+        # check nPC
+
+        if opts_dict['nPC'] > total_vars:
+            new_pc = int(total_vars * 0.8)
+            print('')
+            print(
+                'WARNING: please note the number of PCs specified (option --nPC) is set to ',
+                opts_dict['nPC'],
+                ', which exceeds the number of PC scores in the summary file (',
+                total_vars,
+                '). Instead using --nPC ',
+                new_pc,
+                '.',
+            )
+            print('')
+            opts_dict['nPC'] = new_pc
+
         # extra info
         # Add the new run global mean to the dictionary "results"
         for i in range(means.shape[1]):
@@ -381,7 +411,6 @@ def main(argv):
         sorted_comp_std_gm = comp_std_gm[sort_index]
 
         if opts_dict['printStdMean'] or decision == 'FAILED':
-
             print(' ')
             print('***************************************************************************** ')
             print('Test run variable standardized mean information')
@@ -436,6 +465,9 @@ def main(argv):
                 )
                 print(one_outside99)
 
+            if len(all_outside99) + len(two_outside99) + len(one_outside99) == 0:
+                print('*** No variables have test run global means outside of the 99th percentile.')
+
             # count = len(all_outside99) + len(two_outside99) + len(one_outside99)
             # count = max(10, count)
             count = 20
@@ -462,7 +494,6 @@ def main(argv):
         # Print file with info about new test runs....to a netcdf file
         ##
         if opts_dict['saveResults']:
-
             num_vars = comp_std_gm.shape[0]
             tsize = comp_std_gm.shape[1]
             esize = std_gm_array.shape[1]
