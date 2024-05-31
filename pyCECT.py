@@ -67,7 +67,7 @@ def main(argv):
     opts_dict['json_case'] = ''
     opts_dict['sumfile'] = ''
     opts_dict['web_enabled'] = False
-    opts_dict['saveResults'] = False
+    opts_dict['saveResults'] = ''
     opts_dict['base_year'] = 1
     opts_dict['saveEET'] = ''
 
@@ -493,11 +493,12 @@ def main(argv):
         ##
         # Print file with info about new test runs....to a netcdf file
         ##
-        if opts_dict['saveResults']:
+        if len(opts_dict['saveResults']) > 0:
             num_vars = comp_std_gm.shape[0]
             tsize = comp_std_gm.shape[1]
             esize = std_gm_array.shape[1]
-            this_savefile = 'savefile.nc'
+            # this_savefile = 'savefile.nc'
+            this_savefile = opts_dict['saveResults']
             if verbose:
                 print('VERBOSE: Creating ', this_savefile, '  ...')
 
