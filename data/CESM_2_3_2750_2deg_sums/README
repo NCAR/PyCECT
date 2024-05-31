@@ -1,0 +1,10 @@
+This directory contains summary files for a large ensemble of CESM-CAM run at f19_f19 (2 degree) resolution.
+
+Each summary file represents global spatial averages of a time-slice of a large experimental ensemble. Time-slices begin after 1 default time-step (30 min), and saved for every timestep.
+
+creation_date = May 04 2024
+tag = cesm2.3
+compset = F2000climo
+resolution = f19_f19
+machine = derecho
+ens_size = 2750
