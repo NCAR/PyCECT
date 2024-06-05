@@ -504,11 +504,12 @@ def main(argv):
 
             if os.path.exists(this_savefile):
                 os.unlink(this_savefile)
-            nc_savefile = nc.Dataset(this_savefile, 'w', format='NETCDF4_CLASSIC')
+            nc_savefile = nc.Dataset(this_savefile, 'w', format='NETCDF4')
             nc_savefile.createDimension('ens_size', esize)
             nc_savefile.createDimension('test_size', tsize)
             nc_savefile.createDimension('nvars', num_vars)
             nc_savefile.createDimension('str_size', str_size)
+            nc_savefile.createDimension('files_size', len(ifiles))
 
             # Set global attributes
             now = time.strftime('%c')
@@ -523,6 +524,7 @@ def main(argv):
             v_scores = nc_savefile.createVariable('scores', 'f8', ('nvars', 'test_size'))
             v_ens_sigma_scores = nc_savefile.createVariable('ens_sigma_scores', 'f8', ('nvars',))
             v_ens_std_gm = nc_savefile.createVariable('ens_std_gm', 'f8', ('nvars', 'ens_size'))
+            v_ifiles = nc_savefile.createVariable('ifiles', str, 'files_size')
 
             # v_ens_loadings = nc_savefile.createVariable('ens_loadings', 'f8', ('nvars', 'nvars'))
             v_gm = nc_savefile.createVariable('gm', 'f8', ('nvars', 'test_size'))
@@ -536,6 +538,7 @@ def main(argv):
             v_scores[:, :] = new_scores[:, :]
             v_ens_sigma_scores[:] = sigma_scores_gm[:]
             v_ens_std_gm[:, :] = std_gm_array[:, :]
+            v_ifiles[:] = ifiles
 
             # v_ens_loadings[:,:] = loadings_gm[:,:]
             v_gm[:, :] = means[:, :]
