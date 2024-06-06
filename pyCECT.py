@@ -539,7 +539,7 @@ def main(argv):
             v_scores[:, :] = new_scores[:, :]
             v_ens_sigma_scores[:] = sigma_scores_gm[:]
             v_ens_std_gm[:, :] = std_gm_array[:, :]
-            v_ifiles[:] = ifiles
+            v_ifiles[:] = np.array(ifiles)
 
             # v_ens_loadings[:,:] = loadings_gm[:,:]
             v_gm[:, :] = means[:, :]
