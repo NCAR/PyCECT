@@ -32,6 +32,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
     except getopt.GetoptError:
+        print(getopt.GetoptError)
         pyEnsLib.CECT_usage()
         sys.exit(2)
 
