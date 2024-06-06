@@ -27,7 +27,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
          casejson= npick=  pop_tol= web_enabled
-         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET="""
+         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET= useSavedResults="""
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
@@ -71,6 +71,7 @@ def main(argv):
     opts_dict['saveResults'] = ''
     opts_dict['base_year'] = 1
     opts_dict['saveEET'] = ''
+    opts_dict['useSavedResults'] = ''
 
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -415,7 +416,7 @@ def main(argv):
             new_scores, sum_std_mean, comp_std_gm = pyEnsLib.standardized(
                 means, mu_gm, sigma_gm, loadings_gm, ens_var_name, opts_dict, me
             )
-            
+
         run_index, decision = pyEnsLib.comparePCAscores(
             ifiles, new_scores, sigma_scores_gm, opts_dict, me
         )

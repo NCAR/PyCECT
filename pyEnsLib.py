@@ -1771,6 +1771,9 @@ def CECT_usage():
     print(
         '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (greater than or equal to numRunFile)'
     )
+    print(
+        '   --useSavedResults savefile: Use results from a netcdf file savefile with scores and std global means. This prevents the need to recalculate spatial means.'
+    )
 
     print('  ----------------------------')
     print('   Args relevant to MPAS-CECT only:')
