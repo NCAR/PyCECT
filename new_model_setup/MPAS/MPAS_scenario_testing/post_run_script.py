@@ -204,10 +204,6 @@ def main(argv):
                         # Run PyCECT
                         run_ECT(true_sum_file, indir, t_slice, PCA_dims, verify_runs, saveEET_file=eet_filepath, saveResults_file=savefile_path)
 
-
-if __name__ == '__main__':
-    main(sys.argv[1])
-
 def run_ECT(sumfile, indir, tslice, nPC, eet_count, saveEET_file=None, saveResults_file=None, use_saveResults_file=None):
     args_for_ECT = [
         f'--sumfile={sumfile}',
@@ -226,3 +222,6 @@ def run_ECT(sumfile, indir, tslice, nPC, eet_count, saveEET_file=None, saveResul
         args_for_ECT.append(f'--useSavedResults={use_saveResults_file}')
 
     ECT(args_for_ECT)
+
+if __name__ == '__main__':
+    main(sys.argv[1])
