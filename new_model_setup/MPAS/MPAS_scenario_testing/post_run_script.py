@@ -11,7 +11,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../../'))
 
 from pyCECT import main as ECT
 
-
 def main(argv):
 
     # # read in testing parameter files
@@ -96,7 +95,7 @@ def main(argv):
                 else:
 
                     # Create symlinks to history files
-                    command = f"find {test_output_dir}/{test_name}/{test_name}* -name \"history_full*\" -exec cp -s '{{}}' {test_output_dir}/{test_name}/history_files/ \;"
+                    command = f"find {test_output_dir}/{test_name}/{test_name}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_name}/history_files/ \;"
 
                     os.system(command)
                     # print(command)
@@ -153,7 +152,7 @@ def main(argv):
                     else:
 
                         # Create symlinks to history files
-                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -s '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
+                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
 
                         os.system(command)
                         # print(command)
@@ -196,7 +195,7 @@ def main(argv):
 
                     else:
                         # Create symlinks to history files
-                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -s '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
+                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
 
                         os.system(command)
                         # print(command)
@@ -220,6 +219,8 @@ def run_ECT(sumfile, indir, tslice, nPC, eet_count, saveEET_file=None, saveResul
         args_for_ECT.append(f'--saveResults={saveResults_file}')
     if use_saveResults_file is not None:
         args_for_ECT.append(f'--useSavedResults={use_saveResults_file}')
+
+        print(args_for_ECT)
 
     ECT(args_for_ECT)
 
