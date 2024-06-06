@@ -211,8 +211,7 @@ def run_ECT(sumfile, indir, tslice, nPC, eet_count, saveEET_file=None, saveResul
         f'--nPC={nPC}',
         '--mpas',
         f'--eet={eet_count}',
-        '--mpi_enable',
-        '--printVars']
+        '--mpi_enable']
     if saveEET_file is not None:
         args_for_ECT.append(f'--saveEET={saveEET_file}')
     if saveResults_file is not None:
@@ -220,7 +219,7 @@ def run_ECT(sumfile, indir, tslice, nPC, eet_count, saveEET_file=None, saveResul
     if use_saveResults_file is not None:
         args_for_ECT.append(f'--useSavedResults={use_saveResults_file}')
 
-    print(args_for_ECT)
+    # print(args_for_ECT)
 
     ECT(args_for_ECT)
 
