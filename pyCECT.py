@@ -282,7 +282,7 @@ def main(argv):
             sigma_scores_gm = nc_savefile.variables["ens_sigma_scores"]
             std_gm_array = nc_savefile.variables["ens_std_gm"]
             ifiles = nc_savefile.variables["ifiles"]
-            means = nc_savefile.variables["v_gm"]
+            means = nc_savefile.variables["gm"]
 
         else:
             if ens == 'mpas':
