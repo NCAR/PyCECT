@@ -27,7 +27,7 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
          casejson= npick=  pop_tol= web_enabled
-         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case=  saveEET="""
+         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET="""
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
