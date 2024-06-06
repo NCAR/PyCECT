@@ -270,137 +270,152 @@ def main(argv):
 
     # mpas and cam
     else:
-        if ens == 'mpas':
-            # Read all variables from the ensemble summary file
-            (
-                ens_var_name,
-                num_varCell,
-                num_varEdge,
-                num_varVertex,
-                mu_gm,
-                sigma_gm,
-                loadings_gm,
-                sigma_scores_gm,
-                std_gm,
-                std_gm_array,
-                str_size,
-                ens_gm,
-            ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
 
-            # total vars
-            total_vars = len(ens_var_name)
+        # Read in savedResults and load saved variables
+        if opts_dict['useSavedResults']:
+            nc_savefile = nc.Dataset(opts_dict['useSavedResults'], 'r')
 
-            # Add global mean to the dictionary "variables"
-            variables = {}
-            for k, v in ens_gm.items():
-                pyEnsLib.addvariables(variables, k, 'gmRange', v)
+            ens_var_name = nc_savefile.variables["vars"]
+            comp_std_gm = nc_savefile.variables["std_gm"]
+            new_scores = nc_savefile.variables["scores"]
+            sigma_scores_gm = nc_savefile.variables["ens_sigma_scores"]
+            std_gm_array = nc_savefile.variables["ens_std_gm"]
+            ifiles = nc_savefile.variables["ifiles"]
+            means = nc_savefile.variables["v_gm"]
 
-            varCell_name = ens_var_name[0:num_varCell]
-            varEdge_name = ens_var_name[num_varCell : num_varCell + num_varEdge]
-            varVertex_name = ens_var_name[num_varCell + num_varEdge :]
+        else:
+            if ens == 'mpas':
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    num_varCell,
+                    num_varEdge,
+                    num_varVertex,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                    ens_gm,
+                ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
 
-            # Compare the new run and the ensemble summary file
-            results = {}
-            countgm = np.zeros(len(ifiles), dtype=np.int32)
+                # total vars
+                total_vars = len(ens_var_name)
 
-            gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
-                ifiles, varCell_name, varEdge_name, varVertex_name, opts_dict
-            )
+                # Add global mean to the dictionary "variables"
+                variables = {}
+                for k, v in ens_gm.items():
+                    pyEnsLib.addvariables(variables, k, 'gmRange', v)
 
-            means = np.concatenate((gmCell, gmEdge, gmVertex), axis=0)
-            # end mpas
+                varCell_name = ens_var_name[0:num_varCell]
+                varEdge_name = ens_var_name[num_varCell : num_varCell + num_varEdge]
+                varVertex_name = ens_var_name[num_varCell + num_varEdge :]
 
-        else:  # cam
-            # Read all variables from the ensemble summary file
-            (
-                ens_var_name,
-                ens_avg,
-                ens_stddev,
-                ens_rmsz,
-                ens_gm,
-                num_3d,
-                mu_gm,
-                sigma_gm,
-                loadings_gm,
-                sigma_scores_gm,
-                is_SE_sum,
-                std_gm,
-                std_gm_array,
-                str_size,
-            ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
+                # Compare the new run and the ensemble summary file
+                results = {}
+                countgm = np.zeros(len(ifiles), dtype=np.int32)
 
-            # total vars
-            total_vars = len(ens_var_name)
-
-            # Add global mean to the dictionary "variables"
-            variables = {}
-
-            for k, v in ens_gm.items():
-                pyEnsLib.addvariables(variables, k, 'gmRange', v)
-
-            # Get 3d variable name list and 2d variable name list separately
-            var_name3d = []
-            var_name2d = []
-            for vcount, v in enumerate(ens_var_name):
-                if vcount < num_3d:
-                    var_name3d.append(v)
-                else:
-                    var_name2d.append(v)
-
-            ###
-            npts3d, npts2d, is_SE = pyEnsLib.get_ncol_nlev(ifiles[0])
-
-            if is_SE ^ is_SE_sum:
-                print(
-                    'Warning: please note the ensemble summary file is different from the testing files: they use different grids'
+                gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
+                    ifiles, varCell_name, varEdge_name, varVertex_name, opts_dict
                 )
 
-            # Compare the new run and the ensemble summary file
-            results = {}
-            countgm = np.zeros(len(ifiles), dtype=np.int32)
+                means = np.concatenate((gmCell, gmEdge, gmVertex), axis=0)
+                # end mpas
 
-            # Calculate the new run global mean
-            mean3d, mean2d = pyEnsLib.generate_global_mean_for_summary(
-                ifiles, var_name3d, var_name2d, is_SE, opts_dict
+            else:  # cam
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    ens_avg,
+                    ens_stddev,
+                    ens_rmsz,
+                    ens_gm,
+                    num_3d,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    is_SE_sum,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
+
+                # total vars
+                total_vars = len(ens_var_name)
+
+                # Add global mean to the dictionary "variables"
+                variables = {}
+
+                for k, v in ens_gm.items():
+                    pyEnsLib.addvariables(variables, k, 'gmRange', v)
+
+                # Get 3d variable name list and 2d variable name list separately
+                var_name3d = []
+                var_name2d = []
+                for vcount, v in enumerate(ens_var_name):
+                    if vcount < num_3d:
+                        var_name3d.append(v)
+                    else:
+                        var_name2d.append(v)
+
+                ###
+                npts3d, npts2d, is_SE = pyEnsLib.get_ncol_nlev(ifiles[0])
+
+                if is_SE ^ is_SE_sum:
+                    print(
+                        'Warning: please note the ensemble summary file is different from the testing files: they use different grids'
+                    )
+
+                # Compare the new run and the ensemble summary file
+                results = {}
+                countgm = np.zeros(len(ifiles), dtype=np.int32)
+
+                # Calculate the new run global mean
+                mean3d, mean2d = pyEnsLib.generate_global_mean_for_summary(
+                    ifiles, var_name3d, var_name2d, is_SE, opts_dict
+                )
+                means = np.concatenate((mean3d, mean2d), axis=0)
+                # end cam
+
+            # NOW this the same for MPAS and CAM
+
+            # check nPC
+
+            if opts_dict['nPC'] > total_vars:
+                new_pc = int(total_vars * 0.8)
+                print('')
+                print(
+                    'WARNING: please note the number of PCs specified (option --nPC) is set to ',
+                    opts_dict['nPC'],
+                    ', which exceeds the number of PC scores in the summary file (',
+                    total_vars,
+                    '). Instead using --nPC ',
+                    new_pc,
+                    '.',
+                )
+                print('')
+                opts_dict['nPC'] = new_pc
+
+            # extra info
+            # Add the new run global mean to the dictionary "results"
+            for i in range(means.shape[1]):
+                for j in range(means.shape[0]):
+                    pyEnsLib.addresults(results, 'means', means[j][i], ens_var_name[j], 'f' + str(i))
+            # Evaluate the new run global mean if it is in the range of the ensemble summary global mea?n range
+            for fcount, fid in enumerate(ifiles):
+                countgm[fcount] = pyEnsLib.evaluatestatus(
+                    'means', 'gmRange', variables, 'gm', results, 'f' + str(fcount)
+                )
+            # end extra
+
+            # Calculate the PCA scores of the new run
+            new_scores, sum_std_mean, comp_std_gm = pyEnsLib.standardized(
+                means, mu_gm, sigma_gm, loadings_gm, ens_var_name, opts_dict, me
             )
-            means = np.concatenate((mean3d, mean2d), axis=0)
-            # end cam
-
-        # NOW this the same for MPAS and CAM
-
-        # check nPC
-
-        if opts_dict['nPC'] > total_vars:
-            new_pc = int(total_vars * 0.8)
-            print('')
-            print(
-                'WARNING: please note the number of PCs specified (option --nPC) is set to ',
-                opts_dict['nPC'],
-                ', which exceeds the number of PC scores in the summary file (',
-                total_vars,
-                '). Instead using --nPC ',
-                new_pc,
-                '.',
-            )
-            print('')
-            opts_dict['nPC'] = new_pc
-
-        # extra info
-        # Add the new run global mean to the dictionary "results"
-        for i in range(means.shape[1]):
-            for j in range(means.shape[0]):
-                pyEnsLib.addresults(results, 'means', means[j][i], ens_var_name[j], 'f' + str(i))
-        # Evaluate the new run global mean if it is in the range of the ensemble summary global mea?n range
-        for fcount, fid in enumerate(ifiles):
-            countgm[fcount] = pyEnsLib.evaluatestatus(
-                'means', 'gmRange', variables, 'gm', results, 'f' + str(fcount)
-            )
-        # end extra
-
-        # Calculate the PCA scores of the new run
-        new_scores, sum_std_mean, comp_std_gm = pyEnsLib.standardized(
-            means, mu_gm, sigma_gm, loadings_gm, ens_var_name, opts_dict, me
-        )
+            
         run_index, decision = pyEnsLib.comparePCAscores(
             ifiles, new_scores, sigma_scores_gm, opts_dict, me
         )
@@ -509,7 +524,7 @@ def main(argv):
             nc_savefile.createDimension('ens_size', esize)
             nc_savefile.createDimension('test_size', tsize)
             nc_savefile.createDimension('nvars', num_vars)
-            nc_savefile.createDimension('str_size', str_size)
+            # nc_savefile.createDimension('str_size', str_size)
             nc_savefile.createDimension('files_size', len(ifiles))
 
             # Set global attributes
@@ -520,7 +535,8 @@ def main(argv):
             # nc_savefile.testfiles = in_files
 
             # variables
-            v_vars = nc_savefile.createVariable('vars', 'S1', ('nvars', 'str_size'))
+            # v_vars = nc_savefile.createVariable('vars', 'S1', ('nvars', 'str_size'))
+            v_vars = nc_savefile.createVariable('vars', str, 'nvars')
             v_std_gm = nc_savefile.createVariable('std_gm', 'f8', ('nvars', 'test_size'))
             v_scores = nc_savefile.createVariable('scores', 'f8', ('nvars', 'test_size'))
             v_ens_sigma_scores = nc_savefile.createVariable('ens_sigma_scores', 'f8', ('nvars',))
@@ -531,10 +547,11 @@ def main(argv):
             v_gm = nc_savefile.createVariable('gm', 'f8', ('nvars', 'test_size'))
 
             # hard-coded size
-            ssize = 'S' + str(str_size)
-            str_out = nc.stringtochar(np.array(ens_var_name, ssize))
+            # ssize = 'S' + str(str_size)
+            # str_out = nc.stringtochar(np.array(ens_var_name, ssize))
 
-            v_vars[:] = str_out
+            # v_vars[:] = str_out
+            v_vars[:] = np.array(ens_var_name)
             v_std_gm[:, :] = comp_std_gm[:, :]
             v_scores[:, :] = new_scores[:, :]
             v_ens_sigma_scores[:] = sigma_scores_gm[:]
