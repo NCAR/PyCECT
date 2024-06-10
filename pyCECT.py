@@ -283,6 +283,7 @@ def main(argv):
             std_gm_array = nc_savefile.variables["ens_std_gm"]
             ifiles = nc_savefile.variables["ifiles"]
             means = nc_savefile.variables["gm"]
+            sum_std_mean = nc_savefile.variables["sum_std_mean"]
 
         else:
             if ens == 'mpas':
@@ -514,6 +515,7 @@ def main(argv):
             num_vars = comp_std_gm.shape[0]
             tsize = comp_std_gm.shape[1]
             esize = std_gm_array.shape[1]
+            
             # this_savefile = 'savefile.nc'
             this_savefile = opts_dict['saveResults']
             if verbose:
@@ -543,6 +545,7 @@ def main(argv):
             v_ens_sigma_scores = nc_savefile.createVariable('ens_sigma_scores', 'f8', ('nvars',))
             v_ens_std_gm = nc_savefile.createVariable('ens_std_gm', 'f8', ('nvars', 'ens_size'))
             v_ifiles = nc_savefile.createVariable('ifiles', str, 'files_size')
+            v_sum_std_mean = nc_savefile.createVariable('sum_std_mean', 'f8', ('nvars',))
 
             # v_ens_loadings = nc_savefile.createVariable('ens_loadings', 'f8', ('nvars', 'nvars'))
             v_gm = nc_savefile.createVariable('gm', 'f8', ('nvars', 'test_size'))
@@ -558,6 +561,7 @@ def main(argv):
             v_ens_sigma_scores[:] = sigma_scores_gm[:]
             v_ens_std_gm[:, :] = std_gm_array[:, :]
             v_ifiles[:] = np.array(ifiles)
+            v_sum_std_mean[:] = v_sum_std_mean[:]
 
             # v_ens_loadings[:,:] = loadings_gm[:,:]
             v_gm[:, :] = means[:, :]
