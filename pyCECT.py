@@ -279,11 +279,45 @@ def main(argv):
             ens_var_name = nc_savefile.variables["vars"]
             comp_std_gm = nc_savefile.variables["std_gm"]
             new_scores = nc_savefile.variables["scores"]
-            sigma_scores_gm = nc_savefile.variables["ens_sigma_scores"]
-            std_gm_array = nc_savefile.variables["ens_std_gm"]
             ifiles = nc_savefile.variables["ifiles"]
             means = nc_savefile.variables["gm"]
             sum_std_mean = nc_savefile.variables["sum_std_mean"]
+
+            if ens == 'mpas':
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    num_varCell,
+                    num_varEdge,
+                    num_varVertex,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                    ens_gm,
+                ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
+
+            else:  # cam
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    ens_avg,
+                    ens_stddev,
+                    ens_rmsz,
+                    ens_gm,
+                    num_3d,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    is_SE_sum,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
 
         else:
             if ens == 'mpas':
@@ -516,7 +550,6 @@ def main(argv):
             tsize = comp_std_gm.shape[1]
             esize = std_gm_array.shape[1]
             
-            # this_savefile = 'savefile.nc'
             this_savefile = opts_dict['saveResults']
             if verbose:
                 print('VERBOSE: Creating ', this_savefile, '  ...')
@@ -527,7 +560,6 @@ def main(argv):
             nc_savefile.createDimension('ens_size', esize)
             nc_savefile.createDimension('test_size', tsize)
             nc_savefile.createDimension('nvars', num_vars)
-            # nc_savefile.createDimension('str_size', str_size)
             nc_savefile.createDimension('files_size', len(ifiles))
 
             # Set global attributes
@@ -535,35 +567,21 @@ def main(argv):
             nc_savefile.creation_date = now
             nc_savefile.title = 'PyCECT compare results file'
             nc_savefile.summaryfile = opts_dict['sumfile']
-            # nc_savefile.testfiles = in_files
 
             # variables
-            # v_vars = nc_savefile.createVariable('vars', 'S1', ('nvars', 'str_size'))
             v_vars = nc_savefile.createVariable('vars', str, 'nvars')
             v_std_gm = nc_savefile.createVariable('std_gm', 'f8', ('nvars', 'test_size'))
             v_scores = nc_savefile.createVariable('scores', 'f8', ('nvars', 'test_size'))
-            v_ens_sigma_scores = nc_savefile.createVariable('ens_sigma_scores', 'f8', ('nvars',))
-            v_ens_std_gm = nc_savefile.createVariable('ens_std_gm', 'f8', ('nvars', 'ens_size'))
             v_ifiles = nc_savefile.createVariable('ifiles', str, 'files_size')
             v_sum_std_mean = nc_savefile.createVariable('sum_std_mean', 'f8', ('nvars',))
 
-            # v_ens_loadings = nc_savefile.createVariable('ens_loadings', 'f8', ('nvars', 'nvars'))
             v_gm = nc_savefile.createVariable('gm', 'f8', ('nvars', 'test_size'))
 
-            # hard-coded size
-            # ssize = 'S' + str(str_size)
-            # str_out = nc.stringtochar(np.array(ens_var_name, ssize))
-
-            # v_vars[:] = str_out
             v_vars[:] = np.array(ens_var_name)
             v_std_gm[:, :] = comp_std_gm[:, :]
             v_scores[:, :] = new_scores[:, :]
-            v_ens_sigma_scores[:] = sigma_scores_gm[:]
-            v_ens_std_gm[:, :] = std_gm_array[:, :]
             v_ifiles[:] = np.array(ifiles)
             v_sum_std_mean[:] = v_sum_std_mean[:]
-
-            # v_ens_loadings[:,:] = loadings_gm[:,:]
             v_gm[:, :] = means[:, :]
 
             nc_savefile.close()
