@@ -16,8 +16,8 @@
     }
   ],
   "file_paths": {
-    "mpas_src": "/glade/work/teopb/MPAS-Model",
-    "init_dir": "/glade/work/teopb/mpas_init_large_files_linked",
+    "mpas_src": "",
+    "init_dir": "",
     "namelist_name": "namelist.atmosphere",
     "init_copy_dir": "/glade/work/teopb/teo_campaign/mpas_test_mod_dirs",
     "test_output_dir": "/glade/work/teopb/teo_campaign/mpas_test_run_dirs",
