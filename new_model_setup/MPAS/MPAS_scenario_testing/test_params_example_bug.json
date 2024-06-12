@@ -20,7 +20,7 @@
     "init_dir": "",
     "namelist_name": "namelist.atmosphere",
     "init_copy_dir": "../../../data/MPAS_scenario_data/mpas_test_mod_dirs",
-    "test_output_dir": "../../../data/MPAS_scenario_data/UFECT_MPAS_dirs/test_output_dir",
+    "test_output_dir": "/glade/work/teopb/teo_campaign_2/UFECT_MPAS_dirs/test_output_dir",
     "true_sum_file": "../../../data/MPAS_example_bug_sum.nc"
   },
   "verify_runs": 30,
