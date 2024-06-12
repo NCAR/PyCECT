@@ -1,1 +1,0 @@
-This variable/perturbation combination did not produce output files for all verify members and is thus categorized as a model failure.
