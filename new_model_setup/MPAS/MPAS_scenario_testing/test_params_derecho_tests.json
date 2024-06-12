@@ -20,7 +20,7 @@
     "init_dir": "",
     "namelist_name": "namelist.atmosphere",
     "init_copy_dir": "../../../data/MPAS_scenario_data/mpas_test_mod_dirs",
-    "test_output_dir": "../../../data/MPAS_scenario_data/mpas_test_run_dirs",
+    "test_output_dir": "/glade/work/teopb/teo_campaign_2/mpas_test_run_dirs",
     "true_sum_file": "../../../data/MPAS_paper_rec_sumfile_chey_e200_t12.nc"
   },
   "verify_runs": 30,
