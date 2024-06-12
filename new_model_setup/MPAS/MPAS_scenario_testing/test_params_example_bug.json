@@ -4,23 +4,23 @@
       "test_type": "binary_test",
       "test_name": "example_bug",
       "test_title": "Example Bug",
-      "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_example_bug_buggy",
-      "mod_mpas_init_dir": "/glade/work/teopb/MPAS_changed_init_dirs/MPAS_example_bug"
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_example_bug_buggy",
+      "mod_mpas_init_dir": "MPAS_init_placeholder"
     },
     {
       "test_type": "binary_test",
       "test_name": "example_bug_fixed",
       "test_title": "Example Bug Fixed",
-      "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_example_bug_fixed",
-      "mod_mpas_init_dir": "/glade/work/teopb/MPAS_changed_init_dirs/MPAS_example_bug"
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_example_bug_fixed",
+      "mod_mpas_init_dir": "MPAS_init_placeholder"
     }
   ],
   "file_paths": {
     "mpas_src": "",
     "init_dir": "",
     "namelist_name": "namelist.atmosphere",
-    "init_copy_dir": "/glade/work/teopb/teo_campaign/UFECT_MPAS_dirs/init_copy_dir",
-    "test_output_dir": "/glade/work/teopb/teo_campaign/UFECT_MPAS_dirs/test_output_dir",
+    "init_copy_dir": "../../../data/MPAS_scenario_data/mpas_test_mod_dirs",
+    "test_output_dir": "../../../data/MPAS_scenario_data/mpas_test_run_dirs",
     "true_sum_file": "../../../data/MPAS_example_bug_sum.nc"
   },
   "verify_runs": 30,

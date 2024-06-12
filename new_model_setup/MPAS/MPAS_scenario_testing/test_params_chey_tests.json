@@ -32,44 +32,44 @@
       "test_type": "binary_test",
       "test_name": "core_count",
       "test_title": "96 Core Run",
-      "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_changed_core_count",
-      "mod_mpas_init_dir": "/glade/scratch/teopb/mpas_test_mod_dirs/MPAS_changed_core_count"
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_changed_core_count",
+      "mod_mpas_init_dir": "MPAS_init_placeholder"
     },
     {
       "test_type": "binary_test",
       "test_name": "opt_level",
       "test_title": "Optimization Level",
-      "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_fp_precision",
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_fp_precision",
       "mod_mpas_init_dir": ""
     },
     {
       "test_type": "binary_test",
       "test_name": "oop",
       "test_title": "Order of Operations Change",
-      "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_OOP",
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_OOP",
       "mod_mpas_init_dir": ""
     },
     {
       "test_type": "binary_test",
       "test_name": "GNU",
       "test_title": "GNU Compiler",
-      "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_GNU",
-      "mod_mpas_init_dir": "/glade/scratch/teopb/mpas_test_mod_dirs/MPAS_GNU"
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_GNU",
+      "mod_mpas_init_dir": "MPAS_init_placeholder"
     },
     {
       "test_type": "binary_test",
       "test_name": "single_precision",
       "test_title": "Single Precision",
-      "mod_mpas_src": "/glade/work/teopb/MPAS_changed_src_versions/MPAS_single_precision",
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_single_precision",
       "mod_mpas_init_dir": ""
     }
   ],
   "file_paths": {
     "mpas_src": "",
-    "init_dir": "",
+    "init_dir": "MPAS_init_placeholder",
     "namelist_name": "namelist.atmosphere",
-    "init_copy_dir": "/glade/work/teopb/teo_campaign/mpas_test_mod_dirs",
-    "test_output_dir": "/glade/work/teopb/teo_campaign/mpas_test_run_dirs",
+    "init_copy_dir": "../../../data/MPAS_scenario_data/mpas_test_mod_dirs",
+    "test_output_dir": "../../../data/MPAS_scenario_data/mpas_test_run_dirs",
     "true_sum_file": "../../../data/MPAS_paper_rec_sumfile_chey_e200_t12.nc"
   },
   "verify_runs": 30,
