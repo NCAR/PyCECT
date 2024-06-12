@@ -155,61 +155,74 @@ def main(argv):
 
     ifiles = []
     in_files = []
-    # Random pick pop files from not_pick_files list
-    if opts_dict['casejson']:
-        with open(opts_dict['casejson']) as fin:
-            result = json.load(fin)
-            in_files_first = result['not_pick_files']
-            in_files = random.sample(in_files_first, opts_dict['npick'])
-            print('Testcase files:')
-            print('\n'.join(in_files))
 
-    elif opts_dict['json_case']:
-        json_file = opts_dict['json_case']
-        if os.path.exists(json_file):
-            fd = open(json_file)
-            metainfo = json.load(fd)
-            if 'CaseName' in metainfo:
-                casename = metainfo['CaseName']
-                if os.path.exists(opts_dict['indir']):
-                    for name in casename:
-                        wildname = '*.' + name + '.*'
-                        full_glob_str = os.path.join(opts_dict['indir'], wildname)
-                        glob_file = glob.glob(full_glob_str)
-                        in_files.extend(glob_file)
-        else:
-            print('ERROR: ' + opts_dict['json_case'] + ' does not exist.')
-            sys.exit()
-        print('in_files=', in_files)
+    # Read in savedResults and load saved variables
+    if opts_dict['useSavedResults']:
+        nc_savefile = nc.Dataset(opts_dict['useSavedResults'], 'r')
+
+        ens_var_name = nc_savefile.variables["vars"]
+        comp_std_gm = nc_savefile.variables["std_gm"]
+        new_scores = nc_savefile.variables["scores"]
+        ifiles = nc_savefile.variables["ifiles"]
+        means = nc_savefile.variables["gm"]
+        sum_std_mean = nc_savefile.variables["sum_std_mean"]
+
     else:
-        wildname = '*' + str(opts_dict['input_globs']) + '*.nc'
-        # Open all input files
-        if os.path.exists(opts_dict['indir']):
-            full_glob_str = os.path.join(opts_dict['indir'], wildname)
-            glob_files = glob.glob(full_glob_str)
-            in_files.extend(glob_files)
-            num_file = len(in_files)
-            if num_file == 0:
-                print(
-                    'ERROR: no matching files for wildcard='
-                    + wildname
-                    + ' found in specified --indir'
-                )
-                sys.exit()
-            else:
-                print('Found ' + str(num_file) + ' matching files in specified --indir')
-            if opts_dict['numRunFile'] > num_file:
-                print(
-                    'ERROR: more files needed ('
-                    + str(opts_dict['numRunFile'])
-                    + ') than available in the indir ('
-                    + str(num_file)
-                    + ').'
-                )
-                sys.exit()
+        # Random pick pop files from not_pick_files list
+        if opts_dict['casejson']:
+            with open(opts_dict['casejson']) as fin:
+                result = json.load(fin)
+                in_files_first = result['not_pick_files']
+                in_files = random.sample(in_files_first, opts_dict['npick'])
+                print('Testcase files:')
+                print('\n'.join(in_files))
 
-    in_files.sort()
-    # print in_files
+        elif opts_dict['json_case']:
+            json_file = opts_dict['json_case']
+            if os.path.exists(json_file):
+                fd = open(json_file)
+                metainfo = json.load(fd)
+                if 'CaseName' in metainfo:
+                    casename = metainfo['CaseName']
+                    if os.path.exists(opts_dict['indir']):
+                        for name in casename:
+                            wildname = '*.' + name + '.*'
+                            full_glob_str = os.path.join(opts_dict['indir'], wildname)
+                            glob_file = glob.glob(full_glob_str)
+                            in_files.extend(glob_file)
+            else:
+                print('ERROR: ' + opts_dict['json_case'] + ' does not exist.')
+                sys.exit()
+            print('in_files=', in_files)
+        else:
+            wildname = '*' + str(opts_dict['input_globs']) + '*.nc'
+            # Open all input files
+            if os.path.exists(opts_dict['indir']):
+                full_glob_str = os.path.join(opts_dict['indir'], wildname)
+                glob_files = glob.glob(full_glob_str)
+                in_files.extend(glob_files)
+                num_file = len(in_files)
+                if num_file == 0:
+                    print(
+                        'ERROR: no matching files for wildcard='
+                        + wildname
+                        + ' found in specified --indir'
+                    )
+                    sys.exit()
+                else:
+                    print('Found ' + str(num_file) + ' matching files in specified --indir')
+                if opts_dict['numRunFile'] > num_file:
+                    print(
+                        'ERROR: more files needed ('
+                        + str(opts_dict['numRunFile'])
+                        + ') than available in the indir ('
+                        + str(num_file)
+                        + ').'
+                    )
+                    sys.exit()
+
+        in_files.sort()
+        # print in_files
 
     if ens == 'pop':
         # Partition the input file list
@@ -272,16 +285,8 @@ def main(argv):
     # mpas and cam
     else:
 
-        # Read in savedResults and load saved variables
+        # Read in savedResults
         if opts_dict['useSavedResults']:
-            nc_savefile = nc.Dataset(opts_dict['useSavedResults'], 'r')
-
-            ens_var_name = nc_savefile.variables["vars"]
-            comp_std_gm = nc_savefile.variables["std_gm"]
-            new_scores = nc_savefile.variables["scores"]
-            ifiles = nc_savefile.variables["ifiles"]
-            means = nc_savefile.variables["gm"]
-            sum_std_mean = nc_savefile.variables["sum_std_mean"]
 
             if ens == 'mpas':
                 # Read all variables from the ensemble summary file
