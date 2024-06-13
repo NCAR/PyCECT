@@ -1,0 +1,3 @@
+# UF-ECT Setup Framework README
+
+This directory contains example code for the setup framework described in Price-Broncucia et al 2014. Along with the `data` directory, the code contained here should give users a solid basis with which to determine UF-ECT parameters for their own models. Users should be able to follow the `UFECT_Setup_Framework.ipynb` directly from the repository.
