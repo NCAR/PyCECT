@@ -4,7 +4,7 @@ This directory contains code to facilitate testing of different model scenarios 
 
 There are 3 python files provided, meant to be run in sequence. Supporting information is meant to be stored in JSON file to easily define a testing scenario and needed filepaths.
 
-## JSON File Structure
+## JSON File structure
 
 Test scenarios are defined in JSON files. Multiple tests can be described in the same JSON file. The structure is as follows:
 
@@ -12,26 +12,27 @@ Test scenarios are defined in JSON files. Multiple tests can be described in the
 - "output_timestep": This is likely not the actual timestep, but reflects the index of the wanted timestep in the summary file. Likely, only a single timestep was saved, so using python indexing this means output_timestep = 0.
 - "ect_pca_dims": Desired number of PCA dimensions to use. This should have been determined using the setup framework introduced in the paper (with examples in `new_model_setup/UFECT_new_model_routine.ipynb`). Based on that process, 26 PCA dimensions were selected for MPAS-A.
 - "file_paths":
-    - "mpas_src": Directory for compiled MPAS source code. As these would vary by installation and machine they are left empty in the repository.
-    - "init_dir": Directory containing needed initial-conditions files and grids. As these would vary by installation and machine they are left empty in the repository.
-    - "namelist_name": Filename for the namelist to use for perturbed parameter testing. For all paper testing this was `namelist.atmosphere`
-    - "init_copy_dir": The testing framework will create a copy of the init directory into which it will place the desired MPAS-A executable. This variables specifies where you want those to be placed.
-    - "test_output_dir": The directory you want model outputs to be placed.
-    - "true_sum_file": The UF-ECT summary file (filepath) you want to test against.
+  - "mpas_src": Directory for compiled MPAS source code. As these would vary by installation and machine they are left empty in the repository.
+  - "init_dir": Directory containing needed initial-conditions files and grids. As these would vary by installation and machine they are left empty in the repository.
+  - "namelist_name": Filename for the namelist to use for perturbed parameter testing. For all paper testing this was `namelist.atmosphere`
+  - "init_copy_dir": The testing framework will create a copy of the init directory into which it will place the desired MPAS-A executable. This variables specifies where you want those to be placed.
+  - "test_output_dir": The directory you want model outputs to be placed.
+  - "true_sum_file": The UF-ECT summary file (filepath) you want to test against.
 - "test_vars": Each test gets its own entry
-    - "test_type": Either "binary_test" if a test represents a single change from the baseline configuration (such as changing the compiler) or "continuous_test" if the test will perturb a namelist parameter by a range of values.
-    - If test is "binary_type" the other options are:
-        - "test_name": A descriptive short name for the test. Should be filename safe (no spaces or escape characters) as it will be used to create directory and filenames.
-        - "test_title": A longer descriptive test title. Will be used in plotting so can contain spaces and should be formatted correctly.
-        - "mod_mpas_src": You can specify a different directory from the overall test set default if desired. If an empty string is provided the default will be used.
-        - "mod_mpas_init_dir": You can specify a different directory from the overall test set default if desired. If an empty string is provided the default will be used.
-    - If test is "continuous_test":
-        - "var_name": The variable name, needs to match the name used in the namelist.
-        - "namelist_preface": The namelist group that the test variable falls in.
-        - "neg_test_orders": Array of how much to perturb the variable in the negative direction. Perturbations are defined as orders of 10. For example, if the default value of the variable (found in the unedited namelist) is "x", a neg_test_order of "-1" would result in a new value of x * (1 - 10^(-1)).
-        - "pos_test_orders": Array of how much to perturb the variable in the positive direction. Perturbations are defined as orders of 10. For example, if the default value of the variable (found in the unedited namelist) is "x", a neg_test_order of "-1" would result in a new value of x * (1 + 10^(-1)).
+  - "test_type": Either "binary_test" if a test represents a single change from the baseline configuration (such as changing the compiler) or "continuous_test" if the test will perturb a namelist parameter by a range of values.
+  - If test is "binary_type" the other options are:
+    - "test_name": A descriptive short name for the test. Should be filename safe (no spaces or escape characters) as it will be used to create directory and filenames.
+    - "test_title": A longer descriptive test title. Will be used in plotting so can contain spaces and should be formatted correctly.
+    - "mod_mpas_src": You can specify a different directory from the overall test set default if desired. If an empty string is provided the default will be used.
+    - "mod_mpas_init_dir": You can specify a different directory from the overall test set default if desired. If an empty string is provided the default will be used.
+  - If test is "continuous_test":
+    - "var_name": The variable name, needs to match the name used in the namelist.
+    - "namelist_preface": The namelist group that the test variable falls in.
+    - "neg_test_orders": Array of how much to perturb the variable in the negative direction. Perturbations are defined as orders of 10. For example, if the default value of the variable (found in the unedited namelist) is "x", a neg_test_order of "-1" would result in a new value of x \* (1 - 10^(-1)).
+    - "pos_test_orders": Array of how much to perturb the variable in the positive direction. Perturbations are defined as orders of 10. For example, if the default value of the variable (found in the unedited namelist) is "x", a neg_test_order of "-1" would result in a new value of x \* (1 + 10^(-1)).
 
 ## Testing Scripts
+
 The JSON file is passed as an argument to the following python files.
 
 1. `pre_run_script.py`: This script will create folders for each test combination (variable type and perturbation amount if test involves a range of perturbations). It will then use the `ensemble.py` functionality to submit perturbed model runs. `ensemble.py` Should be housed in the "mpas_src" directory as this code depends highly on a specific model implementation. An example of `ensemble.py` for MPAS-A is included in this repository for reference.

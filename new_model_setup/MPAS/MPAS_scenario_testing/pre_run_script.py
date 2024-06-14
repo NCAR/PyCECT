@@ -1,5 +1,5 @@
 # This script will create folders for each test combination (variable type and perturbation amount).
-# It is intended for float namelist variables.
+# This script is intended for float namelist variables.
 # Perturbations are created based on orders of 10, with exponents specified for both negative and positive directions from the default values. This allows asymmetrical tests like if there is floor to valid values.
 
 # Test parameter should be saved in a json file so they can be easily edited and shared between steps of the procedure.
@@ -15,7 +15,6 @@ import numpy as np
 
 
 def main(argv):
-
     # read in testing parameter files
     with open(argv, 'r') as f:
         test_params = json.load(f)
@@ -53,7 +52,6 @@ def main(argv):
 
         # binary test
         if each['test_type'] == 'binary_test':
-
             test_name = each['test_name']
             print(f'Creating directories for {test_name} test')
 

@@ -1,4 +1,4 @@
-# To be run after test jobs have finished
+# This script is to be run after test jobs have finished
 import json
 import os
 import sys
@@ -9,7 +9,6 @@ from matplotlib import pyplot as plt
 
 
 def main(argv):
-
     # read in testing parameter files
     with open(argv, 'r') as f:
         test_params = json.load(f)
@@ -150,7 +149,7 @@ def main(argv):
 
 
 def plot_test_results(plot_data, file_path, scale='log', plot_perturbations=True):
-# def plot_test_results(plot_data, file_path, scale='log', plot_pca=True, plot_perturbations=True):
+    # def plot_test_results(plot_data, file_path, scale='log', plot_pca=True, plot_perturbations=True):
     (
         var_name,
         model_run_failures,
