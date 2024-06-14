@@ -27,7 +27,7 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
-        exclude: new_model_setup/MPAS/MPAS_scenario_testing/ data/
+        exclude: new_model_setup/MPAS/MPAS_scenario_testing/
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0
