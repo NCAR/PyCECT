@@ -2,7 +2,7 @@
 
 This directory contains supporting code for publications associated with the PyCECT project.
 
-The following is associated with Price-Broncucia et al. 2024
+The following is associated with Price-Broncucia et al., 2024
 
 - data/CESM_2_3_2750_1deg_sums: This directory contains summary files for a large ensemble of CESM-CAM run at f09_f09 (1 degree) resolution.
 - data/CESM_2_3_2750_2deg_sums: This directory contains summary files for a large ensemble of CESM-CAM run at f19_f19 (2 degree) resolution.
