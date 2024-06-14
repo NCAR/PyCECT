@@ -459,7 +459,7 @@ def pre_PCA(gm_orig, all_var_names, ex_list, me):
 
     # standardized_rank = np.linalg.matrix_rank(standardized_global_mean, mytol)
     print('STATUS: using QR...')
-    print('sh, norm, eps ', sh, norm, eps)
+    # print('sh, norm, eps ', sh, norm, eps)
 
     dep_var_list = get_dependent_vars_index(standardized_global_mean, mytol)
     num_dep = len(dep_var_list)
