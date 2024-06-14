@@ -1,6 +1,6 @@
 This directory contains summary files for a large ensemble of MPAS-A run with 120km mesh resolution.
 
-Each summary file represents global spatial averages of a time-slice of a large experimental ensemble. Time-slices begin after 3 default time-steps (12 x 3 = 36 min), and saved for every 3rd timestep. Runs are started from a 1-day spin up model state. The "no_pv" in the directory title refers to exclusion of non scientific "pv" diagnostic variables from the default output of MPAS-A 7.3. 
+Each summary file represents global spatial averages of a time-slice of a large experimental ensemble. Time-slices begin after 3 default time-steps (12 x 3 = 36 min), and saved for every 3rd timestep. Runs are started from a 1-day spin up model state. The "no_pv" in the directory title refers to exclusion of non scientific "pv" diagnostic variables from the default output of MPAS-A 7.3.
 
 creation_date = December 7 2023
 title = MPAS verification ensemble summary file
