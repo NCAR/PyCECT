@@ -1766,10 +1766,13 @@ def CECT_usage():
         '   --printStdMean          : print out variables that fall outside of the global mean ensemble distribution (off by default for a pass)'
     )
     print(
-        '   --saveResults           : save a netcdf file with scores and std global means from the test runs (savefile.nc). '
+        '   --saveResults savefile  : save a netcdf file with scores and std global means from the test runs (savefile). '
     )
     print(
         '   --eet <num>             : enable Ensemble Exhaustive Test (EET) to compute failure percent of <num> runs (greater than or equal to numRunFile)'
+    )
+    print(
+        '   --useSavedResults savefile: Use results from a netcdf file savefile with scores and std global means. This prevents the need to recalculate spatial means.'
     )
 
     print('  ----------------------------')

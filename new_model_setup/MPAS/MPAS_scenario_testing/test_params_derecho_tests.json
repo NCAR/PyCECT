@@ -1,0 +1,29 @@
+{
+  "test_vars": [
+    {
+      "test_type": "binary_test",
+      "test_name": "derecho_nofma",
+      "test_title": "Derecho w/ No FMA",
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_derecho_nofma",
+      "mod_mpas_init_dir": "MPAS_init_placeholder"
+    },
+    {
+      "test_type": "binary_test",
+      "test_name": "derecho",
+      "test_title": "Derecho",
+      "mod_mpas_src": "MPAS_changed_src_versions/MPAS_derecho",
+      "mod_mpas_init_dir": "MPAS_init_placeholder"
+    }
+  ],
+  "file_paths": {
+    "mpas_src": "",
+    "init_dir": "",
+    "namelist_name": "namelist.atmosphere",
+    "init_copy_dir": "",
+    "test_output_dir": "",
+    "true_sum_file": "../../../data/MPAS_paper_rec_sumfile_chey_e200_t12.nc"
+  },
+  "verify_runs": 30,
+  "output_timestep": 0,
+  "ect_pca_dims": 26
+}

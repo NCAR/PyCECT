@@ -27,11 +27,12 @@ def main(argv):
          minPCFail= minRunFail= numRunFile= popens mpas pop cam
          jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
          casejson= npick=  pop_tol= web_enabled
-         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults json_case=  saveEET="""
+         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET= useSavedResults="""
     optkeys = s.split()
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
-    except getopt.GetoptError:
+    except getopt.GetoptError as error:
+        print(error)
         pyEnsLib.CECT_usage()
         sys.exit(2)
 
@@ -67,9 +68,10 @@ def main(argv):
     opts_dict['json_case'] = ''
     opts_dict['sumfile'] = ''
     opts_dict['web_enabled'] = False
-    opts_dict['saveResults'] = False
+    opts_dict['saveResults'] = ''
     opts_dict['base_year'] = 1
     opts_dict['saveEET'] = ''
+    opts_dict['useSavedResults'] = ''
 
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -153,61 +155,74 @@ def main(argv):
 
     ifiles = []
     in_files = []
-    # Random pick pop files from not_pick_files list
-    if opts_dict['casejson']:
-        with open(opts_dict['casejson']) as fin:
-            result = json.load(fin)
-            in_files_first = result['not_pick_files']
-            in_files = random.sample(in_files_first, opts_dict['npick'])
-            print('Testcase files:')
-            print('\n'.join(in_files))
 
-    elif opts_dict['json_case']:
-        json_file = opts_dict['json_case']
-        if os.path.exists(json_file):
-            fd = open(json_file)
-            metainfo = json.load(fd)
-            if 'CaseName' in metainfo:
-                casename = metainfo['CaseName']
-                if os.path.exists(opts_dict['indir']):
-                    for name in casename:
-                        wildname = '*.' + name + '.*'
-                        full_glob_str = os.path.join(opts_dict['indir'], wildname)
-                        glob_file = glob.glob(full_glob_str)
-                        in_files.extend(glob_file)
-        else:
-            print('ERROR: ' + opts_dict['json_case'] + ' does not exist.')
-            sys.exit()
-        print('in_files=', in_files)
+    # Read in savedResults and load saved variables
+    if opts_dict['useSavedResults']:
+        nc_savefile = nc.Dataset(opts_dict['useSavedResults'], 'r')
+
+        ens_var_name = nc_savefile.variables["vars"]
+        comp_std_gm = nc_savefile.variables["std_gm"]
+        new_scores = nc_savefile.variables["scores"]
+        ifiles = nc_savefile.variables["ifiles"]
+        means = nc_savefile.variables["gm"]
+        sum_std_mean = nc_savefile.variables["sum_std_mean"]
+
     else:
-        wildname = '*' + str(opts_dict['input_globs']) + '*.nc'
-        # Open all input files
-        if os.path.exists(opts_dict['indir']):
-            full_glob_str = os.path.join(opts_dict['indir'], wildname)
-            glob_files = glob.glob(full_glob_str)
-            in_files.extend(glob_files)
-            num_file = len(in_files)
-            if num_file == 0:
-                print(
-                    'ERROR: no matching files for wildcard='
-                    + wildname
-                    + ' found in specified --indir'
-                )
-                sys.exit()
-            else:
-                print('Found ' + str(num_file) + ' matching files in specified --indir')
-            if opts_dict['numRunFile'] > num_file:
-                print(
-                    'ERROR: more files needed ('
-                    + str(opts_dict['numRunFile'])
-                    + ') than available in the indir ('
-                    + str(num_file)
-                    + ').'
-                )
-                sys.exit()
+        # Random pick pop files from not_pick_files list
+        if opts_dict['casejson']:
+            with open(opts_dict['casejson']) as fin:
+                result = json.load(fin)
+                in_files_first = result['not_pick_files']
+                in_files = random.sample(in_files_first, opts_dict['npick'])
+                print('Testcase files:')
+                print('\n'.join(in_files))
 
-    in_files.sort()
-    # print in_files
+        elif opts_dict['json_case']:
+            json_file = opts_dict['json_case']
+            if os.path.exists(json_file):
+                fd = open(json_file)
+                metainfo = json.load(fd)
+                if 'CaseName' in metainfo:
+                    casename = metainfo['CaseName']
+                    if os.path.exists(opts_dict['indir']):
+                        for name in casename:
+                            wildname = '*.' + name + '.*'
+                            full_glob_str = os.path.join(opts_dict['indir'], wildname)
+                            glob_file = glob.glob(full_glob_str)
+                            in_files.extend(glob_file)
+            else:
+                print('ERROR: ' + opts_dict['json_case'] + ' does not exist.')
+                sys.exit()
+            print('in_files=', in_files)
+        else:
+            wildname = '*' + str(opts_dict['input_globs']) + '*.nc'
+            # Open all input files
+            if os.path.exists(opts_dict['indir']):
+                full_glob_str = os.path.join(opts_dict['indir'], wildname)
+                glob_files = glob.glob(full_glob_str)
+                in_files.extend(glob_files)
+                num_file = len(in_files)
+                if num_file == 0:
+                    print(
+                        'ERROR: no matching files for wildcard='
+                        + wildname
+                        + ' found in specified --indir'
+                    )
+                    sys.exit()
+                else:
+                    print('Found ' + str(num_file) + ' matching files in specified --indir')
+                if opts_dict['numRunFile'] > num_file:
+                    print(
+                        'ERROR: more files needed ('
+                        + str(opts_dict['numRunFile'])
+                        + ') than available in the indir ('
+                        + str(num_file)
+                        + ').'
+                    )
+                    sys.exit()
+
+        in_files.sort()
+        # print in_files
 
     if ens == 'pop':
         # Partition the input file list
@@ -269,137 +284,179 @@ def main(argv):
 
     # mpas and cam
     else:
-        if ens == 'mpas':
-            # Read all variables from the ensemble summary file
-            (
-                ens_var_name,
-                num_varCell,
-                num_varEdge,
-                num_varVertex,
-                mu_gm,
-                sigma_gm,
-                loadings_gm,
-                sigma_scores_gm,
-                std_gm,
-                std_gm_array,
-                str_size,
-                ens_gm,
-            ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
 
-            # total vars
-            total_vars = len(ens_var_name)
+        # Read in savedResults
+        if opts_dict['useSavedResults']:
 
-            # Add global mean to the dictionary "variables"
-            variables = {}
-            for k, v in ens_gm.items():
-                pyEnsLib.addvariables(variables, k, 'gmRange', v)
+            if ens == 'mpas':
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    num_varCell,
+                    num_varEdge,
+                    num_varVertex,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                    ens_gm,
+                ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
 
-            varCell_name = ens_var_name[0:num_varCell]
-            varEdge_name = ens_var_name[num_varCell : num_varCell + num_varEdge]
-            varVertex_name = ens_var_name[num_varCell + num_varEdge :]
+            else:  # cam
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    ens_avg,
+                    ens_stddev,
+                    ens_rmsz,
+                    ens_gm,
+                    num_3d,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    is_SE_sum,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
 
-            # Compare the new run and the ensemble summary file
-            results = {}
-            countgm = np.zeros(len(ifiles), dtype=np.int32)
+        else:
+            if ens == 'mpas':
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    num_varCell,
+                    num_varEdge,
+                    num_varVertex,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                    ens_gm,
+                ) = pyEnsLib.mpas_read_ensemble_summary(opts_dict['sumfile'])
 
-            gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
-                ifiles, varCell_name, varEdge_name, varVertex_name, opts_dict
-            )
+                # total vars
+                total_vars = len(ens_var_name)
 
-            means = np.concatenate((gmCell, gmEdge, gmVertex), axis=0)
-            # end mpas
+                # Add global mean to the dictionary "variables"
+                variables = {}
+                for k, v in ens_gm.items():
+                    pyEnsLib.addvariables(variables, k, 'gmRange', v)
 
-        else:  # cam
-            # Read all variables from the ensemble summary file
-            (
-                ens_var_name,
-                ens_avg,
-                ens_stddev,
-                ens_rmsz,
-                ens_gm,
-                num_3d,
-                mu_gm,
-                sigma_gm,
-                loadings_gm,
-                sigma_scores_gm,
-                is_SE_sum,
-                std_gm,
-                std_gm_array,
-                str_size,
-            ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
+                varCell_name = ens_var_name[0:num_varCell]
+                varEdge_name = ens_var_name[num_varCell : num_varCell + num_varEdge]
+                varVertex_name = ens_var_name[num_varCell + num_varEdge :]
 
-            # total vars
-            total_vars = len(ens_var_name)
+                # Compare the new run and the ensemble summary file
+                results = {}
+                countgm = np.zeros(len(ifiles), dtype=np.int32)
 
-            # Add global mean to the dictionary "variables"
-            variables = {}
-
-            for k, v in ens_gm.items():
-                pyEnsLib.addvariables(variables, k, 'gmRange', v)
-
-            # Get 3d variable name list and 2d variable name list separately
-            var_name3d = []
-            var_name2d = []
-            for vcount, v in enumerate(ens_var_name):
-                if vcount < num_3d:
-                    var_name3d.append(v)
-                else:
-                    var_name2d.append(v)
-
-            ###
-            npts3d, npts2d, is_SE = pyEnsLib.get_ncol_nlev(ifiles[0])
-
-            if is_SE ^ is_SE_sum:
-                print(
-                    'Warning: please note the ensemble summary file is different from the testing files: they use different grids'
+                gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
+                    ifiles, varCell_name, varEdge_name, varVertex_name, opts_dict
                 )
 
-            # Compare the new run and the ensemble summary file
-            results = {}
-            countgm = np.zeros(len(ifiles), dtype=np.int32)
+                means = np.concatenate((gmCell, gmEdge, gmVertex), axis=0)
+                # end mpas
 
-            # Calculate the new run global mean
-            mean3d, mean2d = pyEnsLib.generate_global_mean_for_summary(
-                ifiles, var_name3d, var_name2d, is_SE, opts_dict
+            else:  # cam
+                # Read all variables from the ensemble summary file
+                (
+                    ens_var_name,
+                    ens_avg,
+                    ens_stddev,
+                    ens_rmsz,
+                    ens_gm,
+                    num_3d,
+                    mu_gm,
+                    sigma_gm,
+                    loadings_gm,
+                    sigma_scores_gm,
+                    is_SE_sum,
+                    std_gm,
+                    std_gm_array,
+                    str_size,
+                ) = pyEnsLib.read_ensemble_summary(opts_dict['sumfile'])
+
+                # total vars
+                total_vars = len(ens_var_name)
+
+                # Add global mean to the dictionary "variables"
+                variables = {}
+
+                for k, v in ens_gm.items():
+                    pyEnsLib.addvariables(variables, k, 'gmRange', v)
+
+                # Get 3d variable name list and 2d variable name list separately
+                var_name3d = []
+                var_name2d = []
+                for vcount, v in enumerate(ens_var_name):
+                    if vcount < num_3d:
+                        var_name3d.append(v)
+                    else:
+                        var_name2d.append(v)
+
+                ###
+                npts3d, npts2d, is_SE = pyEnsLib.get_ncol_nlev(ifiles[0])
+
+                if is_SE ^ is_SE_sum:
+                    print(
+                        'Warning: please note the ensemble summary file is different from the testing files: they use different grids'
+                    )
+
+                # Compare the new run and the ensemble summary file
+                results = {}
+                countgm = np.zeros(len(ifiles), dtype=np.int32)
+
+                # Calculate the new run global mean
+                mean3d, mean2d = pyEnsLib.generate_global_mean_for_summary(
+                    ifiles, var_name3d, var_name2d, is_SE, opts_dict
+                )
+                means = np.concatenate((mean3d, mean2d), axis=0)
+                # end cam
+
+            # NOW this the same for MPAS and CAM
+
+            # check nPC
+
+            if opts_dict['nPC'] > total_vars:
+                new_pc = int(total_vars * 0.8)
+                print('')
+                print(
+                    'WARNING: please note the number of PCs specified (option --nPC) is set to ',
+                    opts_dict['nPC'],
+                    ', which exceeds the number of PC scores in the summary file (',
+                    total_vars,
+                    '). Instead using --nPC ',
+                    new_pc,
+                    '.',
+                )
+                print('')
+                opts_dict['nPC'] = new_pc
+
+            # extra info
+            # Add the new run global mean to the dictionary "results"
+            for i in range(means.shape[1]):
+                for j in range(means.shape[0]):
+                    pyEnsLib.addresults(results, 'means', means[j][i], ens_var_name[j], 'f' + str(i))
+            # Evaluate the new run global mean if it is in the range of the ensemble summary global mea?n range
+            for fcount, fid in enumerate(ifiles):
+                countgm[fcount] = pyEnsLib.evaluatestatus(
+                    'means', 'gmRange', variables, 'gm', results, 'f' + str(fcount)
+                )
+            # end extra
+
+            # Calculate the PCA scores of the new run
+            new_scores, sum_std_mean, comp_std_gm = pyEnsLib.standardized(
+                means, mu_gm, sigma_gm, loadings_gm, ens_var_name, opts_dict, me
             )
-            means = np.concatenate((mean3d, mean2d), axis=0)
-            # end cam
 
-        # NOW this the same for MPAS and CAM
-
-        # check nPC
-
-        if opts_dict['nPC'] > total_vars:
-            new_pc = int(total_vars * 0.8)
-            print('')
-            print(
-                'WARNING: please note the number of PCs specified (option --nPC) is set to ',
-                opts_dict['nPC'],
-                ', which exceeds the number of PC scores in the summary file (',
-                total_vars,
-                '). Instead using --nPC ',
-                new_pc,
-                '.',
-            )
-            print('')
-            opts_dict['nPC'] = new_pc
-
-        # extra info
-        # Add the new run global mean to the dictionary "results"
-        for i in range(means.shape[1]):
-            for j in range(means.shape[0]):
-                pyEnsLib.addresults(results, 'means', means[j][i], ens_var_name[j], 'f' + str(i))
-        # Evaluate the new run global mean if it is in the range of the ensemble summary global mea?n range
-        for fcount, fid in enumerate(ifiles):
-            countgm[fcount] = pyEnsLib.evaluatestatus(
-                'means', 'gmRange', variables, 'gm', results, 'f' + str(fcount)
-            )
-        # end extra
-
-        # Calculate the PCA scores of the new run
-        new_scores, sum_std_mean, comp_std_gm = pyEnsLib.standardized(
-            means, mu_gm, sigma_gm, loadings_gm, ens_var_name, opts_dict, me
-        )
         run_index, decision = pyEnsLib.comparePCAscores(
             ifiles, new_scores, sigma_scores_gm, opts_dict, me
         )
@@ -493,50 +550,43 @@ def main(argv):
         ##
         # Print file with info about new test runs....to a netcdf file
         ##
-        if opts_dict['saveResults']:
+        if len(opts_dict['saveResults']) > 0:
             num_vars = comp_std_gm.shape[0]
             tsize = comp_std_gm.shape[1]
             esize = std_gm_array.shape[1]
-            this_savefile = 'savefile.nc'
+            
+            this_savefile = opts_dict['saveResults']
             if verbose:
                 print('VERBOSE: Creating ', this_savefile, '  ...')
 
             if os.path.exists(this_savefile):
                 os.unlink(this_savefile)
-            nc_savefile = nc.Dataset(this_savefile, 'w', format='NETCDF4_CLASSIC')
+            nc_savefile = nc.Dataset(this_savefile, 'w', format='NETCDF4')
             nc_savefile.createDimension('ens_size', esize)
             nc_savefile.createDimension('test_size', tsize)
             nc_savefile.createDimension('nvars', num_vars)
-            nc_savefile.createDimension('str_size', str_size)
+            nc_savefile.createDimension('files_size', len(ifiles))
 
             # Set global attributes
             now = time.strftime('%c')
             nc_savefile.creation_date = now
             nc_savefile.title = 'PyCECT compare results file'
             nc_savefile.summaryfile = opts_dict['sumfile']
-            # nc_savefile.testfiles = in_files
 
             # variables
-            v_vars = nc_savefile.createVariable('vars', 'S1', ('nvars', 'str_size'))
+            v_vars = nc_savefile.createVariable('vars', str, 'nvars')
             v_std_gm = nc_savefile.createVariable('std_gm', 'f8', ('nvars', 'test_size'))
             v_scores = nc_savefile.createVariable('scores', 'f8', ('nvars', 'test_size'))
-            v_ens_sigma_scores = nc_savefile.createVariable('ens_sigma_scores', 'f8', ('nvars',))
-            v_ens_std_gm = nc_savefile.createVariable('ens_std_gm', 'f8', ('nvars', 'ens_size'))
+            v_ifiles = nc_savefile.createVariable('ifiles', str, 'files_size')
+            v_sum_std_mean = nc_savefile.createVariable('sum_std_mean', 'f8', ('nvars',))
 
-            # v_ens_loadings = nc_savefile.createVariable('ens_loadings', 'f8', ('nvars', 'nvars'))
             v_gm = nc_savefile.createVariable('gm', 'f8', ('nvars', 'test_size'))
 
-            # hard-coded size
-            ssize = 'S' + str(str_size)
-            str_out = nc.stringtochar(np.array(ens_var_name, ssize))
-
-            v_vars[:] = str_out
+            v_vars[:] = np.array(ens_var_name)
             v_std_gm[:, :] = comp_std_gm[:, :]
             v_scores[:, :] = new_scores[:, :]
-            v_ens_sigma_scores[:] = sigma_scores_gm[:]
-            v_ens_std_gm[:, :] = std_gm_array[:, :]
-
-            # v_ens_loadings[:,:] = loadings_gm[:,:]
+            v_ifiles[:] = np.array(ifiles)
+            v_sum_std_mean[:] = v_sum_std_mean[:]
             v_gm[:, :] = means[:, :]
 
             nc_savefile.close()

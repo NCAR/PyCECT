@@ -1,1 +1,12 @@
-Test data can go here.
+# Data README
+
+This directory contains supporting code for publications associated with the PyCECT project.
+
+The following is associated with Price-Broncucia et al. 2024
+
+- data/CESM_2_3_2750_1deg_sums: This directory contains summary files for a large ensemble of CESM-CAM run at f09_f09 (1 degree) resolution.
+- data/CESM_2_3_2750_2deg_sums: This directory contains summary files for a large ensemble of CESM-CAM run at f19_f19 (2 degree) resolution.
+- data/MPAS_no_pv_430_sums : This directory contains summary files for a large ensemble of MPAS-A run with 120km mesh resolution.
+- data/MPAS_example_bug_sum.nc : The summary file represents a reference configuration run on the Derecho machine, for the paper's realistic big scenario. It is created with the paper's recommended UF-ECT test parameters (200 members and T=12 timesteps).
+- data/MPAS_paper_rec_sumfile_chey_e200_t12.nc: The summary file represents a reference configuration run on the Cheyenne machine, for most of the paper's testing scenarios including scientific parameter variation. It is created with the paper's recommended UF-ECT test parameters (200 members and T=12 timesteps).
+- data/MPAS_scenario_data: This directory contains an example of ECT savefiles for MPAS-A used to test ECT performance on different scenarios.
