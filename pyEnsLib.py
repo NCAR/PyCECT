@@ -414,7 +414,7 @@ def pre_PCA(gm_orig, all_var_names, ex_list, me):
             print(
                 'Warning: these ',
                 len(nu_list),
-                ' variables contain fewer than 3% unique values across the ensemble, and will be excluded and added to a copy of thee json file (--jsonfile): ',
+                ' variables contain fewer than 3% unique values across the ensemble, and will be excluded and added to a copy of the json file (--jsonfile): ',
             )
             print('\n')
             print((','.join(['"{0}"'.format(item) for item in nu_list])))
@@ -457,11 +457,11 @@ def pre_PCA(gm_orig, all_var_names, ex_list, me):
     sh = max(standardized_global_mean.shape)
     mytol = sh * norm * eps
 
-    standardized_rank = np.linalg.matrix_rank(standardized_global_mean, mytol)
+    # standardized_rank = np.linalg.matrix_rank(standardized_global_mean, mytol)
     print('STATUS: using QR...')
-    print(('STATUS: standardized_global_mean rank = ', standardized_rank))
+    print('sh, norm, eps ', sh, norm, eps)
 
-    dep_var_list = get_dependent_vars_index(standardized_global_mean, standardized_rank)
+    dep_var_list = get_dependent_vars_index(standardized_global_mean, mytol)
     num_dep = len(dep_var_list)
     new_len = len(new_ex_list)
 
@@ -2269,30 +2269,29 @@ def get_failure_index(the_array):
 
 #
 # Alternative method to get the linearly dependent rows (using QR for faster perf)
-#
-def get_dependent_vars_index(a_mat, orig_rank):
+def get_dependent_vars_index(a_mat, mytol):
     # initialize
     dv_index = []
 
     # the_array is nvars x nens
-    nvars = a_mat.shape[0]
+    # nvars = a_mat.shape[0]
 
-    if orig_rank < nvars:
-        # transpose so vars are the columns
-        t_mat = a_mat.transpose()
+    # transpose so vars are the columns
+    t_mat = a_mat.transpose()
 
-        # now do a rank-revealing qr (pivots for stability)
-        q_mat, r_mat, piv = sla.qr(t_mat, pivoting=True)
+    # now do a rank-revealing qr (pivots for stability)
+    q_mat, r_mat, piv = sla.qr(t_mat, pivoting=True)
 
-        # rank = num of nonzero diag of r
-        # r_mat_d = np.fabs(r_mat.diagonal())
-        # print r_mat_d
+    # rank = num of nonzero diag of r
+    r_mat_d = np.fabs(r_mat.diagonal())
+    # print r_mat_d
+    r_diag_rank = len(np.where(r_mat_d >= mytol)[0])
+    # print("RANK:  ", "r_diag_rank = ", r_diag_rank, "mytol = ", mytol)
 
-        # AB: 4/1/19: instead of an arbitrary tolerance here, we'll just remove vars according to the
-        # tolerance from the rank calculation already done
-        rank_est = orig_rank
-        # ind_vars_index = piv[0:rank_est]
-        dv_index = piv[rank_est:]
+    rank_est = r_diag_rank
+    # ind_vars_index = piv[0:rank_est]
+    # these are the dependent variables
+    dv_index = piv[rank_est:]
 
     return dv_index
 
