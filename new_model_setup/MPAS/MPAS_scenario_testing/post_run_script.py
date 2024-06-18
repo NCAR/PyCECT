@@ -36,11 +36,6 @@ def main(argv):
     print('Test parameters:')
     print(test_params)
 
-    mpas_src = test_params['file_paths']['mpas_src']
-    init_dir = test_params['file_paths']['init_dir']
-    #    namelist_name = test_params['file_paths']['namelist_name']
-
-    #    init_copy_dir = test_params['file_paths']['init_copy_dir']
     test_output_dir = test_params['file_paths']['test_output_dir']
 
     true_sum_file = test_params['file_paths']['true_sum_file']
@@ -55,18 +50,9 @@ def main(argv):
     for each in test_vars:
         print(f'Test type: {each["test_type"]}')
 
-        # reset directories in case they has been changed by a test
-        mpas_src = test_params['file_paths']['mpas_src']
-        init_dir = test_params['file_paths']['init_dir']
-
         # binary test
         if each['test_type'] == 'binary_test':
             print(f'Test name: {each["test_name"]}')
-            # set test specific directories
-            if len(each['mod_mpas_src']) > 0:
-                mpas_src = each['mod_mpas_src']
-            if len(each['mod_mpas_init_dir']) > 0:
-                init_dir = each['mod_mpas_init_dir']
 
             test_name = each['test_name']
 
@@ -105,7 +91,7 @@ def main(argv):
 
                 else:
                     # Create symlinks to history files
-                    command = f"find {test_output_dir}/{test_name}/{test_name}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_name}/history_files/ \;"
+                    command = f"find {test_output_dir}/{test_name}/{test_name}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_name}/history_files/ \\;"
 
                     os.system(command)
                     # print(command)
@@ -174,7 +160,7 @@ def main(argv):
 
                     else:
                         # Create symlinks to history files
-                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
+                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_folder}/history_files/ \\;"
 
                         os.system(command)
                         # print(command)
@@ -230,7 +216,7 @@ def main(argv):
 
                     else:
                         # Create symlinks to history files
-                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_folder}/history_files/ \;"
+                        command = f"find {test_output_dir}/{test_folder}/{test_folder}* -name \"history_full*\" -exec cp -sf '{{}}' {test_output_dir}/{test_folder}/history_files/ \\;"
 
                         os.system(command)
                         # print(command)
