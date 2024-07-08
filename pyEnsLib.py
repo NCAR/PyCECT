@@ -346,7 +346,7 @@ def search_sumfile(opts_dict, ifiles):
 # now gm comes in at 64 bits...
 
 
-# pas in exclude list in case we have to add to id
+# pass in exclude list in case we have to add to it
 def pre_PCA(gm_orig, all_var_names, ex_list, me):
     # initialize
     b_exit = False
