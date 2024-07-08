@@ -718,6 +718,7 @@ def get_area_wgt(o_files, is_SE, nlev, popens):
 
 
 # ofiles are not open
+# Now designed to handle file based parallelism
 def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_vertex, opts_dict):
     tslice = opts_dict['tslice']
 
@@ -728,6 +729,11 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     gmCell = np.zeros((nCell, len(o_files)), dtype=np.float64)
     gmEdge = np.zeros((nEdge, len(o_files)), dtype=np.float64)
     gmVertex = np.zeros((nVertex, len(o_files)), dtype=np.float64)
+
+    # Check if this process got files to average
+    if len(o_files) == 0:
+        return gmCell, gmEdge, gmVertex
+
 
     # get weights for area
     first_file = nc.Dataset(o_files[0], 'r')
@@ -756,6 +762,9 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     weights['edge'] = edge_wgt
     weights['vertex'] = vertex_wgt
 
+    first_file.close()
+
+
     # loop through the input file list to calculate global means
     # print('Examining data from files ...')
     for fcount, in_file in enumerate(o_files):
@@ -779,6 +788,7 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
 
 
 # fname is open
+# Now designed for file based parallelism
 def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, var_vertex, tslice):
     nan_flag = False
 
@@ -809,16 +819,16 @@ def calc_global_mean_for_onefile_MPAS(fname, weight_dict, var_cell, var_edge, va
                 ' that is in the ensemble summary file ...',
             )
             continue
-        data = fname.variables[vname_d]
-        if not data[tslice].size:
+        data_slice = fname.variables[vname_d][tslice]
+
+        if not data_slice.size:
             print('ERROR: ', vname_d, ' data is empty => EXITING....')
             sys.exit(2)
-        if np.any(np.isnan(data)):
+        if np.any(np.isnan(data_slice)):
             print('ERROR: ', vname_d, ' data contains NaNs - please check input => EXITING')
             nan_flag = True
             continue
 
-        data_slice = data[tslice]
         a = np.average(data_slice, axis=0, weights=cell_wgt)
         # print("weightd = ", cell_wgt)
         # if 3d, have to average over levels (unweighted)

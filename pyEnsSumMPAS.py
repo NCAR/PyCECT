@@ -84,6 +84,7 @@ def main(argv):
 
     if me.get_rank() == 0:
         print('STATUS: Running pyEnsSumMPAS.py')
+        print(f'STATUS: Ranks: {me.get_size()}')
 
     if me.get_rank() == 0 and verbose:
         print(opts_dict)
@@ -334,9 +335,8 @@ def main(argv):
     else:
         this_sumfile = this_sumfile
 
-    varCell_list_loc = me.partition(cell_names, func=EqualStride(), involved=True)
-    varEdge_list_loc = me.partition(edge_names, func=EqualStride(), involved=True)
-    varVertex_list_loc = me.partition(vertex_names, func=EqualStride(), involved=True)
+    # Split by files
+    in_files_loc = me.partition(full_in_files, func=EqualStride(), involved=True)
 
     # close first_file
     first_file.close()
@@ -346,7 +346,7 @@ def main(argv):
         print('VERBOSE: Calculating global means .....')
 
     gmCell, gmEdge, gmVertex = pyEnsLib.generate_global_mean_for_summary_MPAS(
-        full_in_files, varCell_list_loc, varEdge_list_loc, varVertex_list_loc, opts_dict
+        in_files_loc, cell_names, edge_names, vertex_names, opts_dict
     )
 
     if me.get_rank() == 0 and verbose:
@@ -354,23 +354,22 @@ def main(argv):
 
     # gather to rank = 0
     if opts_dict['mpi_enable']:
-        # Gather the cell variable results from all processors to the master processor
-        slice_index = get_stride_list(len(cell_names), me)
-        # Gather global means cell results
+        # Split over files
+        slice_index = get_stride_list(len(full_in_files), me)
 
+        # Gather the cell variable results from all processors to the master processor
+        # Gather global means cell results
         # print("MYRANK = ", me.get_rank(), slice_index)
-        gmCell = gather_npArray(gmCell, me, slice_index, (len(cell_names), len(full_in_files)))
+        gmCell = gather_npArray_file_split(gmCell, me, slice_index, (len(cell_names), len(full_in_files)))
         # print(gmCell)
 
         # Gather the edge variable results from all processors to the master processor
-        slice_index = get_stride_list(len(edge_names), me)
         # Gather global means edge results
-        gmEdge = gather_npArray(gmEdge, me, slice_index, (len(edge_names), len(full_in_files)))
+        gmEdge = gather_npArray_file_split(gmEdge, me, slice_index, (len(edge_names), len(full_in_files)))
 
         # Gather the vertex variable results from all processors to the master processor
-        slice_index = get_stride_list(len(vertex_names), me)
         # Gather global means vertex results
-        gmVertex = gather_npArray(
+        gmVertex = gather_npArray_file_split(
             gmVertex, me, slice_index, (len(vertex_names), len(full_in_files))
         )
 
@@ -605,6 +604,27 @@ def gather_npArray(npArray, me, slice_index, array_shape):
             k = 0
             for j in slice_index[rank]:
                 the_array[j, :] = npArray[k, :]
+                k = k + 1
+    if me.get_rank() != 0:
+        # message = {'from_rank': me.get_rank(), 'shape': npArray.shape}
+        me.collect(npArray)
+    me.sync()
+    return the_array
+
+# Gather arrays from each processor split by files to the master processor and make it an array
+def gather_npArray_file_split(npArray, me, slice_index, array_shape):
+    the_array = np.zeros(array_shape, dtype=np.float64)
+    if me.get_rank() == 0:
+        k = 0
+        for j in slice_index[me.get_rank()]:
+            the_array[:, j] = npArray[:, k]
+            k = k + 1
+    for i in range(1, me.get_size()):
+        if me.get_rank() == 0:
+            rank, npArray = me.collect()
+            k = 0
+            for j in slice_index[rank]:
+                the_array[:, j] = npArray[:, k]
                 k = k + 1
     if me.get_rank() != 0:
         # message = {'from_rank': me.get_rank(), 'shape': npArray.shape}
