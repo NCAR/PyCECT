@@ -734,7 +734,6 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     if len(o_files) == 0:
         return gmCell, gmEdge, gmVertex
 
-
     # get weights for area
     first_file = nc.Dataset(o_files[0], 'r')
     input_dims = first_file.dimensions
@@ -763,7 +762,6 @@ def generate_global_mean_for_summary_MPAS(o_files, var_cell, var_edge, var_verte
     weights['vertex'] = vertex_wgt
 
     first_file.close()
-
 
     # loop through the input file list to calculate global means
     # print('Examining data from files ...')

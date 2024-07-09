@@ -360,12 +360,16 @@ def main(argv):
         # Gather the cell variable results from all processors to the master processor
         # Gather global means cell results
         # print("MYRANK = ", me.get_rank(), slice_index)
-        gmCell = gather_npArray_file_split(gmCell, me, slice_index, (len(cell_names), len(full_in_files)))
+        gmCell = gather_npArray_file_split(
+            gmCell, me, slice_index, (len(cell_names), len(full_in_files))
+        )
         # print(gmCell)
 
         # Gather the edge variable results from all processors to the master processor
         # Gather global means edge results
-        gmEdge = gather_npArray_file_split(gmEdge, me, slice_index, (len(edge_names), len(full_in_files)))
+        gmEdge = gather_npArray_file_split(
+            gmEdge, me, slice_index, (len(edge_names), len(full_in_files))
+        )
 
         # Gather the vertex variable results from all processors to the master processor
         # Gather global means vertex results
@@ -610,6 +614,7 @@ def gather_npArray(npArray, me, slice_index, array_shape):
         me.collect(npArray)
     me.sync()
     return the_array
+
 
 # Gather arrays from each processor split by files to the master processor and make it an array
 def gather_npArray_file_split(npArray, me, slice_index, array_shape):
