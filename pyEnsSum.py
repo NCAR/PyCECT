@@ -148,6 +148,9 @@ def main(argv):
                 print('ERROR: Could not locate file ', fname, ' => EXITING....')
             sys.exit()
 
+    # Barrier for printing
+    me.sync()
+
     # open just the first file
     first_file = nc.Dataset(full_in_files[0], 'r')
 
@@ -316,6 +319,9 @@ def main(argv):
     # Calculate global means #
     if me.get_rank() == 0 and verbose:
         print('VERBOSE: Calculating global means .....')
+
+    # Barrier for printing
+    me.sync()
 
     gm3d, gm2d = pyEnsLib.generate_global_mean_for_summary(
         in_files_loc, d3_var_names, d2_var_names, is_SE, opts_dict
