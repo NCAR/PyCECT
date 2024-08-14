@@ -332,13 +332,17 @@ def main(argv):
         # slice_index = get_stride_list(len(d3_var_names), me)
 
         # Gather global means 3d results
-        gm3d = gather_npArray_file_split(gm3d, me, slice_index, (len(d3_var_names), len(full_in_files)))
+        gm3d = gather_npArray_file_split(
+            gm3d, me, slice_index, (len(d3_var_names), len(full_in_files))
+        )
 
         # # Gather 2d variable results from all processors to the master processor
         # slice_index = get_stride_list(len(d2_var_names), me)
 
         # Gather global means 2d results
-        gm2d = gather_npArray_file_split(gm2d, me, slice_index, (len(d2_var_names), len(full_in_files)))
+        gm2d = gather_npArray_file_split(
+            gm2d, me, slice_index, (len(d2_var_names), len(full_in_files))
+        )
 
     # rank =0 : complete calculations for summary file
     if me.get_rank() == 0:
@@ -581,6 +585,7 @@ def gather_npArray_file_split(npArray, me, slice_index, array_shape):
         me.collect(npArray)
     me.sync()
     return the_array
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])
