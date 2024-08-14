@@ -304,8 +304,11 @@ def main(argv):
         this_sumfile = this_sumfile
 
     # All:
-    var3_list_loc = me.partition(d3_var_names, func=EqualStride(), involved=True)
-    var2_list_loc = me.partition(d2_var_names, func=EqualStride(), involved=True)
+    # var3_list_loc = me.partition(d3_var_names, func=EqualStride(), involved=True)
+    # var2_list_loc = me.partition(d2_var_names, func=EqualStride(), involved=True)
+
+    # Split by files
+    in_files_loc = me.partition(full_in_files, func=EqualStride(), involved=True)
 
     # close first_file
     first_file.close()
@@ -315,7 +318,7 @@ def main(argv):
         print('VERBOSE: Calculating global means .....')
 
     gm3d, gm2d = pyEnsLib.generate_global_mean_for_summary(
-        full_in_files, var3_list_loc, var2_list_loc, is_SE, opts_dict
+        in_files_loc, d3_var_names, d2_var_names, is_SE, opts_dict
     )
 
     if me.get_rank() == 0 and verbose:
@@ -323,17 +326,19 @@ def main(argv):
 
     # gather to rank = 0
     if opts_dict['mpi_enable']:
-        # Gather the 3d variable results from all processors to the master processor
-        slice_index = get_stride_list(len(d3_var_names), me)
+        # Split over files
+        slice_index = get_stride_list(len(full_in_files), me)
+        # # Gather the 3d variable results from all processors to the master processor
+        # slice_index = get_stride_list(len(d3_var_names), me)
 
         # Gather global means 3d results
-        gm3d = gather_npArray(gm3d, me, slice_index, (len(d3_var_names), len(full_in_files)))
+        gm3d = gather_npArray_file_split(gm3d, me, slice_index, (len(d3_var_names), len(full_in_files)))
 
-        # Gather 2d variable results from all processors to the master processor
-        slice_index = get_stride_list(len(d2_var_names), me)
+        # # Gather 2d variable results from all processors to the master processor
+        # slice_index = get_stride_list(len(d2_var_names), me)
 
         # Gather global means 2d results
-        gm2d = gather_npArray(gm2d, me, slice_index, (len(d2_var_names), len(full_in_files)))
+        gm2d = gather_npArray_file_split(gm2d, me, slice_index, (len(d2_var_names), len(full_in_files)))
 
     # rank =0 : complete calculations for summary file
     if me.get_rank() == 0:
@@ -555,6 +560,27 @@ def gather_npArray(npArray, me, slice_index, array_shape):
     me.sync()
     return the_array
 
+
+# Gather arrays from each processor split by files to the master processor and make it an array
+def gather_npArray_file_split(npArray, me, slice_index, array_shape):
+    the_array = np.zeros(array_shape, dtype=np.float64)
+    if me.get_rank() == 0:
+        k = 0
+        for j in slice_index[me.get_rank()]:
+            the_array[:, j] = npArray[:, k]
+            k = k + 1
+    for i in range(1, me.get_size()):
+        if me.get_rank() == 0:
+            rank, npArray = me.collect()
+            k = 0
+            for j in slice_index[rank]:
+                the_array[:, j] = npArray[:, k]
+                k = k + 1
+    if me.get_rank() != 0:
+        # message = {'from_rank': me.get_rank(), 'shape': npArray.shape}
+        me.collect(npArray)
+    me.sync()
+    return the_array
 
 if __name__ == '__main__':
     main(sys.argv[1:])
