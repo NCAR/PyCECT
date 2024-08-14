@@ -983,7 +983,7 @@ def calc_global_mean_for_onefile_pop(
     for count, vname in enumerate(var_name3d):
         gm_lev = np.zeros(nlev, dtype=np.float64)
         data = fname.variables[vname]
-        if np.any(np.isnan(data)):
+        if np.any(np.isnan(data[tslice])):
             print('ERROR: ', vname, ' data contains NaNs - please check input.')
             nan_flag = True
         output3d[:, :, :] = data[tslice, :, :, :]
@@ -997,7 +997,7 @@ def calc_global_mean_for_onefile_pop(
     # calculate global mean for each 2D variable
     for count, vname in enumerate(var_name2d):
         data = fname.variables[vname]
-        if np.any(np.isnan(data)):
+        if np.any(np.isnan(data[tslice])):
             print('ERROR: ', vname, ' data contains NaNs - please check input.')
             nan_flag = True
         output2d[:, :] = data[tslice, :, :]
@@ -1049,7 +1049,7 @@ def calc_global_mean_for_onefile(
         if not data[tslice].size:
             print('ERROR: ', vname_d, ' data is empty => EXITING....')
             sys.exit(2)
-        if np.any(np.isnan(data)):
+        if np.any(np.isnan(data[tslice])):
             print('ERROR: ', vname_d, ' data contains NaNs - please check input => EXITING')
             nan_flag = True
             continue
@@ -1091,7 +1091,7 @@ def calc_global_mean_for_onefile(
             )
             continue
         data = fname.variables[vname_d]
-        if np.any(np.isnan(data)):
+        if np.any(np.isnan(data[tslice])):
             print('ERROR: ', vname_d, ' data contains NaNs - please check input => EXITING....')
             nan_flag = True
             continue
