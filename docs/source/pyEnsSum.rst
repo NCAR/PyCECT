@@ -25,7 +25,7 @@ To use pyEnsSum:
 
 1. On NCAR's Derecho machine:
 
-   An example script is given in ``test_pyEnsSum.sh``.  Modify as needed and do:
+   An example script is given in ``test_pyEnsSum.sh``. Modify as needed and do:
 
    ``qsub test_pyEnsSum.sh``
 
@@ -89,7 +89,7 @@ Notes:
 
 4. The ``--esize``  (the ensemble size) can be less than or equal to the number of files
    in ``--indir``.  Ensembles numbered 0000-(esize-1) will be included.  UF-CAM-ECT
-   typically uses at least 350 members, whereas CAM-ECT does not require as many.
+   typically uses at least 1800 members, whereas CAM-ECT does not require as many.
 
 5. Note that ``--res``, ``--tag``, ``--compset``, and ``--mach``
    parameters only affect the metadata written to the summary file.
@@ -114,16 +114,18 @@ Notes:
    are constant across the ensemble, are not floating-point (e.g., integer),
    are linearly dependant, or have very few (< 3%) unique values.
 
+9. The pyEnsSum.py program parallelizes over the number of files in the ensemble
+   directory. This allows for the use of a large number of processes, up to the ensemble size if needed. Our experience on Derecho has also shown that per-node bandwidth is a limiting factor. For this reason, we recommend using fewer processes than possible cores. With sufficient nodes, (for example 20 nodes and 36 cores per node) an 1800 member ensemble should be processed in less than 10 minutes on Derecho.
 
 Example:
 --------------------------------------
 (Note: This example is in test_pyEnsSum.sh)
 
-*To generate a summary file for 350 UF-CAM-ECT simulations runs (time step nine):*
+*To generate a summary file for 1800 UF-CAM-ECT simulations runs (time step 7):*
 
 * we specify the size and data location:
 
-  ``--esize 350``
+  ``--esize 1800``
 
   ``--indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files``
 
@@ -131,14 +133,13 @@ Example:
 
   ``--sumfile uf.ens.c1.2.2.1_fc5.ne30.nc``
 
-* Since the ensemble files contain the intial conditions  as well as the time slice that
-  contains the desired values at time step 9, we set:
+* If the ensemble files do not contain the initial conditions as a timeslice, the desired values at time step 7 are the only timeslice. So we set:
 
-  ``--tslice 1``
+  ``--tslice 0``
 
 * We also specify the CESM tag, compset and resolution and machine of our ensemble data so that it can be written to the metadata of the summary file:
 
-  ``--tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --mach cheyenne``
+  ``--tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --mach derecho``
 
 * We can exclude variables from the analysis by specifying them in a json file:
 
@@ -146,4 +147,4 @@ Example:
 
 * This yields the following command for your job submission script:
 
-  ``python pyCECT.py --esize 350 --indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files  --sumfile uf.ens.c1.2.2.1_fc5.ne30.nc  --tslice 1 --tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --jsonfile excluded_varlist.json``
+  ``python pyCECT.py --esize 1800 --indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files  --sumfile uf.ens.c1.2.2.1_fc5.ne30.nc  --tslice 0 --tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --jsonfile excluded_varlist.json``
