@@ -73,8 +73,8 @@ def read_summary_series(folder, file_prefix, file_suffix, starting_timestep, sav
 
     return all_standard_means, timesteps, shared_vars
 
-def read_summary_series_single_file(filename, starting_timestep, save_interval, up_to_save=None):
 
+def read_summary_series_single_file(filename, starting_timestep, save_interval, up_to_save=None):
     print(f'Opening {filename}')
 
     dataset = xr.open_dataset(filename, engine='netcdf4')
@@ -100,7 +100,6 @@ def read_summary_series_single_file(filename, starting_timestep, save_interval, 
     for i in range(ntimes):
         standardized_means[i, :, :] = StandardScaler().fit_transform(all_means[:, :, i].T).T
 
-
     timesteps = list(
         range(starting_timestep, ntimes * save_interval + starting_timestep, save_interval)
     )
@@ -108,10 +107,14 @@ def read_summary_series_single_file(filename, starting_timestep, save_interval, 
     return standardized_means, timesteps, shared_vars
 
 
-
 # Step 2, Calculate Shapiro-Wilks P-score over time
 def shapiro_wilks_over_time(
-    all_standard_means, timesteps, shared_vars, title='', mark_timestep=None, alternative_xlabel=None
+    all_standard_means,
+    timesteps,
+    shared_vars,
+    title='',
+    mark_timestep=None,
+    alternative_xlabel=None,
 ):
     num_vars = len(shared_vars)
     num_times = len(timesteps)
@@ -253,6 +256,7 @@ def stable_PCs_required(
 
     return (sample_sizes, min_pca_included)
 
+
 def stable_PCs_required_dataset(
     standardized_gms,
     timestep,
@@ -284,7 +288,7 @@ def stable_PCs_required_dataset(
     while stable_count < 5:
         sample_sizes.append(sample_sizes[i - 1] + 50)
 
-        print(f"Sample size: {sample_sizes[i]}")
+        print(f'Sample size: {sample_sizes[i]}')
 
         if sample_sizes[i] > standardized_gm.shape[1]:
             sample_sizes.pop()
@@ -312,6 +316,7 @@ def stable_PCs_required_dataset(
     plot_stable_PCs(sample_sizes, min_pca_included, vertical_line=vertical_line, title=title)
 
     return (sample_sizes, min_pca_included)
+
 
 def plot_stable_PCs(
     sample_sizes, min_pca_included, vertical_line=None, horizontal_line=None, title=''
