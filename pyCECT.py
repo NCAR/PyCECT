@@ -482,15 +482,24 @@ def main(argv):
             tsize = comp_std_gm.shape[1]
             b = list(ens_var_name)
             for f, avar in enumerate(b):
+                print(f'Variable: {avar}')
+
                 if np.ma.is_masked(std_gm[avar]):
                     tempa = std_gm[avar]
                 else:
                     tempa = np.array(std_gm[avar])
+
+                print(f'tempa: {tempa}')
+
                 dist_995 = np.percentile(tempa, 99.5)
                 dist_005 = np.percentile(tempa, 0.5)
-                # print(avar, " = ", dist_005, dist_995)
+
+                print(avar, ' = ', dist_005, dist_995)
+
                 count = 0
                 for i in range(tsize):
+                    print(f'comp_std_gm[f, i]: {comp_std_gm[f, i]}')
+
                     if comp_std_gm[f, i] > dist_995 or comp_std_gm[f, i] < dist_005:
                         count = count + 1
                 if count == 1:
@@ -533,7 +542,7 @@ def main(argv):
             print('')
             print('***************************************************************************** ')
             print(
-                'Top 20 test run variables in decreasing order of (abs) standardized mean sum (note: ensemble is standardized such that mean = 0 and std_dev = 1)'
+                f'Top {count} test run variables in decreasing order of (abs) standardized mean sum (note: ensemble is standardized such that mean = 0 and std_dev = 1)'
             )
             for i in range(count):
                 print(
