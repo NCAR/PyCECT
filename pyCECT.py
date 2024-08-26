@@ -475,37 +475,35 @@ def main(argv):
             print(' ')
 
             all_outside99 = []
+            many_outside99 = []
             two_outside99 = []
             one_outside99 = []
+            many_outside99_count = []
 
             # std_gm is a dictionary
             tsize = comp_std_gm.shape[1]
             b = list(ens_var_name)
             for f, avar in enumerate(b):
-                print(f'Variable: {avar}')
-
                 if np.ma.is_masked(std_gm[avar]):
                     tempa = std_gm[avar]
                 else:
                     tempa = np.array(std_gm[avar])
 
-                print(f'tempa: {tempa}')
-
                 dist_995 = np.percentile(tempa, 99.5)
                 dist_005 = np.percentile(tempa, 0.5)
 
-                print(avar, ' = ', dist_005, dist_995)
-
                 count = 0
                 for i in range(tsize):
-                    print(f'comp_std_gm[f, i]: {comp_std_gm[f, i]}')
-
                     if comp_std_gm[f, i] > dist_995 or comp_std_gm[f, i] < dist_005:
                         count = count + 1
+
                 if count == 1:
                     one_outside99.append(avar)
                 elif count == 2:
                     two_outside99.append(avar)
+                elif (count > 2) and (count < tsize):
+                    many_outside99.append(avar)
+                    many_outside99_count.append(count)
                 elif count == tsize:
                     all_outside99.append(avar)
 
@@ -516,6 +514,16 @@ def main(argv):
                     ' variable(s) have all test run global means outside of the 99th percentile.',
                 )
                 print(all_outside99)
+            if len(many_outside99) > 0:
+                print(
+                    '*** ',
+                    len(many_outside99),
+                    ' variable(s) have more than 2 test run global means outside of the 99th percentile.',
+                )
+                for i, each in enumerate(many_outside99):
+                    print(
+                        f'{each} has {many_outside99_count[i]} test run global means outside of the 99th percentile.'
+                    )
             if len(two_outside99) > 0:
                 print(
                     '*** ',
@@ -531,13 +539,16 @@ def main(argv):
                 )
                 print(one_outside99)
 
-            if len(all_outside99) + len(two_outside99) + len(one_outside99) == 0:
+            if (
+                len(all_outside99) + len(two_outside99) + len(one_outside99) + len(many_outside99)
+                == 0
+            ):
                 print('*** No variables have test run global means outside of the 99th percentile.')
 
             # count = len(all_outside99) + len(two_outside99) + len(one_outside99)
             # count = max(10, count)
             count = 20
-            count = min(count, means.shape[0])
+            count = min(count, len(ens_var_name))
 
             print('')
             print('***************************************************************************** ')
