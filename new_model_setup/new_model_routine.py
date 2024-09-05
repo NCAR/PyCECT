@@ -22,6 +22,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter
 from scipy.stats import shapiro
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 plt.rcParams['figure.dpi'] = 200
 
@@ -73,9 +74,47 @@ def read_summary_series(folder, file_prefix, file_suffix, starting_timestep, sav
     return all_standard_means, timesteps, shared_vars
 
 
+def read_summary_series_single_file(filename, starting_timestep, save_interval, up_to_save=None):
+    print(f'Opening {filename}')
+
+    dataset = xr.open_dataset(filename, engine='netcdf4')
+
+    shared_vars = dataset.vars
+
+    print(f'{len(shared_vars)} shared variables')
+
+    n_vars = len(shared_vars)
+    ens_size = dataset.dims['ens_size']
+
+    all_means = dataset.global_mean.values
+
+    if up_to_save:
+        print(f'Up to save {up_to_save}')
+        ntimes = up_to_save
+        all_means = all_means[:, :, :ntimes]
+    else:
+        ntimes = dataset.dims['ntimes']
+
+    standardized_means = np.zeros((ntimes, n_vars, ens_size))
+
+    for i in range(ntimes):
+        standardized_means[i, :, :] = StandardScaler().fit_transform(all_means[:, :, i].T).T
+
+    timesteps = list(
+        range(starting_timestep, ntimes * save_interval + starting_timestep, save_interval)
+    )
+
+    return standardized_means, timesteps, shared_vars
+
+
 # Step 2, Calculate Shapiro-Wilks P-score over time
 def shapiro_wilks_over_time(
-    all_standard_means, timesteps, shared_vars, title='', mark_timestep=None
+    all_standard_means,
+    timesteps,
+    shared_vars,
+    title='',
+    mark_timestep=None,
+    alternative_xlabel=None,
 ):
     num_vars = len(shared_vars)
     num_times = len(timesteps)
@@ -93,6 +132,9 @@ def shapiro_wilks_over_time(
     non_normal_vars_percentage = non_normal_vars / num_vars
 
     plt.plot(timesteps, non_normal_vars_percentage)
+
+    # if alternative_xlabel is not None:
+
     plt.xlabel('Model Timestep')
     plt.xticks(timesteps[::2], map(str, timesteps[::2]))
     plt.ylabel('Non-Normal Variable Percentage')
@@ -190,6 +232,67 @@ def stable_PCs_required(
     while stable_count < 5:
         print(i)
         sample_sizes.append(sample_sizes[i - 1] + 50)
+
+        scores_variances, cum_sum = var_explained_sample(standardized_gm, sample_sizes[i], 10)
+        test_variances = np.vstack([test_variances, np.mean(scores_variances, axis=0)])
+        test_cum_variances = np.vstack([test_cum_variances, np.mean(cum_sum, axis=0)])
+
+        min_pca_included.append(np.argwhere(test_cum_variances[i, :] > variance_explained)[0][0])
+
+        #         test for 128
+        #         print("Variance Explained by 128")
+        #         print(test_cum_variances[i, 127])
+
+        if min_pca_included[i] == min_pca_included[i - 1]:
+            stable_count += 1
+        else:
+            stable_count = 1
+
+        i += 1
+
+    print(min_pca_included)
+
+    plot_stable_PCs(sample_sizes, min_pca_included, vertical_line=vertical_line, title=title)
+
+    return (sample_sizes, min_pca_included)
+
+
+def stable_PCs_required_dataset(
+    standardized_gms,
+    timestep,
+    all_timesteps,
+    variance_explained,
+    title='',
+    vertical_line=None,
+):
+    idx = timestep_to_idx(timestep, all_timesteps)
+
+    standardized_gm = standardized_gms[idx, :, :]
+
+    dims = standardized_gm.shape[0]
+
+    sample_sizes = [dims]
+
+    test_variances = np.zeros((len(sample_sizes), dims))
+    test_cum_variances = np.zeros((len(sample_sizes), dims))
+    min_pca_included = [0]
+
+    scores_variances, cum_sum = var_explained_sample(standardized_gm, sample_sizes[0], 10)
+    test_variances[0, :] = np.mean(scores_variances, axis=0)
+    test_cum_variances[0, :] = np.mean(cum_sum, axis=0)
+    min_pca_included[0] = np.argwhere(test_cum_variances[0, :] > 0.95)[0][0]
+
+    i = 1
+    stable_count = 1
+
+    while stable_count < 5:
+        sample_sizes.append(sample_sizes[i - 1] + 50)
+
+        print(f'Sample size: {sample_sizes[i]}')
+
+        if sample_sizes[i] > standardized_gm.shape[1]:
+            sample_sizes.pop()
+            break
 
         scores_variances, cum_sum = var_explained_sample(standardized_gm, sample_sizes[i], 10)
         test_variances = np.vstack([test_variances, np.mean(scores_variances, axis=0)])
