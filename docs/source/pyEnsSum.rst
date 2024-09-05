@@ -127,11 +127,11 @@ Example:
 
   ``--esize 1800``
 
-  ``--indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files``
+  ``--indir /glade/campaign/cisl/asap/pycect_sample_data/cam7_ne30/uf_cam_ens_files``
 
 * We also specify the name of file to create for the summary:
 
-  ``--sumfile uf.ens.c1.2.2.1_fc5.ne30.nc``
+  ``--sumfile cam_sum.nc``
 
 * If the ensemble files do not contain the initial conditions as a timeslice, the desired values at time step 7 are the only timeslice. So we set:
 
@@ -139,12 +139,12 @@ Example:
 
 * We also specify the CESM tag, compset and resolution and machine of our ensemble data so that it can be written to the metadata of the summary file:
 
-  ``--tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --mach derecho``
+  ``--tag cam6_4_019 --compset F2000 --res ne30_ne30 --mach derecho``
 
-* We can exclude variables from the analysis by specifying them in a json file:
+* We can exclude variables from the analysis by specifying them in a json file. If file does not exist or if none is provided, a default empty_excluded.json file is used:
 
   ``--jsonfile excluded_varlist.json``
 
 * This yields the following command for your job submission script:
 
-  ``python pyCECT.py --esize 1800 --indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files  --sumfile uf.ens.c1.2.2.1_fc5.ne30.nc  --tslice 0 --tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --jsonfile excluded_varlist.json``
+  ``python pyEnsSum.py --esize 1800 --indir /glade/campaign/cisl/asap/pycect_sample_data/cam7_ne30/uf_cam_ens_files --sumfile cam_sum.nc  --tslice 0 --tag cam6_4_019 --compset F2000 --res ne30_ne30 --mach derecho --verbose --jsonfile empty_excluded.json``

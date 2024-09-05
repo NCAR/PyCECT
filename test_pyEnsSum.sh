@@ -13,4 +13,4 @@ conda activate npl
 export TMPDIR=/glade/derecho/scratch/$USER/temp
 mkdir -p $TMPDIR
 
-mpiexec -n 720 -ppn 36 python pyEnsSum.py --esize 1800 --indir /glade/campaign/cisl/asap/pycect_sample_data/cam_c1.2.2.1/uf_cam_ens_files --sumfile cam_sum.nc  --tslice 0 --tag cesm1.2.2.1 --compset FC5 --res ne30_ne30 --mach derecho --verbose --jsonfile empty_excluded.json
+mpiexec -n 720 -ppn 36 python pyEnsSum.py --esize 1800 --indir /glade/campaign/cisl/asap/pycect_sample_data/cam7_ne30/uf_cam_ens_files --sumfile cam_sum.nc  --tslice 0 --tag cam6_4_019 --compset F2000 --res ne30_ne30 --mach derecho --verbose --jsonfile empty_excluded.json
