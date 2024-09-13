@@ -141,10 +141,10 @@ def main(argv):
     parser.add_argument(
         '-rs',
         '--run_script',
-        default='chey-run.sh',
+        default='derecho-run.sh',
         dest='run_script',
         help='Run script name to\
-    submit to PBS queue in the control run directory (default: chey-run.sh).',
+    submit to PBS queue in the control run directory (default: derecho-run.sh).',
     )
     parser.add_argument(
         '-s',
