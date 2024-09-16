@@ -21,6 +21,7 @@ from EET import exhaustive_test
 #
 # Parse header file of a netcdf to get the variable 3d/2d/1d list
 #
+# comment
 
 
 def parse_header_file(filename):
