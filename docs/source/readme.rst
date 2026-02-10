@@ -39,11 +39,20 @@ MPAS notes:
 1. MPAS-A summary files may be generated via pyEnsSumMPAS.  As this functionality
    is new, summary files are not yet available in the MPAS-A repo.
 
-2. Please contact us with any questions/issues.  (MPAS publication is in preparation.)
+2. Please contact us with any questions/issues.
+
+
+Setup FRamework notes:
+---------------------
+
+See the README file PyCECT/new_model_setup for information on examples of how to use the setup framework for determining parameters for your own model.  (This approach is described in Price-Broncucia 2025, listed below.)
 
 
 Relevant publications:
 ----------------------
+
+Teo Price-Broncucia, Allison Baker, Dorit Hammerling, Michael Duda, and Rebecca Morrison, “The Ensemble Consistency Test: From CESM to MPAS and Beyond”, Geoscientific Model Development, 18, pp. 2349-2372, 2025.
+https://gmd.copernicus.org/articles/18/2349/2025/
 
 Daniel J. Milroy, Allison H. Baker, Dorit M. Hammerling, and Elizabeth R. Jessup, “Nine time steps: ultra-fast statistical consistency testing of the Community Earth System Model (pyCECT v3.0)”, Geoscientific Model Development, 11, pp. 697-711, 2018.
 https://gmd.copernicus.org/articles/11/697/2018/
