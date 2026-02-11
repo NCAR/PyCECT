@@ -22,7 +22,7 @@ CESM simulations.
 
 
 :AUTHORS: Haiying Xu, Allison Baker, Daniel Milroy, Dorit Hammerling, Teo Price-Broncucia
-:COPYRIGHT: 2015-2024 University Corporation for Atmospheric Research
+:COPYRIGHT: 2015-2026 University Corporation for Atmospheric Research
 :LICENSE: Apache 2.0
 
 
