@@ -42,7 +42,7 @@ MPAS notes:
 2. Please contact us with any questions/issues.
 
 
-Setup FRamework notes:
+Setup Framework notes:
 ---------------------
 
 See the README file PyCECT/new_model_setup for information on examples of how to use the setup framework for determining parameters for your own model.  (This approach is described in Price-Broncucia 2025, listed below.)
