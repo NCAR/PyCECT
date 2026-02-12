@@ -43,13 +43,13 @@ MPAS notes:
 
 
 Setup Framework notes:
----------------------
+--------------------------
 
 See the README file PyCECT/new_model_setup for information on examples of how to use the setup framework for determining parameters for your own model.  (This approach is described in Price-Broncucia 2025, listed below.)
 
 
 Relevant publications:
-----------------------
+-------------------------
 
 Teo Price-Broncucia, Allison Baker, Dorit Hammerling, Michael Duda, and Rebecca Morrison, “The Ensemble Consistency Test: From CESM to MPAS and Beyond”, Geoscientific Model Development, 18, pp. 2349-2372, 2025.
 https://gmd.copernicus.org/articles/18/2349/2025/
