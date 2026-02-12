@@ -33,7 +33,7 @@ def main(argv):
     test_vars = test_params['test_vars']
 
     for each in test_vars:
-        print(f'Test type: {each["test_type"]}')
+        print(f"Test type: {each['test_type']}")
 
         # reset directories in case they have been changed by a test
         mpas_src = test_params['file_paths']['mpas_src']

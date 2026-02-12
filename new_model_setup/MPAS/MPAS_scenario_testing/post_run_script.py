@@ -52,7 +52,7 @@ def main(argv):
 
         # binary test
         if each['test_type'] == 'binary_test':
-            print(f'Test name: {each["test_name"]}')
+            print(f"Test name: {each['test_name']}")
 
             test_name = each['test_name']
 
