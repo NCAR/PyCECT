@@ -606,7 +606,7 @@ def main(argv):
             v_std_gm[:, :] = comp_std_gm[:, :]
             v_scores[:, :] = new_scores[:, :]
             v_ifiles[:] = np.array(ifiles)
-            v_sum_std_mean[:] = v_sum_std_mean[:]
+            v_sum_std_mean[:] = sum_std_mean[:]
             v_gm[:, :] = means[:, :]
 
             nc_savefile.close()
