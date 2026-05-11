@@ -1,0 +1,174 @@
+------------------------------------------
+CESM-ECT (CESM Ensemble Consistency Test:
+------------------------------------------
+
+CESM-ECT is a suite of tests to determine whether a new
+simulation set up (new machine, compiler, etc.) is statistically
+distinguishable from an accepted ensemble.  The verification tools in
+the CESM-ECT suite are:
+
+CAM-ECT - detects issues in CAM and CLM (12 month runs)
+UF-CAM-ECT - detects issues in CAM and CLM (7 or 9 time step runs)
+POP-ECT - detects issues in POP and CICE (12 month runs)
+
+The ECT process involves comparing runs generated with
+the new scenario ( 3 for CAM-ECT and UF-CAM-ECT, and 1 for POP-ECT)
+to an ensemble built on a trusted machine (currently
+cheyenne). The python ECT tools are located in the pyCECT
+subdirectory or https://github.com/NCAR/PyCECT/releases.
+
+-OR-
+
+We now provide a web server for CAM-ECT and UF-CAM-ECT,  where
+you can upload the (3) generated runs for comparison to our ensemble.
+Please see the webpage at http://www.cesm.ucar.edu/models/cesm2/verification/
+for further instructions.
+
+-----------------------------------
+-----------------------------------
+Creating or obtaining a summary file:
+-----------------------------------
+-----------------------------------
+
+Before the test can be run, a summary file is needed of the ensemble
+runs to which the comparison will be made. Ensemble summary files
+(NetCDF) for existing tags for CAM-ECT, UF-CAM-ECT, and POP-ECT that
+were created by CSEG are located (respectively) in the CESM input data
+directories:
+
+$CESMDATAROOT/inputdata/validation/ensembles
+$CESMDATAROOT/inputdata/validation/uf_ensembles
+$CESMDATAROOT/inputdata/validation/pop_ensembles
+
+If none of our ensembles are suitable for your needs, then you may create
+your own ensemble (and summary file) using the following instructions:
+
+(1) To create a new ensemble, use the ensemble.py script in this directory.
+This script creates and compiles a case, then creates clones of the
+original case, where the initial temperature perturbation is slightly modified
+for each ensemble member.  At this time, CESM includes functionality
+to create ensembles for CAM-ECT, UF-CAM-ECT, and POP-ECT.
+
+(2) Use --ect <pop,cam> to specify whether ensemble is for CAM or POP.
+
+
+(3) See 'python ensemble.py -h' for additional details:
+
+derecho6> python ensemble.py -h
+
+----------------------------
+ensemble.py :
+----------------------------
+ 
+Required flags:
+  --case <name>    Case name passed on to create_newcase (incl. full path AND must end in ".0000")
+  --mach <name>    Machine name passed on to create_newcase
+ 
+Optional flags (+ all "--" options to create_newcase): 
+  --project <num>     Project number to charge in job scripts
+  --ect <cam,pop>     Specify whether ensemble is for CAM-ECT or POP-ECT (default = cam)
+  --walltime <hr:mn>  Amount of walltime requested (default = 4:30 (CAM-ECT) 2:00 (POP-ECT), or 0:10 with --uf or --uf9 enabled)
+  --compiler <name>   Compiler to use (default = same as Machine default) 
+  --compset <name>    Compset to use (default = FHIST (CAM-ECT) or G (POP-ECT))
+  --res <name>        Resolution to run (default = ne30pg3_ne30pg3_mg17 (CAM-ECT) or T62_g17 (POP-ECT))
+  --uf                Enable SEVENTH time step runs (ultra-fast mode for CAM-ECT) - otherwise the default is 12-month runs
+  --uf9               Enable ninth time step runs (for older versions of CAM) - otherwise the default is 12-month runs
+  --uf_setup <num>    Enable output of EVERY time step for <num> timesteps (useful when determing which time step to use for future runs)
+  --nb                Disables auto building the root case of the ensemble
+  --ns                Disables auto submitting any members of the ensemble
+  --ens_start <start> Start ensemble creation at this number (default is 0). Ends at --ensemble <size>.
+  --ensemble <size>   Build the ensemble (instead of building case(s) with random pertlim values for verification),
+                      and specify the number of ensemble members to generate (e.g.: 400 for CAM-ECT annual averages 
+                      or 1800 for ultra-fast CAM-ECT mode or 40 for POP-ECT)
+  --help, -h          Prints out this usage message
+
+
+
+
+(4) Use --ensemble <size> to specify the ensemble size.
+Recommended ensemble sizes:
+CAM 6:
+    UF-CAM-ECT: 1800 (time-step = 7) for 2 degree
+    UF-CAM-ECT:  XXX (time-step = X) for 1 dgree
+    CAM-ECT: Not needed at this time
+CAM 5:
+     CAM-ECT: 151
+     UF-CAM-ECT: 350 (time-step = 9)  (Use --uf9)
+POP:
+     POP-ECT 40
+
+Hint: You do not have to generate all ensemble members at once.
+(See UF-CAM-ECT example below.)
+
+
+(5) Examples:
+
+From the statistical_ensemble_test directory:
+
+
+UF-CAM-ECT:
+------------------------------
+python ensemble.py --case /glade/derecho/scratch/cesm_user/cesm_tag/uf_ensemble/ensemble.cesm_tag.uf.0000 --mach derecho  --ensemble 1800 --uf --ect cam --project P99999999
+
+Hint: You do not have to do all 1800 at once.  By using the ' --ens_start <start>' and '--ensemble' option, you can break up the job submission.
+The following three commands create 1800 runs in four calls:
+
+python ensemble.py --case /glade/derecho/scratch/cesm_user/cesm_tag/uf_ensemble/ensemble.cesm_tag.uf.0000 --mach derecho  --ensemble 10 --uf --ect cam --project P99999999
+python ensemble.py --case /glade/derecho/scratch/cesm_user/cesm_tag/uf_ensemble/ensemble.cesm_tag.uf.0000 --mach derecho  --ensemble 600 --ens_start 10 --uf --ect cam --project P\
+python ensemble.py --case /glade/derecho/scratch/cesm_user/cesm_tag/uf_ensemble/ensemble.cesm_tag.uf.0000 --mach derecho  --ensemble 1200 --ens_start 600 --uf --ect cam --project P99999999
+python ensemble.py --case /glade/dereecho/scratch/cesm_user/cesm_tag/uf_ensemble/ensemble.cesm_tag.uf.0000 --mach derecho  --ensemble 1800 --ens_start 1200 --uf --ect cam --project P99999999
+
+
+
+
+CAM-ECT: (not usually needed)
+------------------------------
+python ensemble.py --case /glade/derecho/scratch/cesm_user/cesm_tag/ensemble/ensemble.cesm_tag.0000 --mach derecho   --ensemble 151 --ect cam --project P99999999
+
+
+POP-ECT:
+-----------------------------
+python ensemble.py --case /glade/derecho/scratch/cesm_user/cesm_tag/uf_ensemble/ensemble.cesm_tag.000 --mach derecho  --ensemble 40 --ect pop --project P99999999
+
+Notes:
+       (a) ensemble.py accepts (most of) the argumenets of create_newcase
+
+       (b) case name must end in ".0000" (CAM) or ".0000" (POP) and include the full path
+
+       (c) ensemble size must be specified, and suggested defaults are listed
+       	   above. Note that for CAM-ECT and UF-CAM-ECT, the ensemble size
+	   needs to be larger than the number of variables that ECT will evaluate.
+
+
+(6) Once all ensemble simulations have run successfully, copy every cam history
+file (*.cam.h0.*) for CAM-ECT and UF-CAM-ECT) or monthly pop history file
+(*.pop.h.*) for POP-ECT from each ensemble run directory into a separate directory.
+Next create the ensemble summary using the pyCECT tool pyEnsSum.py (for CAM-ECT and
+UF-CAM-ECT) or pyEnsSumPop.py (for POP-ECT).  For details see README_pyEnsSum.rst
+and README_pyEnsSumPop.rst with the pyCECT tools.
+
+
+-----------------------------------
+-----------------------------------
+Creating test runs:
+-----------------------------------
+-----------------------------------
+
+(1) Once an ensemble summary file has been created or chosen to
+use from $CESMDATAROOT/inputdata/validation, the simulation
+run(s) to be verified by ECT must be created via script ensemble.py.
+
+NOTE: It is important that the **same** resolution and compset be used in the
+individual runs as in the ensemble.  The NetCDF ensemble summary file global
+attributes give this information.
+
+(2) For example, for UF-CAM-ECT:
+
+python ensemble.py --case /glade/scratch/cesm_user/cesm_tag/uf.camcase.cesm_tag.0000 --ect cam --uf --mach derecho --project P99999999 --compset   F2000climo --res f19_f19_mg17
+
+For example, for POP-ECT:
+
+python ensemble.py --case /glade/scratch/cesm_user/cesm_tag/popcase.cesm_tag.0000 --ect pop --mach derecho  --project P99999999 --compset   G --res T62_g17
+
+(3) Next verify the new simulation(s) with the pyCECT tool pyCECT.py (see
+README_pyCECT.rst with the pyCECT tools).

@@ -253,3 +253,4 @@ MPAS_true_failure_testing/ect_postrun_xnutr.o4357960
 MPAS_true_failure_testing/ect_postrun_xnutr.o4357970
 MPAS_true_failure_testing/example_bug_test.out
 MPAS_true_failure_testing/test_params_copy.json
+.DS_Store
