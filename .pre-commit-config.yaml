@@ -28,7 +28,8 @@ repos:
         args: ["--profile=black", "--filter-files"]
 
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.8.5
+    rev: 1.9.1
     hooks:
       - id: nbqa-pyupgrade
-        additional_dependencies: [pyupgrade==3.15.0]
+        language_version: python3
+        additional_dependencies: [pyupgrade==3.19.0]

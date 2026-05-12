@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 from __future__ import print_function
-import sys, getopt, os
+
+import getopt
+import os
+import sys
+
 
 #
 # Command options
@@ -11,9 +15,7 @@ def disp_usage(callType):
             "\nSets up multiple CESM cases for either an ensemble of runs or a small (CAM-ECT = 3, POP-ECT = 1)"
         )
         print("test set (default). Then use pyCECT utilities to create an ensemble")
-        print(
-            "summary file or to evaluate the small test set of runs against the ensemble."
-        )
+        print("summary file or to evaluate the small test set of runs against the ensemble.")
         print("  ")
         print("----------------------------")
         print("ensemble.py :")
@@ -26,9 +28,7 @@ def disp_usage(callType):
     print(" ")
     print("Required flags:")
     if callType == "single_run.py":
-        print(
-            "  --case <name>    Case name passed on to create_newcase (incl. full path AND same)"
-        )
+        print("  --case <name>    Case name passed on to create_newcase (incl. full path AND same)")
     else:
         print(
             '  --case <name>    Case name passed on to create_newcase (incl. full path AND must end in ".0000")'
@@ -46,9 +46,7 @@ def disp_usage(callType):
         "  --walltime <hr:mn>  Amount of walltime requested (default = 4:30 (CAM-ECT) 2:00 (POP-ECT), or 0:10 with --uf or --uf9 enabled)"
     )
     print("  --compiler <name>   Compiler to use (default = same as Machine default) ")
-    print(
-        "  --compset <name>    Compset to use (default = FHIST (CAM-ECT) or G (POP-ECT))"
-    )
+    print("  --compset <name>    Compset to use (default = FHIST (CAM-ECT) or G (POP-ECT))")
     print(
         "  --res <name>        Resolution to run (default = ne30pg3_ne30pg3_mg17 (CAM-ECT) or T62_g17 (POP-ECT))"
     )
@@ -63,12 +61,8 @@ def disp_usage(callType):
     )
 
     if callType == "ensemble.py":
-        print(
-            "  --nb                Disables auto building the root case of the ensemble"
-        )
-        print(
-            "  --ns                Disables auto submitting any members of the ensemble"
-        )
+        print("  --nb                Disables auto building the root case of the ensemble")
+        print("  --ns                Disables auto submitting any members of the ensemble")
         print(
             "  --ens_start <start> Start ensemble creation at this number (default is 0). Ends at --ensemble <size>."
         )
@@ -78,9 +72,7 @@ def disp_usage(callType):
         print(
             "                      and specify the number of ensemble members to generate (e.g.: 400 for CAM-ECT annual averages "
         )
-        print(
-            "                      or 1800 for ultra-fast CAM-ECT mode or 40 for POP-ECT)"
-        )
+        print("                      or 1800 for ultra-fast CAM-ECT mode or 40 for POP-ECT)")
     else:
         print("  --nb                Disables building (and submitting) the single case")
         print("  --ns                Disables submitting the single case")
@@ -89,7 +81,6 @@ def disp_usage(callType):
 
 ########
 def process_args_dict(caller, caller_argv):
-
     # Pull in and analyze the command line arguements
     s = "case= mach= project= compiler= compset= res= uf uf9 nb ns uf_setup= ensemble= verbose silent test multi-driver pecount= nist= mpilib= pesfile= gridfile= srcroot= output-root= script-root= queue= user-modes-dir= input-dir= pertlim= walltime= h ens_start= ect= ngpus-per-node= gpu-type= gpu-offload="
 
@@ -247,12 +238,10 @@ def process_args_dict(caller, caller_argv):
         case = opts_dict["case"]
         if caller == "ensemble.py":
             if case[-5:] != ".0000":
-                print(
-                    'Error: when using ensemble.py, the case name (--case) must end in ".0000".'
-                )
+                print('Error: when using ensemble.py, the case name (--case) must end in ".0000".')
                 sys.exit()
         case_dir = os.path.dirname(case)
-        if os.path.isdir(case_dir) == False:
+        if not os.path.isdir(case_dir):
             print("Error: Need a valid full path with the case name (--case).")
             sys.exit()
     # defaults for resolution and case
@@ -268,7 +257,7 @@ def process_args_dict(caller, caller_argv):
             opts_dict["res"] = "ne30pg3_ne30pg3_mg17"
 
     if opts_dict["walltime"] == "00:00":
-        if opts_dict["uf"] == True or opts_dict["uf9"] == True or opts_dict["uf_setup"] > 0:
+        if opts_dict["uf"] or opts_dict["uf9"] or opts_dict["uf_setup"] > 0:
             opts_dict["walltime"] = "00:10"
         else:
             if opts_dict["ect"] == "pop":
@@ -284,18 +273,13 @@ def process_args_dict(caller, caller_argv):
 
 
 def single_case(opts_dict, case_flags, stat_dir):
-
     # scripts dir
     ret = os.chdir(stat_dir)
     ret = os.chdir("../../cime/scripts")
 
-    ##res and compset are required for create_newcase
+    # res and compset are required for create_newcase
     case_flags += (
-        " --compset "
-        + opts_dict["compset"]
-        + " --res "
-        + opts_dict["res"]
-        + " --run-unsupported"
+        " --compset " + opts_dict["compset"] + " --res " + opts_dict["res"] + " --run-unsupported"
     )
 
     # create newcase
@@ -333,12 +317,12 @@ def single_case(opts_dict, case_flags, stat_dir):
         command = "  ./xmlchange --file env_run.xml --id STOP_N --val 1"
         ret = os.system(command)
     else:
-        if opts_dict["uf"] == True:
+        if opts_dict["uf"]:
             command = "./xmlchange --file env_run.xml --id STOP_OPTION --val nsteps"
             ret = os.system(command)
             command = "  ./xmlchange --file env_run.xml --id STOP_N --val 7"
             ret = os.system(command)
-        elif opts_dict["uf9"] == True:
+        elif opts_dict["uf9"]:
             command = "./xmlchange --file env_run.xml --id STOP_OPTION --val nsteps"
             ret = os.system(command)
             command = "  ./xmlchange --file env_run.xml --id STOP_N --val 9"
@@ -349,21 +333,20 @@ def single_case(opts_dict, case_flags, stat_dir):
             ret = os.system(command)
             command = "  ./xmlchange --file env_run.xml --id STOP_N --val " + str(num)
             ret = os.system(command)
-            
+
         else:
             command = "./xmlchange --file env_run.xml --id STOP_OPTION --val nmonths"
             ret = os.system(command)
             command = "./xmlchange --file env_run.xml --id STOP_N --val 12"
             ret = os.system(command)
 
-        #AB -  for runs shorter than 1 full day, the ROF ncpl needs to be changed
+        # AB -  for runs shorter than 1 full day, the ROF ncpl needs to be changed
         # so that it will execute at least one timestep or you will get an error
         # and the ROF_NCPL means how many times in 24 hours it is coupled (so 48=>30 min)
         print("STATUS: updating ROF_NCPL...")
         command = "./xmlchange ROF_NCPL=48"
         ret = os.system(command)
 
-        
     print("STATUS: running setup for single case...")
     command = "./case.setup"
     ret = os.system(command)
@@ -372,7 +355,7 @@ def single_case(opts_dict, case_flags, stat_dir):
 
     # POP-ECT
     if opts_dict["ect"] == "pop":
-        if os.path.isfile("user_nl_pop") == True:
+        if os.path.isfile("user_nl_pop"):
             with open("user_nl_pop", "a") as f:
                 if opts_dict["pertlim"] != "0":
                     text = "\ninit_ts_perturb = {}".format(opts_dict["pertlim"])
@@ -382,21 +365,21 @@ def single_case(opts_dict, case_flags, stat_dir):
     else:
         # CAM-ECT
         # cam
-        if os.path.isfile("user_nl_cam") == True:
-            if opts_dict["uf"] == True:
+        if os.path.isfile("user_nl_cam"):
+            if opts_dict["uf"]:
                 text1 = "\navgflag_pertape = 'I'"
                 text2 = "\nnhtfrq  = 7"
-            elif opts_dict["uf9"] == True:
+            elif opts_dict["uf9"]:
                 text1 = "\navgflag_pertape = 'I'"
                 text2 = "\nnhtfrq  = 9"
-            elif opts_dict["uf_setup"] > 0: #ever timestep
+            elif opts_dict["uf_setup"] > 0:  # ever timestep
                 num = opts_dict["uf_setup"]
                 text1 = "\navgflag_pertape = 'I'"
                 text2 = "\nnhtfrq  = 1"
             else:
                 text1 = "\navgflag_pertape = 'A'"
                 text2 = "\nnhtfrq  = -8760"
-                
+
             text3 = "\ninithist = 'NONE'"
 
             with open("user_nl_cam", "a") as f:
@@ -410,11 +393,11 @@ def single_case(opts_dict, case_flags, stat_dir):
             print("Warning: no user_nl_cam found")
 
         # clm
-        if os.path.isfile("user_nl_clm") == True:
-            if opts_dict["uf"] == True:
+        if os.path.isfile("user_nl_clm"):
+            if opts_dict["uf"]:
                 text1 = "\nhist_avgflag_pertape = 'I'"
                 text2 = "\nhist_nhtfrq  = 7"
-            elif opts_dict["uf9"] == True:
+            elif opts_dict["uf9"]:
                 text1 = "\nhist_avgflag_pertape = 'I'"
                 text2 = "\nhist_nhtfrq  = 9"
             else:
@@ -426,13 +409,13 @@ def single_case(opts_dict, case_flags, stat_dir):
                 f.write(text2)
 
         # disable ice output
-        if os.path.isfile("user_nl_cice") == True:
+        if os.path.isfile("user_nl_cice"):
             text = "\nhistfreq = 'x','x','x','x','x'"
             with open("user_nl_cice", "a") as f:
                 f.write(text)
 
         # pop
-        if os.path.isfile("user_nl_pop") == True:
+        if os.path.isfile("user_nl_pop"):
             text = ["'\nn_tavg_streams = 1"]
             text.append("\nldiag_bsf = .false.")
             text.append("\nldiag_global_tracer_budgets = .false.")
@@ -442,7 +425,7 @@ def single_case(opts_dict, case_flags, stat_dir):
             text.append("\nmoc_requested = .false.")
             text.append("\nn_heat_trans_requested = .false.")
             text.append("\nn_salt_trans_requested = .false.")
-            test.append("\ntavg_freq_opt = 'once', 'never', 'never'")
+            text.append("\ntavg_freq_opt = 'once', 'never', 'never'")
             text.append("\ntavg_file_freq_opt = 'once', 'never', 'never'")
             text.append("\ndiag_cfl_freq_opt = 'never'")
             text.append("\ndiag_global_freq_opt = 'never'")
@@ -462,21 +445,20 @@ def single_case(opts_dict, case_flags, stat_dir):
     ns = opts_dict["ns"]
     print("STATUS: no-build = " + str(nb))
     print("STATUS: no-submit = " + str(ns))
-    if nb == False:
+    if not nb:
         print("STATUS: building case ...")
         command = "./case.build"
         ret = os.system(command)
         if ret != 0:
             print("Error building...")
             sys.exit()
-        if ns == False:
+        if not ns:
             command = "./case.submit"
             ret = os.system(command)
 
 
 ########
 def main(argv):
-
     caller = "single_run.py"
 
     # directory with single_run.py and ensemble.py

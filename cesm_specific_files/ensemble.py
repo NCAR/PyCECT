@@ -1,7 +1,11 @@
 #!/usr/bin/python
 from __future__ import print_function
-import os, sys, getopt
+
+import getopt
+import os
 import random
+import sys
+
 from single_run import process_args_dict, single_case
 
 # ==============================================================================
@@ -9,7 +13,8 @@ from single_run import process_args_dict, single_case
 # clones for a complete ensemble or a set of (3) test cases
 # ==============================================================================
 
-#For CAM 6 , now using 7 timestep length (3/24)
+# For CAM 6 , now using 7 timestep length (3/24)
+
 
 # generate <num_pick> positive random integers in [0, end-1]
 # can't have any duplicates
@@ -30,7 +35,7 @@ def get_pertlim_uf(rand_num):
         ptlim = '0'
     elif i > 3996:
         print("don't support sizes > 3996")
-    else: #generate perturbation
+    else:  # generate perturbation
         if i > 1998:
             orig = i
             i = orig - 1998
@@ -69,18 +74,16 @@ def get_pertlim_uf(rand_num):
                 ptlim = '-0.' + ippt + 'd-13'
 
         if orig > 0:
-            #adjust
-            if i % 2 != 0:  # odd 
+            # adjust
+            if i % 2 != 0:  # odd
                 ptlim = '1.' + ippt + 'd-13'
-            else: #even
+            else:  # even
                 ptlim = '-1.' + ippt + 'd-13'
 
     return ptlim
 
 
-
 def main(argv):
-
     caller = "ensemble.py"
 
     # directory with single_run.py and ensemble.py
@@ -108,19 +111,18 @@ def main(argv):
             sys.exit()
         print("STATUS: ensemble size = " + str(ens_size))
 
-    #where to start ensemble
+    # where to start ensemble
     start = opts_dict["ens_start"]
     if start < 0:
         start = 0
     if run_type == "ensemble":
-        if start >= ens_size:    
+        if start >= ens_size:
             print("Error: cannot start the ensemble at a number larger than the ensemble size.")
             sys.exit()
         print("STATUS: ensemble start = " + str(start))
     else:
-        #don't allow a mid start when doing verifcation runs
+        # don't allow a mid start when doing verifcation runs
         start = 0
-
 
     # generate random pertlim(s) for verify
     if run_type == "verify":
@@ -145,19 +147,18 @@ def main(argv):
         print("STATUS: creating first case ...")
         single_case(opts_dict, case_flags, stat_dir)
         begin_i = 1
-    else :
+    else:
         begin_i = start
 
     # clone?
     if clone_count > 0:
-
         # now clone
         print("STATUS: cloning additional cases ...")
 
         # scripts dir
         print("STATUS: stat_dir = " + stat_dir)
-        ret = os.chdir(stat_dir)
-        ret = os.chdir("../../cime/scripts")
+        os.chdir(stat_dir)
+        os.chdir("../../cime/scripts")
         scripts_dir = os.getcwd()
         print("STATUS: scripts dir = " + scripts_dir)
 
@@ -171,8 +172,7 @@ def main(argv):
             else:  # full ensemble
                 this_pertlim = get_pertlim_uf(i)
 
-
-            #allow for 4 digit numbers
+            # allow for 4 digit numbers
             iens = '{0:04d}'.format(i)
             new_case = case_pfx + "." + iens
 
@@ -183,12 +183,12 @@ def main(argv):
             print("        with args: " + clone_args)
 
             command = scripts_dir + "/create_clone" + clone_args
-            ret = os.system(command)
+            os.system(command)
 
             print("STATUS: running setup for new cloned case: " + new_case)
             os.chdir(new_case)
             command = "./case.setup"
-            ret = os.system(command)
+            os.system(command)
 
             # adjust perturbation
             if opts_dict["ect"] == "pop":
@@ -229,12 +229,12 @@ def main(argv):
 
             # preview namelists
             command = "./preview_namelists"
-            ret = os.system(command)
+            os.system(command)
 
             # submit?
-            if opts_dict["ns"] == False:
+            if not opts_dict["ns"]:
                 command = "./case.submit"
-                ret = os.system(command)
+                os.system(command)
 
     # Final output
     if run_type == "verify":

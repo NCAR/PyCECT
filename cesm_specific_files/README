@@ -59,16 +59,16 @@ derecho6> python ensemble.py -h
 ----------------------------
 ensemble.py :
 ----------------------------
- 
+
 Required flags:
   --case <name>    Case name passed on to create_newcase (incl. full path AND must end in ".0000")
   --mach <name>    Machine name passed on to create_newcase
- 
-Optional flags (+ all "--" options to create_newcase): 
+
+Optional flags (+ all "--" options to create_newcase):
   --project <num>     Project number to charge in job scripts
   --ect <cam,pop>     Specify whether ensemble is for CAM-ECT or POP-ECT (default = cam)
   --walltime <hr:mn>  Amount of walltime requested (default = 4:30 (CAM-ECT) 2:00 (POP-ECT), or 0:10 with --uf or --uf9 enabled)
-  --compiler <name>   Compiler to use (default = same as Machine default) 
+  --compiler <name>   Compiler to use (default = same as Machine default)
   --compset <name>    Compset to use (default = FHIST (CAM-ECT) or G (POP-ECT))
   --res <name>        Resolution to run (default = ne30pg3_ne30pg3_mg17 (CAM-ECT) or T62_g17 (POP-ECT))
   --uf                Enable SEVENTH time step runs (ultra-fast mode for CAM-ECT) - otherwise the default is 12-month runs
@@ -78,7 +78,7 @@ Optional flags (+ all "--" options to create_newcase):
   --ns                Disables auto submitting any members of the ensemble
   --ens_start <start> Start ensemble creation at this number (default is 0). Ends at --ensemble <size>.
   --ensemble <size>   Build the ensemble (instead of building case(s) with random pertlim values for verification),
-                      and specify the number of ensemble members to generate (e.g.: 400 for CAM-ECT annual averages 
+                      and specify the number of ensemble members to generate (e.g.: 400 for CAM-ECT annual averages
                       or 1800 for ultra-fast CAM-ECT mode or 40 for POP-ECT)
   --help, -h          Prints out this usage message
 
