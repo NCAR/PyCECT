@@ -73,6 +73,13 @@ def disp_usage(callType):
             "                      and specify the number of ensemble members to generate (e.g.: 400 for CAM-ECT annual averages "
         )
         print("                      or 1800 for ultra-fast CAM-ECT mode or 40 for POP-ECT)")
+        print(
+            "--failed-jobs-resubmit  Resubmit any cases that failed. Will check if case directories exist within specified range "
+        )
+        print(
+            "                      and resubmit any cases where last entry in CaseStatus indicates a failure."
+        )
+        print("                      Intended mainly for small sets of jobs that timed out.")
     else:
         print("  --nb                Disables building (and submitting) the single case")
         print("  --ns                Disables submitting the single case")
@@ -82,7 +89,7 @@ def disp_usage(callType):
 ########
 def process_args_dict(caller, caller_argv):
     # Pull in and analyze the command line arguements
-    s = "case= mach= project= compiler= compset= res= uf uf9 nb ns uf_setup= ensemble= verbose silent test multi-driver pecount= nist= mpilib= pesfile= gridfile= srcroot= output-root= script-root= queue= user-modes-dir= input-dir= pertlim= walltime= h ens_start= ect= ngpus-per-node= gpu-type= gpu-offload="
+    s = "case= mach= project= compiler= compset= res= uf uf9 nb ns uf_setup= ensemble= verbose silent test multi-driver pecount= nist= mpilib= pesfile= gridfile= srcroot= output-root= script-root= queue= user-modes-dir= input-dir= pertlim= walltime= h ens_start= ect= ngpus-per-node= gpu-type= gpu-offload= failed-jobs-resubmit"
 
     optkeys = s.split()
 
@@ -124,6 +131,8 @@ def process_args_dict(caller, caller_argv):
     opts_dict["ngpus-per-node"] = 0
     opts_dict["gpu-type"] = "NONE"
     opts_dict["gpu-offload"] = "NONE"
+    # To resubmit cases that failed
+    opts_dict["failed_jobs_resubmit"] = False
 
     s_case_flags = ""
 
@@ -226,6 +235,11 @@ def process_args_dict(caller, caller_argv):
             opts_dict["gpu-offload"] = arg
             s_case_flags += " " + opt + " " + arg
             # add below
+        elif opt == "--failed-jobs-resubmit":
+            print(
+                "STATUS: --failed_jobs_resubmit enabled. Will check for existing case directory and resubmit if last entry in CaseStatus indicates failure."
+            )
+            opts_dict["failed_jobs_resubmit"] = True
 
     # check required things: case, machine
     if opts_dict["mach"] == "NONE":

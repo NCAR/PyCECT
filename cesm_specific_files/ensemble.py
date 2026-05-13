@@ -6,7 +6,7 @@ import os
 import random
 import sys
 
-from single_run import process_args_dict, single_case
+from single_run_with_fail_resubmit import process_args_dict, single_case
 
 # ==============================================================================
 # set up and submit 12-month (original) or 7 or 9-time step (uf) run.  then create
@@ -157,8 +157,8 @@ def main(argv):
 
         # scripts dir
         print("STATUS: stat_dir = " + stat_dir)
-        os.chdir(stat_dir)
-        os.chdir("../../cime/scripts")
+        ret = os.chdir(stat_dir)
+        ret = os.chdir("../../cime/scripts")
         scripts_dir = os.getcwd()
         print("STATUS: scripts dir = " + scripts_dir)
 
@@ -176,65 +176,103 @@ def main(argv):
             iens = '{0:04d}'.format(i)
             new_case = case_pfx + "." + iens
 
-            os.chdir(scripts_dir)
-            print("STATUS: creating new cloned case: " + new_case)
-
-            clone_args = " --keepexe --case " + new_case + " --clone " + clone_case
-            print("        with args: " + clone_args)
-
-            command = scripts_dir + "/create_clone" + clone_args
-            os.system(command)
-
-            print("STATUS: running setup for new cloned case: " + new_case)
-            os.chdir(new_case)
-            command = "./case.setup"
-            os.system(command)
-
-            # adjust perturbation
-            if opts_dict["ect"] == "pop":
-                if run_type == "verify":  # remove old init_ts_perturb
-                    f = open("user_nl_pop", "r+")
-                    all_lines = f.readlines()
-                    f.seek(0)
-                    for line in all_lines:
-                        if line.find("init_ts_perturb") == -1:
-                            f.write(line)
-                    f.truncate()
-                    f.close()
-                    text = "init_ts_perturb = " + this_pertlim
+            # check if failed_jobs_resubmit is enabled and if new_case already exists. If so, check CaseStatus for failure and resubmit if failed.
+            successful_run = False
+            resubmitted = False
+            print(f"STATUS: Checking for existing case {new_case}")
+            if opts_dict["failed_jobs_resubmit"] and os.path.isdir(new_case):
+                print(
+                    f"STATUS: --failed_jobs_resubmit enabled and case {new_case} already exists. Will check CaseStatus for failure and resubmit if last entry in CaseStatus indicates failure."
+                )
+                case_status_file = os.path.join(new_case, "CaseStatus")
+                if os.path.isfile(case_status_file):
+                    with open(case_status_file, "r") as f:
+                        lines = f.readlines()
+                        case_success = False
+                        for line_index in range(-1, -4, -1):
+                            # if lines[line_index] contains "case.run success" consider the case successful and do not resubmit
+                            if "case.run success" in lines[line_index]:
+                                case_success = True
+                                print(
+                                    "STATUS: `case.run success` found in last 3 lines of CaseStatus indicating success. Not resubmitting."
+                                )
+                                successful_run = True
+                                break
+                        if not case_success:
+                            print(
+                                f"STATUS: 'case.run success' not found in last 3 lines of CaseStatus. Assuming failure and resubmitting case {new_case}"
+                            )
+                            ret = os.chdir(new_case)
+                            command = "./case.submit"
+                            ret = os.system(command)
+                            resubmitted = True
+                            if ret != 0:
+                                print("Error resubmitting")
                 else:
-                    text = "\ninit_ts_perturb = " + this_pertlim
+                    print(
+                        f"Warning: Case {new_case} exists but CaseStatus file not found. Cannot check for failure. Not resubmitting."
+                    )
 
-                # now append new pertlim
-                with open("user_nl_pop", "a") as f:
-                    f.write(text)
+            elif not resubmitted and not successful_run:
+                os.chdir(scripts_dir)
+                print("STATUS: creating new cloned case: " + new_case)
 
-            else:
-                if run_type == "verify":  # remove old pertlim first
-                    f = open("user_nl_cam", "r+")
-                    all_lines = f.readlines()
-                    f.seek(0)
-                    for line in all_lines:
-                        if line.find("pertlim") == -1:
-                            f.write(line)
-                    f.truncate()
-                    f.close()
-                    text = "pertlim = " + this_pertlim
+                clone_args = " --keepexe --case " + new_case + " --clone " + clone_case
+                print("        with args: " + clone_args)
+
+                command = scripts_dir + "/create_clone" + clone_args
+                ret = os.system(command)
+
+                print("STATUS: running setup for new cloned case: " + new_case)
+                os.chdir(new_case)
+                command = "./case.setup"
+                ret = os.system(command)
+
+                # adjust perturbation
+                if opts_dict["ect"] == "pop":
+                    if run_type == "verify":  # remove old init_ts_perturb
+                        f = open("user_nl_pop", "r+")
+                        all_lines = f.readlines()
+                        f.seek(0)
+                        for line in all_lines:
+                            if line.find("init_ts_perturb") == -1:
+                                f.write(line)
+                        f.truncate()
+                        f.close()
+                        text = "init_ts_perturb = " + this_pertlim
+                    else:
+                        text = "\ninit_ts_perturb = " + this_pertlim
+
+                    # now append new pertlim
+                    with open("user_nl_pop", "a") as f:
+                        f.write(text)
+
                 else:
-                    text = "\npertlim = " + this_pertlim
+                    if run_type == "verify":  # remove old pertlim first
+                        f = open("user_nl_cam", "r+")
+                        all_lines = f.readlines()
+                        f.seek(0)
+                        for line in all_lines:
+                            if line.find("pertlim") == -1:
+                                f.write(line)
+                        f.truncate()
+                        f.close()
+                        text = "pertlim = " + this_pertlim
+                    else:
+                        text = "\npertlim = " + this_pertlim
 
-                # now append new pertlim
-                with open("user_nl_cam", "a") as f:
-                    f.write(text)
+                    # now append new pertlim
+                    with open("user_nl_cam", "a") as f:
+                        f.write(text)
 
-            # preview namelists
-            command = "./preview_namelists"
-            os.system(command)
+                # preview namelists
+                command = "./preview_namelists"
+                ret = os.system(command)
 
-            # submit?
-            if not opts_dict["ns"]:
-                command = "./case.submit"
-                os.system(command)
+                # submit?
+                if not opts_dict["ns"]:
+                    command = "./case.submit"
+                    ret = os.system(command)
 
     # Final output
     if run_type == "verify":

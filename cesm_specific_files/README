@@ -80,6 +80,9 @@ Optional flags (+ all "--" options to create_newcase):
   --ensemble <size>   Build the ensemble (instead of building case(s) with random pertlim values for verification),
                       and specify the number of ensemble members to generate (e.g.: 400 for CAM-ECT annual averages
                       or 1800 for ultra-fast CAM-ECT mode or 40 for POP-ECT)
+  --failed-jobs-resubmit  Resubmit any cases that failed. Will check if case directories exist within specified range.
+                      Intended mostly for the small number of cases that sometimes timeout in a large ensemble due to
+                      cluster variability.
   --help, -h          Prints out this usage message
 
 
