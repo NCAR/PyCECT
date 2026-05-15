@@ -6,7 +6,7 @@ import os
 import random
 import sys
 
-from single_run_with_fail_resubmit import process_args_dict, single_case
+from single_run import process_args_dict, single_case
 
 # ==============================================================================
 # set up and submit 12-month (original) or 7 or 9-time step (uf) run.  then create
