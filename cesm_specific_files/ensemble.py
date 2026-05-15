@@ -189,7 +189,8 @@ def main(argv):
                     with open(case_status_file, "r") as f:
                         lines = f.readlines()
                         case_success = False
-                        for line_index in range(-1, -4, -1):
+                        # Going up to -9 to account for seperator lines and timing entries.
+                        for line_index in range(-1, -9, -1):
                             # if lines[line_index] contains "case.run success" consider the case successful and do not resubmit
                             if "case.run success" in lines[line_index]:
                                 case_success = True
@@ -200,7 +201,7 @@ def main(argv):
                                 break
                         if not case_success:
                             print(
-                                f"STATUS: 'case.run success' not found in last 3 lines of CaseStatus. Assuming failure and resubmitting case {new_case}"
+                                f"STATUS: 'case.run success' not found in last 3 entries of CaseStatus. Assuming failure and resubmitting case {new_case}"
                             )
                             ret = os.chdir(new_case)
                             command = "./case.submit"
@@ -213,7 +214,7 @@ def main(argv):
                         f"Warning: Case {new_case} exists but CaseStatus file not found. Cannot check for failure. Not resubmitting."
                     )
 
-            elif not resubmitted and not successful_run:
+            if not resubmitted and not successful_run:
                 os.chdir(scripts_dir)
                 print("STATUS: creating new cloned case: " + new_case)
 
