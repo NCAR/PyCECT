@@ -7,6 +7,7 @@ Usage:
     python check_for_missing_files.py [path]
     python check_for_missing_files.py [path] --delete
     python check_for_missing_files.py [path] --make-symlinks
+    python check_for_missing_files.py [path] --make-symlinks --history-filter cam.h0i
 """
 
 import argparse
@@ -32,53 +33,65 @@ def find_case_dirs(base_path: Path):
     ]
 
 
-def get_history_files(case_dir: Path):
+def get_history_files(case_dir: Path, history_filter: str = ""):
     """Return (list_of_nc_paths, error_string). One of the two will be None."""
     run_dir = case_dir / "run"
     if not run_dir.exists():
         return None, "run/ directory does not exist"
     try:
-        files = [f for f in run_dir.iterdir() if f.is_file() and f.suffix == ".nc"]
+        files = [
+            f
+            for f in run_dir.iterdir()
+            if f.is_file()
+            and f.suffix == ".nc"
+            and (not history_filter or history_filter in f.name)
+        ]
         return files, None
     except PermissionError:
         return None, "Permission denied reading run/"
 
 
-def check_ensemble_dirs(base_path: Path, delete: bool = False, make_symlinks: bool = False):
+def check_ensemble_dirs(
+    base_path: Path,
+    delete: bool = False,
+    make_symlinks: bool = False,
+    history_filter: str = "cam.h0i",
+):
     case_dirs = find_case_dirs(base_path)
 
     if not case_dirs:
         print(f"No case directories found in: {base_path}")
         sys.exit(1)
 
-    print(f"Found {len(case_dirs)} case directories in {base_path}\n")
+    print(f"Found {len(case_dirs)} case directories in {base_path}")
+    print(f"History file filter: '{history_filter}'\n")
 
     missing = []
     present = []
     all_history_files = []
 
     for case_dir in case_dirs:
-        history_files, error = get_history_files(case_dir)
+        history_files, error = get_history_files(case_dir, history_filter)
         if error:
             missing.append((case_dir.name, error))
         elif history_files:
             present.append((case_dir.name, len(history_files)))
             all_history_files.extend(history_files)
         else:
-            missing.append((case_dir.name, "No .nc files in run/"))
+            missing.append((case_dir.name, f"No .nc files matching '{history_filter}' in run/"))
 
     print(f"{'=' * 60}")
-    print(f"  OK      : {len(present)} directories have history files")
-    print(f"  MISSING : {len(missing)} directories have no history files")
+    print(f"  OK      : {len(present)} directories have matching history files")
+    print(f"  MISSING : {len(missing)} directories have no matching history files")
     print(f"{'=' * 60}\n")
 
     if missing:
-        print("Directories missing history files:")
+        print("Directories missing matching history files:")
         for name, reason in missing:
             print(f"  [MISSING] {name}")
             print(f"            {reason}")
     else:
-        print("All case directories have history files.")
+        print("All case directories have matching history files.")
 
     if present and missing:
         print(f"\nExample of a good directory: {present[0][0]}")
@@ -111,10 +124,10 @@ def check_ensemble_dirs(base_path: Path, delete: bool = False, make_symlinks: bo
     if make_symlinks:
         print(f"\n{'=' * 60}")
         print(f"  Case directories : {len(case_dirs)}")
-        print(f"  Directories with history files : {len(present)}")
-        print(f"  Total history files found : {len(all_history_files)}")
+        print(f"  Directories with matching history files : {len(present)}")
+        print(f"  Total matching history files found : {len(all_history_files)}")
         if missing:
-            print(f"  Directories with no history files : {len(missing)}")
+            print(f"  Directories with no matching history files : {len(missing)}")
             print("  Note: some jobs may still be running or have failed.")
         print(f"{'=' * 60}")
 
@@ -175,6 +188,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Create a history_files/ directory with symlinks to all found history files",
     )
+    parser.add_argument(
+        "--history-filter",
+        default="cam.h0i",
+        metavar="STRING",
+        help="Only consider history files whose names contain STRING (default: cam.h0i)",
+    )
     args = parser.parse_args()
 
     base = Path(args.path)
@@ -182,4 +201,9 @@ if __name__ == "__main__":
         print(f"ERROR: Path does not exist: {base}")
         sys.exit(1)
 
-    check_ensemble_dirs(base, delete=args.delete, make_symlinks=args.make_symlinks)
+    check_ensemble_dirs(
+        base,
+        delete=args.delete,
+        make_symlinks=args.make_symlinks,
+        history_filter=args.history_filter,
+    )
