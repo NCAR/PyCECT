@@ -4,6 +4,7 @@ from __future__ import print_function
 import getopt
 import os
 import random
+import shutil
 import sys
 
 from single_run import process_args_dict, single_case
@@ -145,6 +146,58 @@ def main(argv):
     # first case
     if start == 0:
         print("STATUS: creating first case ...")
+        if opts_dict["failed_jobs_resubmit"]:
+            print("STATUS: --failed_jobs_resubmit is enabled.")
+            # we know case name ends in '.0000' (already checked)
+            clone_case = opts_dict["case"]
+            case_pfx = clone_case[:-5]
+            # allow for 4 digit numbers
+            iens = '{0:04d}'.format(start)
+            new_case = case_pfx + "." + iens
+            if os.path.isdir(new_case):
+                print(
+                    f"STATUS: --failed_jobs_resubmit enabled and case {new_case} already exists. Will check CaseStatus for failure and resubmit if last entry in CaseStatus indicates failure."
+                )
+                case_status_file = os.path.join(new_case, "CaseStatus")
+                if os.path.isfile(case_status_file):
+                    with open(case_status_file, "r") as f:
+                        lines = f.readlines()
+                        case_success = False
+                        # Going up to -9 to account for seperator lines and timing entries.
+                        for line_index in range(-1, -9, -1):
+                            # if lines[line_index] contains "case.run success" consider the case successful and do not resubmit
+                            if "case.run success" in lines[line_index]:
+                                case_success = True
+                                print(
+                                    "STATUS: `case.run success` found in last 3 lines of CaseStatus indicating success. Not resubmitting."
+                                )
+                                break
+                        if not case_success:
+                            print(
+                                f"STATUS: 'case.run success' not found in last 3 entries of CaseStatus. Assuming failure and resubmitting case {new_case}"
+                            )
+                            ret = os.chdir(new_case)
+                            command = "./case.submit"
+                            ret = os.system(command)
+                            if ret != 0:
+                                print("Error resubmitting")
+                else:
+                    print(
+                        f"Warning: Case {new_case} exists but CaseStatus file not found. Cannot check for failure. Deleting case and creating new one."
+                    )
+                    command = f"rm -rf {new_case}"
+                    ret = os.system(command)
+                    if ret != 0:
+                        print("Error deleting case")
+                    else:
+                        print(f"STATUS: Successfully deleted case {new_case}. Creating new case.")
+                        single_case(opts_dict, case_flags, stat_dir)
+
+            else:
+                print(
+                    f"STATUS: --failed_jobs_resubmit enabled but case {new_case} does not exist. Creating new case."
+                )
+                single_case(opts_dict, case_flags, stat_dir)
         single_case(opts_dict, case_flags, stat_dir)
         begin_i = 1
     else:
