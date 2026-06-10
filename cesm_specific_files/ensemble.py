@@ -198,7 +198,8 @@ def main(argv):
                     f"STATUS: --failed_jobs_resubmit enabled but case {new_case} does not exist. Creating new case."
                 )
                 single_case(opts_dict, case_flags, stat_dir)
-        single_case(opts_dict, case_flags, stat_dir)
+        else:
+            single_case(opts_dict, case_flags, stat_dir)
         begin_i = 1
     else:
         begin_i = start
