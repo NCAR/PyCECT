@@ -244,7 +244,9 @@ def main(argv):
                         lines = f.readlines()
                         case_success = False
                         # Going up to -9 to account for seperator lines and timing entries.
-                        for line_index in range(-1, -9, -1):
+                        # Check length of lines to avoid index error if CaseStatus is shorter than expected, use len(lines) to determine how many lines to check (up to 8)
+                        num_lines_to_check = min(9, len(lines))
+                        for line_index in range(-1, -(num_lines_to_check + 1), -1):
                             # if lines[line_index] contains "case.run success" consider the case successful and do not resubmit
                             if "case.run success" in lines[line_index]:
                                 case_success = True
