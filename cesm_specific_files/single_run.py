@@ -83,13 +83,16 @@ def disp_usage(callType):
     else:
         print("  --nb                Disables building (and submitting) the single case")
         print("  --ns                Disables submitting the single case")
+    print(
+        "  --user-nl-cam-append <path>  Append contents of <path> to user_nl_cam after case setup"
+    )
     print("  --help, -h          Prints out this usage message")
 
 
 ########
 def process_args_dict(caller, caller_argv):
     # Pull in and analyze the command line arguements
-    s = "case= mach= project= compiler= compset= res= uf uf9 nb ns uf_setup= ensemble= verbose silent test multi-driver pecount= nist= mpilib= pesfile= gridfile= srcroot= output-root= script-root= queue= user-modes-dir= input-dir= pertlim= walltime= h ens_start= ect= ngpus-per-node= gpu-type= gpu-offload= failed-jobs-resubmit"
+    s = "case= mach= project= compiler= compset= res= uf uf9 nb ns uf_setup= ensemble= verbose silent test multi-driver pecount= nist= mpilib= pesfile= gridfile= srcroot= output-root= script-root= queue= user-modes-dir= input-dir= pertlim= walltime= h ens_start= ect= ngpus-per-node= gpu-type= gpu-offload= failed-jobs-resubmit user-nl-cam-append="
 
     optkeys = s.split()
 
@@ -133,6 +136,7 @@ def process_args_dict(caller, caller_argv):
     opts_dict["gpu-offload"] = "NONE"
     # To resubmit cases that failed
     opts_dict["failed_jobs_resubmit"] = False
+    opts_dict["user-nl-cam-append"] = ""
 
     s_case_flags = ""
 
@@ -240,6 +244,8 @@ def process_args_dict(caller, caller_argv):
                 "STATUS: --failed_jobs_resubmit enabled. Will check for existing case directory and resubmit if last entry in CaseStatus indicates failure."
             )
             opts_dict["failed_jobs_resubmit"] = True
+        elif opt == "--user-nl-cam-append":
+            opts_dict["user-nl-cam-append"] = arg
 
     # check required things: case, machine
     if opts_dict["mach"] == "NONE":
@@ -405,6 +411,18 @@ def single_case(opts_dict, case_flags, stat_dir):
                     f.write(text)
         else:
             print("Warning: no user_nl_cam found")
+
+        if opts_dict["user-nl-cam-append"]:
+            append_path = opts_dict["user-nl-cam-append"]
+            if os.path.isfile(append_path):
+                with open(append_path, "r") as src:
+                    extra = src.read()
+                with open("user_nl_cam", "a") as f:
+                    if extra and not extra.startswith("\n"):
+                        f.write("\n")
+                    f.write(extra)
+            else:
+                print("Warning: --user-nl-cam-append file not found: " + append_path)
 
         # clm
         if os.path.isfile("user_nl_clm"):
