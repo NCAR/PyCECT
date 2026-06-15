@@ -56,6 +56,7 @@ def check_ensemble_dirs(
     delete: bool = False,
     make_symlinks: bool = False,
     history_filter: str = "cam.h0i",
+    force: bool = False,
 ):
     case_dirs = find_case_dirs(base_path)
 
@@ -101,10 +102,11 @@ def check_ensemble_dirs(
         print(f"\n{'=' * 60}")
         print(f"  WARNING: About to permanently delete {len(missing)} directories.")
         print(f"{'=' * 60}")
-        answer = input("\nType 'yes' to confirm deletion: ").strip().lower()
-        if answer != "yes":
-            print("Deletion cancelled.")
-            return
+        if not force:
+            answer = input("\nType 'yes' to confirm deletion: ").strip().lower()
+            if answer != "yes":
+                print("Deletion cancelled.")
+                return
 
         deleted = 0
         failed = 0
@@ -135,17 +137,18 @@ def check_ensemble_dirs(
             print("\nNo history files found. Nothing to symlink.")
             return
 
-        answer = (
-            input(
-                "\nCreate history_files/ directory with symlinks to all history files? "
-                "Type 'yes' to confirm: "
+        if not force:
+            answer = (
+                input(
+                    "\nCreate history_files/ directory with symlinks to all history files? "
+                    "Type 'yes' to confirm: "
+                )
+                .strip()
+                .lower()
             )
-            .strip()
-            .lower()
-        )
-        if answer != "yes":
-            print("Symlink creation cancelled.")
-            return
+            if answer != "yes":
+                print("Symlink creation cancelled.")
+                return
 
         symlink_dir = base_path / "history_files"
         symlink_dir.mkdir(exist_ok=True)
@@ -194,6 +197,11 @@ if __name__ == "__main__":
         metavar="STRING",
         help="Only consider history files whose names contain STRING (default: cam.h0i)",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Skip all confirmation prompts (for non-interactive use)",
+    )
     args = parser.parse_args()
 
     base = Path(args.path)
@@ -206,4 +214,5 @@ if __name__ == "__main__":
         delete=args.delete,
         make_symlinks=args.make_symlinks,
         history_filter=args.history_filter,
+        force=args.force,
     )
