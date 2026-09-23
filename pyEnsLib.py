@@ -32,12 +32,226 @@ def parse_header_file(filename):
     print(retvalue)
 
 
+# Create RMSZ zscores for ensemble file sets
+# o_files are not open
+# this is used for MOM6
+def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_lqh, opts_dict):
+    threshold = 1e-12
+    tslice = 0
+    nbin = opts_dict['nbin']
+    minrange = opts_dict['minrange']
+    maxrange = opts_dict['maxrange']
+
+    first_file = nc.Dataset(o_files[0], 'r')
+    input_dims = first_file.dimensions
+
+    # Create array variables
+    z_l = len(input_dims['z_l'])
+    z_i = len(input_dims['z_i'])
+    yq = len(input_dims['yq'])
+    yh = len(input_dims['yh'])
+    xq = len(input_dims['xq'])
+    xh = len(input_dims['xh'])
+
+    output_lhh = np.zeros((len(o_files), z_l, yh, xh), dtype=np.float32)
+    output_ihh = np.zeros((len(o_files), z_i, yh, xh), dtype=np.float32)
+    output_lqh = np.zeros((len(o_files), z_l, yq, xh), dtype=np.float32)
+    output_lhq = np.zeros((len(o_files), z_l, yh, xq), dtype=np.float32)
+
+    ens_avg_lhh = np.zeros((len(var_name_lhh), z_l, yh, xh), dtype=np.float32)
+    ens_stddev_lhh = np.zeros((len(var_name_lhh), z_l, yh, xh), dtype=np.float32)
+
+    ens_avg_ihh = np.zeros((len(var_name_ihh), z_i, yh, xh), dtype=np.float32)
+    ens_stddev_ihh = np.zeros((len(var_name_ihh), z_i, yh, xh), dtype=np.float32)
+
+    ens_avg_lqh = np.zeros((len(var_name_lqh), z_l, yq, xh), dtype=np.float32)
+    ens_stddev_lqh = np.zeros((len(var_name_lqh), z_l, yq, xh), dtype=np.float32)
+
+    ens_avg_lhq = np.zeros((len(var_name_lhq), z_l, yh, xq), dtype=np.float32)
+    ens_stddev_lhq = np.zeros((len(var_name_lhq), z_l, yh, xq), dtype=np.float32)
+
+    zscore_lhh = np.zeros((len(var_name_lhh), len(o_files), (nbin)), dtype=np.float32)
+    zscore_ihh = np.zeros((len(var_name_ihh), len(o_files), (nbin)), dtype=np.float32)
+    zscore_lqh = np.zeros((len(var_name_lqh), len(o_files), (nbin)), dtype=np.float32)
+    zscore_lhq = np.zeros((len(var_name_lhq), len(o_files), (nbin)), dtype=np.float32)
+
+    first_file.close()
+
+    # open all of the files at once
+    # (not too many for mom)
+    handle_o_files = []
+    for fname in o_files:
+        handle_o_files.append(nc.Dataset(fname, 'r'))
+
+    # Now lOOP THROUGH lhh
+    for vcount, vname in enumerate(var_name_lhh):
+        # Read in vname's data from all ens. files
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            output_lhh[fcount, :, :, :] = data[tslice, :, :, :]
+        # for this variable, Generate ens_avg and ens_stddev to store in the ensemble summary file
+        moutput_lhh = np.ma.masked_values(output_lhh, data._FillValue)
+        ens_avg_lhh[vcount] = np.ma.average(moutput_lhh, axis=0)
+        ens_stddev_lhh[vcount] = np.ma.std(moutput_lhh, axis=0, dtype=np.float32)
+        # Generate avg, stddev and zscore for this lhh variable
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            # if we collect regions for each grid point, add here (currently no - it's "offline" data)
+            Zscore = mom_zpdf(
+                output_lhh[fcount],
+                nbin,
+                (minrange, maxrange),
+                ens_avg_lhh[vcount],
+                ens_stddev_lhh[vcount],
+                data._FillValue,
+                threshold,
+                opts_dict,
+            )
+            zscore_lhh[vcount, fcount, :] = Zscore[:]
+
+    # LOOP THROUGH ihh
+    for vcount, vname in enumerate(var_name_ihh):
+        # Read in vname's data from all ens. files
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            output_ihh[fcount, :, :, :] = data[tslice, :, :, :]
+        # for this variable, Generate ens_avg and ens_stddev to store in the ensemble summary file
+        moutput_ihh = np.ma.masked_values(output_ihh, data._FillValue)
+        ens_avg_ihh[vcount] = np.ma.average(moutput_ihh, axis=0)
+        ens_stddev_ihh[vcount] = np.ma.std(moutput_ihh, axis=0, dtype=np.float32)
+        # Generate avg, stddev and zscore for this ihh variable
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            # if we collect regions for each grid point, add here (currently no - it's "offline" data)
+            Zscore = mom_zpdf(
+                output_ihh[fcount],
+                nbin,
+                (minrange, maxrange),
+                ens_avg_ihh[vcount],
+                ens_stddev_ihh[vcount],
+                data._FillValue,
+                threshold,
+                opts_dict,
+            )
+            zscore_ihh[vcount, fcount, :] = Zscore[:]
+
+    # LOOP THROUGH lqh
+    for vcount, vname in enumerate(var_name_lqh):
+        # Read in vname's data from all ens. files
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            output_lqh[fcount, :, :, :] = data[tslice, :, :, :]
+        # for this variable, Generate ens_avg and ens_stddev to store in the ensemble summary file
+        moutput_lqh = np.ma.masked_values(output_lqh, data._FillValue)
+        ens_avg_lqh[vcount] = np.ma.average(moutput_lqh, axis=0)
+        ens_stddev_lqh[vcount] = np.ma.std(moutput_lqh, axis=0, dtype=np.float32)
+        # Generate avg, stddev and zscore for this lqh variable
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            # if we collect regions for each grid point, add here (currently no - it's "offline" data)
+            Zscore = mom_zpdf(
+                output_lqh[fcount],
+                nbin,
+                (minrange, maxrange),
+                ens_avg_lqh[vcount],
+                ens_stddev_lqh[vcount],
+                data._FillValue,
+                threshold,
+                opts_dict,
+            )
+            zscore_lqh[vcount, fcount, :] = Zscore[:]
+
+    # LOOP THROUGH lhq
+    for vcount, vname in enumerate(var_name_lhq):
+        # Read in vname's data from all ens. files
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            output_lhq[fcount, :, :, :] = data[tslice, :, :, :]
+        # for this variable, Generate ens_avg and ens_stddev to store in the ensemble summary file
+        moutput_lhq = np.ma.masked_values(output_lhq, data._FillValue)
+        ens_avg_lhq[vcount] = np.ma.average(moutput_lhq, axis=0)
+        ens_stddev_lhq[vcount] = np.ma.std(moutput_lhq, axis=0, dtype=np.float32)
+        # Generate avg, stddev and zscore for this lhq variable
+        for fcount, this_file in enumerate(handle_o_files):
+            data = this_file.variables[vname]
+            # if we collect regions for each grid point, add here (currently no - it's "offline" data)
+            Zscore = mom_zpdf(
+                output_lhq[fcount],
+                nbin,
+                (minrange, maxrange),
+                ens_avg_lhq[vcount],
+                ens_stddev_lhq[vcount],
+                data._FillValue,
+                threshold,
+                opts_dict,
+            )
+            zscore_lhq[vcount, fcount, :] = Zscore[:]
+
+    # close files
+    for this_file in handle_o_files:
+        this_file.close()
+
+    return (
+        zscore_lhh,
+        zscore_ihh,
+        zscore_lhq,
+        zscore_lqh,
+        ens_avg_lhh,
+        ens_stddev_lhh,
+        ens_avg_ihh,
+        ens_stddev_ihh,
+        ens_avg_lqh,
+        ens_stddev_lqh,
+        ens_avg_lhq,
+        ens_stddev_lhq,
+    )
+
+
+#
+# Calculate mom zscore pass rate (ZPR) or mom zpdf values
+#
+def mom_zpdf(input_array, nbin, zrange, ens_avg, ens_stddev, FillValue, threshold, opts_dict):
+    # test_failure is set in pyCECT
+    if 'test_failure' in opts_dict:
+        test_failure = opts_dict['test_failure']
+    else:  # called from summary
+        test_failure = False
+
+    # Masked out the missing values (land)
+    moutput = np.ma.masked_values(input_array, FillValue)
+    # note: here we could mask out a region in the future
+
+    # Use the masked array moutput to calculate Zscore_temp=(data-avg)/stddev
+    Zscore_temp = np.fabs(
+        (moutput.astype(np.float64) - ens_avg)
+        / np.where(ens_stddev <= threshold, FillValue, ens_stddev)
+    )
+
+    # To retrieve only the valid entries (unmasked) of Zscore_temp
+    Zscore_nomask = Zscore_temp[~Zscore_temp.mask]
+
+    # If just test failure mode, then just calculate ZPR only (DEFAULT - not changable via cmd line)
+    if test_failure:
+        # Zpr=the count of Zscore_nomask is less than pop_tol (3.0)/ the total count of Zscore_nomask
+        Zpr = np.where(Zscore_nomask <= opts_dict['pop_tol'])[0].size / float(Zscore_temp.count())
+        return Zpr
+    else:
+        # Count the unmasked values
+        count = Zscore_temp.count()
+        Zscore, bins = np.histogram(Zscore_temp.compressed(), bins=nbin, range=zrange)
+
+        # Normalize the number by dividing the count
+        if count != 0:
+            Zscore = Zscore.astype(np.float32) / count
+        else:
+            print(('count=0,sum=', np.sum(Zscore)))
+        return Zscore
+
+
 #
 # Create RMSZ zscores for ensemble file sets
 # o_files are not open
 # this is used for POP
-
-
 def calc_rmsz(o_files, var_name3d, var_name2d, opts_dict):
     threshold = 1e-12
     popens = opts_dict['popens']
@@ -579,7 +793,7 @@ def calc_Z(val, avg, stddev, count, flag):
 def read_jsonlist(metajson, method_name):
     # method_name = ES for ensemble summary (CAM, MPAS)
     #            = ESP for POP ensemble summary
-
+    #            = ES_MOM for MOM
     exclude = True
     if not os.path.exists(metajson):
         print('\n')
@@ -611,6 +825,12 @@ def read_jsonlist(metajson, method_name):
             var2d = metainfo['Var2d']
             var3d = metainfo['Var3d']
             return var2d, var3d
+        elif method_name == 'ES_MOM':  # MOM6
+            var1hh = metainfo['Var_zl_yh_xh']
+            varihh = metainfo['Var_zi_yh_xh']
+            varlhq = metainfo['Var_zl_yh_xq']
+            varlqh = metainfo['Var_zl_yq_xh']
+            return var1hh, varihh, varlhq, varlqh
 
 
 #
@@ -1443,6 +1663,9 @@ def getopt_parseconfig(opts, optkeys, caller, opts_dict):
         elif opt == '-h' and caller == 'ES_MPAS':
             EnsSumMPAS_usage()
             sys.exit()
+        elif opt == '-h' and caller == 'ES_MOM':
+            EnsSumMom_usage()
+            sys.exit()
         elif opt == '-f':
             opts_dict['orig'] = arg
         elif opt == '-m':
@@ -1838,6 +2061,11 @@ def EnsSum_usage():
     print('   ')
 
 
+#
+# MPAS Command options
+#
+
+
 def EnsSumMPAS_usage():
     print('\n Creates the summary file for an ensemble of MPAS data. \n')
     print('  ------------------------')
@@ -1861,9 +2089,9 @@ def EnsSumMPAS_usage():
     print('   ')
 
 
-#
-# Command options for pyEnsSumPop.py
-#
+#                                                                                                                      # Command options for pyEnsSumPop.py
+
+
 def EnsSumPop_usage():
     print('\n Creates the summary file for an ensemble of POP data. \n')
     print('  ------------------------')
@@ -1872,8 +2100,8 @@ def EnsSumPop_usage():
     print('   pyEnsSumPop.py')
     print('   -h                   : prints out this usage message')
     print('   --verbose            : prints out in verbose mode (off by default)')
-    print('   --sumfile    <ofile> : the output summary data file (default = pop.ens.summary.nc)')
-    print('   --indir      <path>  : directory containing all of the ensemble runs (default = ./)')
+    print('   --sumfile <ofile>    : the output summary data file (default = pop.ens.summary.nc)')
+    print('   --indir <path>       : directory containing all of the ensemble runs (default = ./)')
     print('   --esize <num>        : Number of ensemble members (default = 40)')
     print('                          (Note: backwards compatible with --npert)')
     print('   --tag <name>         : Tag name used in metadata (default = tag)')
@@ -1886,6 +2114,34 @@ def EnsSumPop_usage():
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be')
     print('                          included  (RECOMMENDED: default = pop_ensemble.json)')
     print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
+    print('   ')
+
+
+#
+# Command options for pyEnsSumMom6.py
+#
+def EnsSumMom_usage():
+    print('\n Creates the summary file for an ensemble of POP data. \n')
+    print('  ------------------------')
+    print('   Args for pyEnsSumMom6 : ')
+    print('  ------------------------')
+    print('   pyEnsSumPop.py')
+    print('   -h                   : prints out this usage message')
+    print('   --verbose            : prints out in verbose mode (off by default)')
+    print('   --sumfile <ofile>    : the output summary data file (default = mom6.ens.summary.nc)')
+    print('   --indir <path>       : directory containing all of the ensemble runs (default = ./)')
+    print('   --esize <num>        : Number of ensemble members (default = 40)')
+    print('   --tag <name>         : Tag name used in metadata (default = tag)')
+    print('   --res <name>         : Resolution (used in metadata) (default = res)')
+    print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
+    print('   --tslice <num>       : the time slice of the variable that we will use (default = 0)')
+    print('   --nyear  <num>       : Number of years (default = 1)')
+    print('   --nmonth  <num>      : Number of months (default = 12)')
+    print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be')
+    print('                          included  (RECOMMENDED: default = mom6_ensemble.json)')
+    print(
+        '   --mpi_disable        : Disable mpi mode to run in serial (defaul: off, i.e., use mpi)'
+    )
     print('   ')
 
 
