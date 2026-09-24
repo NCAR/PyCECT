@@ -436,7 +436,7 @@ def main(argv):
         ens_stddev_lqh,
         ens_avg_lhq,
         ens_stddev_lhq,
-    ) = pyEnsLib.calc_rmsz(full_in_files, Var_lhh, Var_ihh, Var_lhq, Var_lqh, opts_dict)
+    ) = pyEnsLib.mom6_calc_rmsz(full_in_files, Var_lhh, Var_ihh, Var_lhq, Var_lqh, opts_dict)
 
     if verbose and me.get_rank() == 0:
         print('VERBOSE: Finished with RMSZ scores .....')
