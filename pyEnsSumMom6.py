@@ -100,6 +100,8 @@ def main(argv):
     n_var_lqh = len(Var_lqh)
     n_var_lhq = len(Var_lhq)
 
+    nvars = n_var_lhh + n_var_ihh + n_var_lqh + n_var_lhq
+
     if me.get_rank() == 0:
         print('STATUS: Running pyEnsSumMom6!')
 
@@ -228,7 +230,7 @@ def main(argv):
 
         nc_sumfile.createDimension('ens_size', esize)
         nc_sumfile.createDimension('nbin', opts_dict['nbin'])
-        nc_sumfile.createDimension('nvars', n_var_lhh + n_var_ihh + n_var_lhq + n_var_lqh)
+        nc_sumfile.createDimension('nvars', nvars)
         nc_sumfile.createDimension('nvars_lhh', n_var_lhh)
         nc_sumfile.createDimension('nvars_ihh', n_var_ihh)
         nc_sumfile.createDimension('nvars_lqh', n_var_lqh)
