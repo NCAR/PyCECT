@@ -400,7 +400,7 @@ def main(argv):
     z_ens_avg_lqh = np.zeros((n_var_lqh, z_l, yq, xh), dtype=np.float32)
     z_ens_stddev_lqh = np.zeros((n_var_lqh, z_l, yq, xh), dtype=np.float32)
 
-    z_RMSZ = np.zeros((n_vars, esize, b_size), dtype=np.float32)
+    z_RMSZ = np.zeros((nvars, esize, b_size), dtype=np.float32)
 
     # rank 0 (put zero values in summary file)
     if me.get_rank() == 0:
