@@ -13,6 +13,7 @@ import pyEnsLib
 import pyTools
 from pyTools import Duplicate, EqualStride
 
+#files should have member, then year, then month in the filename (in that order) to be recognized by this script
 
 def main(argv):
     # Get command line stuff and store in a dictionary
@@ -122,12 +123,12 @@ def main(argv):
 
     # make sure we have enough files
     files_needed = opts_dict['nmonth'] * esize * opts_dict['nyear']
-    if num_files < files_needed:
+    if num_files != files_needed:
         if me.get_rank() == 0:
             print(
-                'ERROR: Input directory does not contain enough files (must be esize*nyear*nmonth = ',
+                'ERROR: Input directory must contain exactly esize*nyear*nmonth = ',
                 files_needed,
-                ' ) and it has only ',
+                ' ) but it has',
                 num_files,
                 ' files).',
             )
@@ -487,7 +488,7 @@ def main(argv):
 
         # Assign to summary file:
         if me.get_rank() == 0:
-            print("RMSZ = ", RMSZ.shape)
+            print("RMSZ = ", v_RMSZ.shape)
             v_RMSZ[:, :, :, :] = zmall[:, :, :, :]
             v_ens_avg_lhh[:, :, :, :, :] = ens_avg_lhh[:, :, :, :, :]
             v_ens_stddev_lhh[:, :, :, :, :] = ens_stddev_lhh[:, :, :, :, :]
