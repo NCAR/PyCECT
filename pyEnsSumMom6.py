@@ -446,8 +446,8 @@ def main(argv):
     # Collect from all processors
     if opts_dict['mpi_enable']:
         # Gather the variable results from all processors to the master processor
-
         zmall = np.concatenate((zscore_lhh, zscore_ihh, zscore_lqh, zscore_lhq), axis=0)
+        print("1: zmall = ",zmall.shape)
         zmall = pyEnsLib.gather_npArray_pop(
             zmall,
             me,
@@ -458,7 +458,7 @@ def main(argv):
                 nbin,
             ),
         )
-
+        print("2: zmall = ",zmall.shape)
         ens_avg_lhh = pyEnsLib.gather_npArray_pop(
             ens_avg_lhh, me, (me.get_size(), n_var_lhh, z_l, yh, xh)
         )
@@ -487,6 +487,7 @@ def main(argv):
 
         # Assign to summary file:
         if me.get_rank() == 0:
+            print("RMSZ = ", RMSZ.shape)
             v_RMSZ[:, :, :, :] = zmall[:, :, :, :]
             v_ens_avg_lhh[:, :, :, :, :] = ens_avg_lhh[:, :, :, :, :]
             v_ens_stddev_lhh[:, :, :, :, :] = ens_stddev_lhh[:, :, :, :, :]
