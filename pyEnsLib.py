@@ -826,11 +826,14 @@ def read_jsonlist(metajson, method_name):
             var3d = metainfo['Var3d']
             return var2d, var3d
         elif method_name == 'ES_MOM':  # MOM6
-            var1hh = metainfo['Var_zl_yh_xh']
-            varihh = metainfo['Var_zi_yh_xh']
-            varlhq = metainfo['Var_zl_yh_xq']
-            varlqh = metainfo['Var_zl_yq_xh']
-            return var1hh, varihh, varlhq, varlqh
+            mom_keys = ['Var_zl_yh_xh', 'Var_zi_yh_xh', 'Var_zl_yh_xq', 'Var_zl_yq_xh']
+            missing = [k for k in mom_keys if k not in metainfo]
+            if missing:
+                print(f'ERROR: {metajson} is missing required key(s): {missing}')
+                return ['JSONERROR'], [], [], []
+            return tuple(metainfo[k] for k in mom_keys)
+
+        
 
 
 #
@@ -2121,11 +2124,11 @@ def EnsSumPop_usage():
 # Command options for pyEnsSumMom6.py
 #
 def EnsSumMom_usage():
-    print('\n Creates the summary file for an ensemble of POP data. \n')
+    print('\n Creates the summary file for an ensemble of MOM6 data. \n')
     print('  ------------------------')
     print('   Args for pyEnsSumMom6 : ')
     print('  ------------------------')
-    print('   pyEnsSumPop.py')
+    print('   pyEnsSumMom6.py')
     print('   -h                   : prints out this usage message')
     print('   --verbose            : prints out in verbose mode (off by default)')
     print('   --sumfile <ofile>    : the output summary data file (default = mom6.ens.summary.nc)')
@@ -2134,7 +2137,6 @@ def EnsSumMom_usage():
     print('   --tag <name>         : Tag name used in metadata (default = tag)')
     print('   --res <name>         : Resolution (used in metadata) (default = res)')
     print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
-    print('   --tslice <num>       : the time slice of the variable that we will use (default = 0)')
     print('   --nyear  <num>       : Number of years (default = 1)')
     print('   --nmonth  <num>      : Number of months (default = 12)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be')

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-import configparser
 import getopt
 import os
-import re
 import sys
 import time
 
@@ -11,19 +9,20 @@ import numpy as np
 
 import pyEnsLib
 import pyTools
-from pyTools import Duplicate, EqualStride
+from pyTools import EqualStride
 
 #files should have member, then year, then month in the filename (in that order) to be recognized by this script
+# we want 1 rank per timeslice (so months*years)
 
 def main(argv):
     # Get command line stuff and store in a dictionary
-    s = 'tag= mach= nyear= nmonth= esize= nbin= min_range= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable nrand= rand seq= jsondir='
+    s = 'tag= mach= nyear= nmonth= esize= nbin= minrange= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable'
     optkeys = s.split()
 
     try:
         opts, args = getopt.getopt(argv, 'h', optkeys)
     except getopt.GetoptError:
-        pyEnsLib.EnsSumPop_usage()
+        pyEnsLib.EnsSumMom_usage()
         sys.exit(2)
 
     # Put command line options in a dictionary - also set defaults
@@ -43,12 +42,10 @@ def main(argv):
     opts_dict['sumfile'] = 'mom6.ens.summary.nc'
     opts_dict['indir'] = './'
     opts_dict['jsonfile'] = 'mom6_ensemble.json'
-    opts_dict['verbose'] = True
+    opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = True
     opts_dict['mpi_disable'] = False
-    opts_dict['seq'] = 0
-    opts_dict['jsondir'] = './'
-
+    
     # TO DO: why not listed in help: seq, minrange, maxrange, nbin, mpi_enable
 
     # This creates the dictionary of input arguments
@@ -75,25 +72,18 @@ def main(argv):
         # Z, Y,X
     if opts_dict['jsonfile']:
         # Read in the included var list
-        Var_lhh, Var_ihh, Var_lhq, Var_lqh = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES_MOM')
-        # check for error opening file
-        if len(Var_lhh) > 0:
-            if Var_lhh[0] == 'JSONERROR':
-                me.abort()
+        json_vars = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES_MOM')
+        if len(json_vars) != 4:
+            if me.get_rank() == 0:
+                print('ERROR: could not read MOM6 variable lists from ', opts_dict['jsonfile'])
+            sys.exit(2)
+        Var_lhh, Var_ihh, Var_lhq, Var_lqh = json_vars
+
+
         # get max size of var names
         str_size = 0
-        for str in Var_lhh:
-            if str_size < len(str):
-                str_size = len(str)
-        for str in Var_ihh:
-            if str_size < len(str):
-                str_size = len(str)
-        for str in Var_lhq:
-            if str_size < len(str):
-                str_size = len(str)
-        for str in Var_lqh:
-            if str_size < len(str):
-                str_size = len(str)
+        str_size = max(len(v) for v in Var_lhh + Var_ihh + Var_lhq + Var_lqh)
+
 
     # get number of each variable type
     n_var_lhh = len(Var_lhh)
@@ -113,8 +103,7 @@ def main(argv):
     in_files = []
     if os.path.exists(input_dir):
         # Get the list of files
-        in_files_temp = os.listdir(input_dir)
-        in_files = sorted(in_files_temp)
+        in_files = sorted(f for f in os.listdir(input_dir) if f.endswith('.nc'))
         num_files = len(in_files)
     else:
         if me.get_rank() == 0:
@@ -128,41 +117,47 @@ def main(argv):
             print(
                 'ERROR: Input directory must contain exactly esize*nyear*nmonth = ',
                 files_needed,
-                ' ) but it has',
+                ' ( but it has',
                 num_files,
                 ' files).',
             )
         sys.exit(2)
 
-    # Don't want more processors than months
-    if me.get_size() > opts_dict['nmonth']:
+    # if using parallel, then we want exactly one timeslice per process
+    # (serial handles all timeslices)
+    ntslices = opts_dict['nmonth'] * opts_dict['nyear']
+    if opts_dict['mpi_enable'] and me.get_size() != ntslices:
         if me.get_rank() == 0:
             print(
-                'ERROR: more processors requested than the number of months. Recommendation is one processor per month (or fewer).'
+                'ERROR: number of processors (',
+                me.get_size(),
+                ') must equal nmonth*nyear (',
+                ntslices,
+                ') => EXITING....',
             )
         sys.exit(2)
 
-    # TO DO (verify/simplify)
-    # Partition the input file list (ideally we have one processor per month)
-    in_file_list = me.partition(in_files, func=EqualStride(), involved=True)
+    # Partition the timeslices (serial gets all of them, MPI gets one per rank)
+    my_slices = me.partition(list(range(ntslices)), func=EqualStride(), involved=True)
 
-    # Check the files in the input directory
-    full_in_files = []
-    if me.get_rank() == 0 and opts_dict['verbose']:
-        print('VERBOSE: Input files are:')
-
-    for onefile in in_file_list:
-        fname = input_dir + '/' + onefile
-        # if opts_dict['verbose']:
-        #    print( "my_rank = ", me.get_rank(), "  ", fname)
-        if os.path.isfile(fname):
-            full_in_files.append(fname)
-        else:
-            print('ERROR: Could not locate file: ' + fname + ' => EXITING....')
-            sys.exit()
+    # Files for timeslice k are in_files[k::ntslices] (assumes the sorted file
+    # names are member-major: all months for member 0, then member 1, ...)
+    slice_files = []
+    for k in my_slices:
+        full_in_files = []
+        for onefile in in_files[k::ntslices]:
+            fname = input_dir + '/' + onefile
+            if os.path.isfile(fname):
+                full_in_files.append(fname)
+            else:
+                print('ERROR: Could not locate file: ' + fname + ' => EXITING....')
+                if opts_dict['mpi_enable']:
+                    me.abort()
+                sys.exit(2)
+        slice_files.append(full_in_files)
 
     # open just the first file (all procs) to get metadata
-    first_file = nc.Dataset(full_in_files[0], 'r')
+    first_file = nc.Dataset(slice_files[0][0], 'r')
 
     # Store dimensions of the input fields
     if verbose and me.get_rank() == 0:
@@ -182,7 +177,7 @@ def main(argv):
     for key in input_dims:
         if key == 'z_l':
             z_l = len(input_dims['z_l'])
-        if key == 'z_i':
+        elif key == 'z_i':
             z_i = len(input_dims['z_i'])
         elif key == 'yq':
             yq = len(input_dims['yq'])
@@ -196,7 +191,7 @@ def main(argv):
     if z_i == -1 or z_l == -1 or xq == -1 or xh == -1 or yh == -1 or yq == -1:
         if me.get_rank() == 0:
             print('ERROR: Need dimensions z_i, z_l, xq, xh, yh and yq => EXITING....')
-        sys.exit()
+        sys.exit(2)
 
     if verbose and me.get_rank() == 0:
         print('z_i = ', z_i)
@@ -256,8 +251,8 @@ def main(argv):
         v_vars = nc_sumfile.createVariable('vars', 'S1', ('nvars', 'str_size'))
         v_var_lhh = nc_sumfile.createVariable('var_lhh', 'S1', ('nvars_lhh', 'str_size'))
         v_var_ihh = nc_sumfile.createVariable('var_ihh', 'S1', ('nvars_ihh', 'str_size'))
-        v_var_lhq = nc_sumfile.createVariable('var_ihq', 'S1', ('nvars_lhq', 'str_size'))
-        v_var_lqh = nc_sumfile.createVariable('var_iqh', 'S1', ('nvars_lqh', 'str_size'))
+        v_var_lhq = nc_sumfile.createVariable('var_lhq', 'S1', ('nvars_lhq', 'str_size'))
+        v_var_lqh = nc_sumfile.createVariable('var_lqh', 'S1', ('nvars_lqh', 'str_size'))
         v_time = nc_sumfile.createVariable('time', 'd', ('time',))
 
         v_ens_avg_lhh = nc_sumfile.createVariable(
@@ -376,12 +371,15 @@ def main(argv):
     if verbose:
         if me.get_rank() == 0:
             print('VERBOSE: Assigning time variant metadata .....')
-    vars_dict = first_file.variables
-    time_value = vars_dict['time']
-    time_array = np.array([time_value])
+    # one time value per timeslice (taken from the first file of each slice)
+    time_array = np.zeros(len(slice_files), dtype=np.float64)
+    for i, full_in_files in enumerate(slice_files):
+        with nc.Dataset(full_in_files[0], 'r') as f:
+            time_array[i] = f.variables['time'][0]
 
     # gather time array to root (0)
-    time_array = pyEnsLib.gather_npArray_pop(time_array, me, (me.get_size(),))
+    if opts_dict['mpi_enable']:
+        time_array = pyEnsLib.gather_npArray_pop(time_array, me, (me.get_size(),))
     if me.get_rank() == 0:
         v_time[:] = time_array[:]
 
@@ -426,6 +424,13 @@ def main(argv):
     if verbose and me.get_rank() == 0:
         print('VERBOSE: Calculating RMSZ scores .....')
 
+    # compute each of this rank's timeslices, then stack the results so that
+    # every array gets a leading time dimension
+    results = []
+    for full_in_files in slice_files:
+        results.append(
+            pyEnsLib.mom6_calc_rmsz(full_in_files, Var_lhh, Var_ihh, Var_lhq, Var_lqh, opts_dict)
+        )
     (
         zscore_lhh,
         zscore_ihh,
@@ -439,68 +444,69 @@ def main(argv):
         ens_stddev_lqh,
         ens_avg_lhq,
         ens_stddev_lhq,
-    ) = pyEnsLib.mom6_calc_rmsz(full_in_files, Var_lhh, Var_ihh, Var_lhq, Var_lqh, opts_dict)
+    ) = [np.stack(r, axis=0) for r in zip(*results)]
 
     if verbose and me.get_rank() == 0:
         print('VERBOSE: Finished with RMSZ scores .....')
 
-    # Collect from all processors
+    zmall = np.concatenate((zscore_lhh, zscore_ihh, zscore_lhq, zscore_lhq), axis=1)
+
+    # Collect from all processors (serial already has all timeslices)
     if opts_dict['mpi_enable']:
         # Gather the variable results from all processors to the master processor
-        zmall = np.concatenate((zscore_lhh, zscore_ihh, zscore_lqh, zscore_lhq), axis=0)
-        print("1: zmall = ",zmall.shape)
+        # (each rank has exactly one timeslice, so pass in index 0)
         zmall = pyEnsLib.gather_npArray_pop(
-            zmall,
+            zmall[0],
             me,
             (
                 me.get_size(),
                 n_var_lhh + n_var_ihh + n_var_lqh + n_var_lhq,
-                len(full_in_files),
+                esize,
                 nbin,
             ),
         )
-        print("2: zmall = ",zmall.shape)
         ens_avg_lhh = pyEnsLib.gather_npArray_pop(
-            ens_avg_lhh, me, (me.get_size(), n_var_lhh, z_l, yh, xh)
+            ens_avg_lhh[0], me, (me.get_size(), n_var_lhh, z_l, yh, xh)
         )
         ens_avg_ihh = pyEnsLib.gather_npArray_pop(
-            ens_avg_ihh, me, (me.get_size(), n_var_ihh, z_i, yh, xh)
+            ens_avg_ihh[0], me, (me.get_size(), n_var_ihh, z_i, yh, xh)
         )
         ens_avg_lhq = pyEnsLib.gather_npArray_pop(
-            ens_avg_lhq, me, (me.get_size(), n_var_lhq, z_l, yh, xq)
+            ens_avg_lhq[0], me, (me.get_size(), n_var_lhq, z_l, yh, xq)
         )
         ens_avg_lqh = pyEnsLib.gather_npArray_pop(
-            ens_avg_lqh, me, (me.get_size(), n_var_lqh, z_l, yq, xh)
+            ens_avg_lqh[0], me, (me.get_size(), n_var_lqh, z_l, yq, xh)
         )
 
         ens_stddev_lhh = pyEnsLib.gather_npArray_pop(
-            ens_stddev_lhh, me, (me.get_size(), n_var_lhh, z_l, yh, xh)
+            ens_stddev_lhh[0], me, (me.get_size(), n_var_lhh, z_l, yh, xh)
         )
         ens_stddev_ihh = pyEnsLib.gather_npArray_pop(
-            ens_stddev_ihh, me, (me.get_size(), n_var_ihh, z_i, yh, xh)
+            ens_stddev_ihh[0], me, (me.get_size(), n_var_ihh, z_i, yh, xh)
         )
         ens_stddev_lhq = pyEnsLib.gather_npArray_pop(
-            ens_stddev_lhq, me, (me.get_size(), n_var_lhq, z_l, yh, xq)
+            ens_stddev_lhq[0], me, (me.get_size(), n_var_lhq, z_l, yh, xq)
         )
         ens_stddev_lqh = pyEnsLib.gather_npArray_pop(
-            ens_stddev_lqh, me, (me.get_size(), n_var_lqh, z_l, yq, xh)
+            ens_stddev_lqh[0], me, (me.get_size(), n_var_lqh, z_l, yq, xh)
         )
 
-        # Assign to summary file:
-        if me.get_rank() == 0:
-            print("RMSZ = ", v_RMSZ.shape)
-            v_RMSZ[:, :, :, :] = zmall[:, :, :, :]
-            v_ens_avg_lhh[:, :, :, :, :] = ens_avg_lhh[:, :, :, :, :]
-            v_ens_stddev_lhh[:, :, :, :, :] = ens_stddev_lhh[:, :, :, :, :]
-            v_ens_avg_ihh[:, :, :, :, :] = ens_avg_ihh[:, :, :, :, :]
-            v_ens_stddev_ihh[:, :, :, :, :] = ens_stddev_ihh[:, :, :, :, :]
-            v_ens_avg_lhq[:, :, :, :, :] = ens_avg_lhq[:, :, :, :, :]
-            v_ens_stddev_lhq[:, :, :, :, :] = ens_stddev_lhq[:, :, :, :, :]
-            v_ens_avg_lqh[:, :, :, :, :] = ens_avg_lqh[:, :, :, :, :]
-            v_ens_stddev_lqh[:, :, :, :, :] = ens_stddev_lqh[:, :, :, :, :]
 
-            print('STATUS: PyEnsSumMom6 has completed.')
-            nc_sumfile.close()
+    # Assign to summary file:
+    if me.get_rank() == 0:
+        #print("RMSZ = ", v_RMSZ.shape)
+        v_RMSZ[:, :, :, :] = zmall[:, :, :, :]
+        v_ens_avg_lhh[:, :, :, :, :] = ens_avg_lhh[:, :, :, :, :]
+        v_ens_stddev_lhh[:, :, :, :, :] = ens_stddev_lhh[:, :, :, :, :]
+        v_ens_avg_ihh[:, :, :, :, :] = ens_avg_ihh[:, :, :, :, :]
+        v_ens_stddev_ihh[:, :, :, :, :] = ens_stddev_ihh[:, :, :, :, :]
+        v_ens_avg_lhq[:, :, :, :, :] = ens_avg_lhq[:, :, :, :, :]
+        v_ens_stddev_lhq[:, :, :, :, :] = ens_stddev_lhq[:, :, :, :, :]
+        v_ens_avg_lqh[:, :, :, :, :] = ens_avg_lqh[:, :, :, :, :]
+        v_ens_stddev_lqh[:, :, :, :, :] = ens_stddev_lqh[:, :, :, :, :]
+
+        print('STATUS: PyEnsSumMom6 has completed.')
+        nc_sumfile.close()
 
 
 if __name__ == '__main__':
