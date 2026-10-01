@@ -11,8 +11,9 @@ import pyEnsLib
 import pyTools
 from pyTools import EqualStride
 
-#files should have member, then year, then month in the filename (in that order) to be recognized by this script
+# files should have member, then year, then month in the filename (in that order) to be recognized by this script
 # we want 1 rank per timeslice (so months*years)
+
 
 def main(argv):
     # Get command line stuff and store in a dictionary
@@ -45,7 +46,7 @@ def main(argv):
     opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = True
     opts_dict['mpi_disable'] = False
-    
+
     # TO DO: why not listed in help: seq, minrange, maxrange, nbin, mpi_enable
 
     # This creates the dictionary of input arguments
@@ -79,11 +80,9 @@ def main(argv):
             sys.exit(2)
         Var_lhh, Var_ihh, Var_lhq, Var_lqh = json_vars
 
-
         # get max size of var names
         str_size = 0
         str_size = max(len(v) for v in Var_lhh + Var_ihh + Var_lhq + Var_lqh)
-
 
     # get number of each variable type
     n_var_lhh = len(Var_lhh)
@@ -491,10 +490,9 @@ def main(argv):
             ens_stddev_lqh[0], me, (me.get_size(), n_var_lqh, z_l, yq, xh)
         )
 
-
     # Assign to summary file:
     if me.get_rank() == 0:
-        #print("RMSZ = ", v_RMSZ.shape)
+        # print("RMSZ = ", v_RMSZ.shape)
         v_RMSZ[:, :, :, :] = zmall[:, :, :, :]
         v_ens_avg_lhh[:, :, :, :, :] = ens_avg_lhh[:, :, :, :, :]
         v_ens_stddev_lhh[:, :, :, :, :] = ens_stddev_lhh[:, :, :, :, :]
