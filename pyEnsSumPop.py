@@ -16,7 +16,7 @@ from pyTools import Duplicate, EqualStride
 
 def main(argv):
     # Get command line stuff and store in a dictionary
-    s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable mpi_disable nrand= rand seq= jsondir= esize='
+    s = 'nyear= nmonth= npert= tag= res= mach= compset= sumfile= indir= tslice= verbose jsonfile= mpi_enable mpi_disable esize='
     optkeys = s.split()
 
     try:
@@ -49,11 +49,7 @@ def main(argv):
     opts_dict['mpi_disable'] = False
     # opts_dict['zscoreonly'] = True
     opts_dict['popens'] = True
-    opts_dict['nrand'] = 40
-    opts_dict['rand'] = False
-    opts_dict['seq'] = 0
-    opts_dict['jsondir'] = './'
-
+    
     # This creates the dictionary of input arguments
     # print "before parseconfig"
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ESP', opts_dict)
@@ -80,7 +76,7 @@ def main(argv):
     if opts_dict['mpi_enable']:
         me = pyTools.create_comm()
     else:
-        me = pyTools.create_comm(False)
+        me = pyTools.create_comm(True)
 
     if opts_dict['jsonfile']:
         # Read in the included var list
@@ -105,13 +101,8 @@ def main(argv):
 
     in_files = []
     if os.path.exists(input_dir):
-        # Pick up the 'nrand' random number of input files to generate summary files
-        if opts_dict['rand']:
-            in_files = pyEnsLib.Random_pickup_pop(input_dir, opts_dict, opts_dict['nrand'])
-        else:
-            # Get the list of files
-            in_files_temp = os.listdir(input_dir)
-            in_files = sorted(in_files_temp)
+        # Get the list of files
+        in_files = sorted(os.listdir(input_dir))
         num_files = len(in_files)
 
     else:

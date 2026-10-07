@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import configparser
-import fnmatch
 import getopt
 import glob
 import itertools
@@ -231,8 +230,12 @@ def mom_zpdf(input_array, nbin, zrange, ens_avg, ens_stddev, FillValue, threshol
 
     # If just test failure mode, then just calculate ZPR only (DEFAULT - not changable via cmd line)
     if test_failure:
-        # Zpr=the count of Zscore_nomask is less than pop_tol (3.0)/ the total count of Zscore_nomask
-        Zpr = np.where(Zscore_nomask <= opts_dict['pop_tol'])[0].size / float(Zscore_temp.count())
+        # Zpr=the count of Zscore_nomask is less than mom_tol (3.0)/ the total count of Zscore_nomask
+        count = Zscore_temp.count()
+        if count == 0:
+            print('WARNING: no valid (unmasked) points for this variable')
+            return 0.0
+        Zpr = np.where(Zscore_nomask <= opts_dict['mom_tol'])[0].size / float(count)
         return Zpr
     else:
         # Count the unmasked values
@@ -1864,8 +1867,6 @@ def comparePCAscores(ifiles, new_scores, sigma_scores_gm, opts_dict, me):
     #    if len(opts_dict['savePCAMat']) > 0:
     #        np.save(opts_dict['savePCAMat'], comp_array)
 
-    # false_positive=check_falsepositive(opts_dict,sum_index)
-
     # If the length of sum_index is larger than min_PC_fail, the three runs failed.
     # This doesn't apply for UF-ECT.
     if opts_dict['numRunFile'] > opts_dict['eet']:
@@ -1976,11 +1977,11 @@ def CECT_usage():
     print(
         '   --indir    <path>       : directory containing the input run files (at least 3 files)'
     )
-    print('   --tslice   <num>        : which time slice to use from input run files (default = 1)')
-    print('   NOTE: Runs for CAM by default (see below to specify POP or MPAS instead)')
+    print('   NOTE: Runs for CAM by default (see below to specify POP or MPAS or MOM instead)')
     print('  ----------------------------')
     print('   Args relevant to CAM-CECT/UF-CAM-ECT and MPAS-ECT only:')
     print('  ----------------------------')
+    print('   --tslice   <num>        : which time slice to use from input run files (default = 1)')
     print(
         '   --nPC <num>             : number of principal components (PCs) to check (can\'t be greater than the number of variables)'
     )
@@ -2031,11 +2032,19 @@ def CECT_usage():
     print(
         '   --base_year <num>       :We assume the pop test files names start in year 0001. Use this option to specify a different start year.'
     )
-
-
-#    print 'Version 3.0.8'
-
-
+    print('  ----------------------------')
+    print('   Args relevant to MOM-CECT only :')
+    print('  ----------------------------')
+    print('   --mom                   : indicate MOM-ECT (required!)')
+    print('   --mom_tol <num>         : set mom zscore tolerance (default is 3.0 - recommended)')
+    print('   --mom_threshold <num>   : set mom threshold (default is 0.9)')
+    print(
+        '   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from '
+    )
+    print (
+        '   --base_year <num>       :We assume the mom test files names start in year 0001. Use this option to specify a different start year.'
+    )
+    
 #
 # Command options for pyEnsSum.py
 #
@@ -2139,7 +2148,7 @@ def EnsSumMom_usage():
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be')
     print('                          included  (RECOMMENDED: default = mom6_ensemble.json)')
     print(
-        '   --mpi_disable        : Disable mpi mode to run in serial (defaul: off, i.e., use mpi)'
+        '   --mpi_disable        : Disable mpi mode to run in serial (default: off, i.e., use mpi)'
     )
     print('   ')
 
@@ -2165,85 +2174,6 @@ def Random_pickup(ifiles, opts_dict):
         print(ifiles[i])
 
     return new_ifiles
-
-
-#
-# Random pick up opts_dict['npick'] files out of a lot of OCN files
-#
-def Random_pickup_pop(indir, opts_dict, npick):
-    # random_year_range = opts_dict['nyear']
-    # random_month_range = opts_dict['nmonth']
-    random_case_range = opts_dict['esize']
-
-    pyear = 1
-    pmonth = 12
-
-    pcase = random.sample(list(range(0, random_case_range)), npick)
-
-    new_ifiles_temp = []
-    not_pick_files = []
-    for i in pcase:
-        wildname = (
-            '*' + str(i).zfill(4) + '*' + str(pyear).zfill(4) + '-' + str(pmonth).zfill(2) + '*'
-        )
-        print(wildname)
-        for filename in os.listdir(opts_dict['indir']):
-            if fnmatch.fnmatch(filename, wildname):
-                new_ifiles_temp.append(filename)
-    for filename in os.listdir(opts_dict['indir']):
-        if filename not in new_ifiles_temp:
-            not_pick_files.append(filename)
-    with open(
-        opts_dict['jsondir']
-        + 'random_testcase.'
-        + str(npick)
-        + '.'
-        + str(opts_dict['seq'])
-        + '.json',
-        'wb',
-    ) as fout:
-        json.dump(
-            {'not_pick_files': not_pick_files}, fout, sort_keys=True, indent=4, ensure_ascii=True
-        )
-    print(sorted(new_ifiles_temp))
-    print(sorted(not_pick_files))
-    return sorted(new_ifiles_temp)
-
-
-#
-# Check the false positive rate
-# (needs updating: this is only for esize 151)
-def check_falsepositive(opts_dict, sum_index):
-    fp = np.zeros((opts_dict['nPC'],), dtype=np.float32)
-    fp[0] = 0.30305
-    fp[1] = 0.05069
-    fp[2] = 0.005745
-    fp[3] = 0.000435
-    fp[4] = 5.0e-05
-    nPC = 50
-    sigMul = 2
-    minPCFail = 3
-    minRunFail = 2
-    numRunFile = 3
-
-    if opts_dict['numRunFile'] > opts_dict['eet']:
-        nFiles = opts_dict['numRunFile']
-    else:
-        nFiles = opts_dict['eet']
-
-    if (
-        (nPC == opts_dict['nPC'])
-        and (sigMul == opts_dict['sigMul'])
-        and (minPCFail == opts_dict['minPCFail'])
-        and (minRunFail == opts_dict['minRunFail'])
-        and (numRunFile == nFiles)
-    ):
-        false_positive = fp[len(sum_index) - 1]
-    else:
-        false_positive = 1.0
-
-    return false_positive
-
 
 #
 # Get the shape of all variable list in tuple for all processor
@@ -2497,6 +2427,137 @@ def pop_compare_raw_score(opts_dict, ifiles, timeslice, Var3d, Var2d):
     else:
         Zscore = 0
         return Zscore, n_timeslice
+
+
+#
+# MOM-ECT Compare the testcase(s) with the ensemble summary file
+# (ifiles are not open). The variable lists are read from the summary file
+# and the timeslice for each test file is found by matching its time value
+# to the summary file's time array.
+#
+def mom_compare_raw_score(opts_dict, ifiles):
+    threshold = 1e-12
+    nbin = 1  # test_failure mode: one ZPR value per variable
+
+    sum_file = nc.Dataset(opts_dict['sumfile'], 'r')
+    sum_vars = sum_file.variables
+
+    # grid dimensions that every test file must match
+    grid_dims = ['z_l', 'z_i', 'yh', 'yq', 'xh', 'xq']
+    sum_dims = {d: len(sum_file.dimensions[d]) for d in grid_dims}
+
+    # variable groups in the same order as the summary file's 'vars'
+    groups = ['lhh', 'ihh', 'lhq', 'lqh']
+    var_names = {}
+    for g in groups:
+        var_names[g] = [str(v).strip() for v in nc.chartostring(sum_vars['var_' + g][:])]
+    nvars = sum(len(var_names[g]) for g in groups)
+
+    # check time slice 0 for zeros....indicating an incomplete summary file
+    sum_problem = False
+    for g in groups:
+        if len(var_names[g]) == 0:
+            continue
+        for fld in ('ens_avg_' + g, 'ens_stddev_' + g):
+            if not np.any(sum_vars[fld][0]):
+                print('ERROR: ' + fld + ' field in summary file was not computed.')
+                sum_problem = True
+    if sum_problem:
+        print('=> EXITING....')
+        sys.exit(2)
+
+    ens_time = sum_vars['time'][:]
+
+    Zscore = np.zeros((nvars, len(ifiles), nbin), dtype=np.float32)
+    failure_count = np.zeros((len(ifiles)), dtype=np.int32)
+
+    skip_count = 0
+    for fcount, fid in enumerate(ifiles):
+        print(' ')
+        o_fid = nc.Dataset(fid, 'r')
+        otimeSeries = o_fid.variables
+
+        print('**********' + 'Run ' + str(fcount + 1) + ' (file=' + fid + '):')
+
+        # make sure the test file is on the same grid as the summary file
+        mismatch = []
+        for d in grid_dims:
+            if d not in o_fid.dimensions:
+                mismatch.append(d + ' (missing)')
+            elif len(o_fid.dimensions[d]) != sum_dims[d]:
+                mismatch.append(
+                    d + ' (' + str(len(o_fid.dimensions[d])) + ' vs. summary ' + str(sum_dims[d]) + ')'
+                )
+        if mismatch:
+            print(
+                'ERROR: grid of this file does not match the summary file: '
+                + ', '.join(mismatch)
+                + '. Skipping this run evaluation...'
+            )
+            skip_count = skip_count + 1
+            o_fid.close()
+            continue
+
+
+        # find the matching timeslice in the summary file
+        match = np.where(np.isclose(ens_time, otimeSeries['time'][0], rtol=0.0, atol=.5))[0]
+        if len(match) == 0:
+            print(
+                'WARNING: time value ',
+                otimeSeries['time'][0],
+                ' of this file was not found in the summary file. Skipping this run evaluation...',
+            )
+            skip_count = skip_count + 1
+            o_fid.close()
+            continue
+        timeslice = match[0]
+        print('STATUS: Summary file timeslice = ', timeslice)
+
+        vcount = 0
+        for g in groups:
+            for i, var_name in enumerate(var_names[g]):
+                orig = otimeSeries[var_name][0]
+                FillValue = otimeSeries[var_name]._FillValue
+                Zscore[vcount, fcount, :] = mom_zpdf(
+                    orig,
+                    nbin,
+                    (opts_dict['minrange'], opts_dict['maxrange']),
+                    sum_vars['ens_avg_' + g][timeslice, i],
+                    sum_vars['ens_stddev_' + g][timeslice, i],
+                    FillValue,
+                    threshold,
+                    opts_dict,
+                )
+                temp = Zscore[vcount, fcount, 0]
+                print('          ' + '{:>10}'.format(var_name) + ': ' + '{:.2%}'.format(temp))
+                if temp < opts_dict['mom_threshold']:
+                    failure_count[fcount] = failure_count[fcount] + 1
+                vcount = vcount + 1
+
+        if failure_count[fcount] > 0:
+            result = 'FAIL'
+        else:
+            result = 'PASS'
+        print(
+            '**********'
+            + str(failure_count[fcount])
+            + ' of '
+            + str(nvars)
+            + ' variables failed, resulting in an overall '
+            + result
+            + '**********'
+        )
+
+        o_fid.close()
+
+    sum_file.close()
+
+    # give error msg if none of the files were valid
+    if skip_count == len(ifiles):
+        print('ERROR: no files to process with valid timeslices. Exiting...')
+        sys.exit(2)
+
+    return Zscore
 
 
 # Get the deficit row number of the standardized global mean matrix

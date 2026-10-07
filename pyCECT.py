@@ -3,8 +3,6 @@ import getopt
 import glob
 import json
 import os
-import random
-import re
 import sys
 import time
 from datetime import datetime
@@ -14,7 +12,6 @@ import numpy as np
 
 import pyEnsLib
 import pyTools
-from pyTools import EqualStride
 
 # This routine compares the results of several (default=3) new CAM tests
 # or a POP test or an MPAS-A test against the accepted ensemble
@@ -24,12 +21,14 @@ from pyTools import EqualStride
 def main(argv):
     # Get command line stuff and store in a dictionary
     s = """verbose sumfile= indir= input_globs= tslice= nPC= sigMul=
-         minPCFail= minRunFail= numRunFile= popens mpas pop cam
-         jsonfile= mpi_enable nbin= minrange= maxrange= outfile=
-         casejson= npick=  pop_tol= web_enabled
-         base_year= pop_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET= useSavedResults="""
+         minPCFail= minRunFail= numRunFile= popens mpas pop mom cam
+         jsonfile=  nbin= minrange= maxrange= outfile=
+         mom_tol= pop_tol= web_enabled
+         base_year= pop_threshold= mom_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET= useSavedResults="""
     optkeys = s.split()
     try:
+
+
         opts, args = getopt.getopt(argv, 'h', optkeys)
     except getopt.GetoptError as error:
         print(error)
@@ -49,19 +48,21 @@ def main(argv):
     opts_dict['numRunFile'] = 3
     opts_dict['popens'] = False
     opts_dict['mpas'] = False
-    opts_dict['cam'] = True
+    opts_dict['cam'] = False
     opts_dict['pop'] = False
     opts_dict['jsonfile'] = ''
+    #can't run cect in parallel, so disable mpi_enable
     opts_dict['mpi_enable'] = False
+    opts_dict['mom'] = False
     opts_dict['nbin'] = 40
     opts_dict['minrange'] = 0.0
     opts_dict['maxrange'] = 4.0
     opts_dict['outfile'] = 'testcase.result'
-    opts_dict['casejson'] = ''
-    opts_dict['npick'] = 10
     opts_dict['test_failure'] = True
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
+    opts_dict['mom_tol'] = 3.0
+    opts_dict['mom_threshold'] = 0.90  
     opts_dict['printStdMean'] = False
     opts_dict['lev'] = 0
     opts_dict['eet'] = 0
@@ -78,23 +79,35 @@ def main(argv):
     caller = 'CECT'
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, caller, opts_dict)
 
-    # ens type
-    # cam = opts_dict['cam']
-    popens = opts_dict['popens']
-    pop = opts_dict['pop']
-    mpas = opts_dict['mpas']
+    # ens type (cam is the default if none is given)
+    # (--popens is an older alias for --pop)
+    ens_flags = {
+        'pop': opts_dict['pop'] or opts_dict['popens'],
+        'mom': opts_dict['mom'],
+        'mpas': opts_dict['mpas'],
+        'cam': opts_dict['cam'],
+    }
+    selected = []
+    for name, on in ens_flags.items():
+        if on:
+            selected.append(name)
+    if len(selected) > 1:
+        print(
+            'ERROR: only one of --pop, --mom, --mpas, --cam may be specified (got: '
+            + ', '.join('--' + s for s in selected)
+            + ') => EXITING....'
+        )
+        sys.exit(2)
+    ens = selected[0] if selected else 'cam'
 
-    # print(f'!test mpas:{mpas}')
+    # --web_enabled (summary file lookup) is not supported for MOM-ECT
+    if ens == 'mom' and opts_dict['web_enabled']:
+        print('ERROR: --web_enabled is not supported with --mom. Please specify --sumfile instead => EXITING....')
+        sys.exit(2)
 
-    if pop or popens:
-        ens = 'pop'
-    elif mpas:
-        ens = 'mpas'
-    else:
-        ens = 'cam'
 
-    # for POP-ECT only take one file
-    if ens == 'pop':
+    # for POP-ECT and MOM-ECTonly take one file
+    if ens == 'pop' or ens == 'mom':
         opts_dict['numRunFile'] = 1
 
     # some more specific defaults (if not specified)
@@ -112,12 +125,10 @@ def main(argv):
     print('Parameter values:')
     print(opts_dict)
 
-    # Create a mpi simplecomm object
-    if opts_dict['mpi_enable']:
-        me = pyTools.create_comm()
-    else:
-        me = pyTools.create_comm(not opts_dict['mpi_enable'])
-
+    # pyCECT only runs in serial
+    opts_dict['mpi_enable'] = False
+    me = pyTools.create_comm(True)
+    
     # Print out timestamp, input ensemble file and new run directory
     dt = datetime.now()
     verbose = opts_dict['verbose']
@@ -143,10 +154,10 @@ def main(argv):
     # make sure these are valid
     if opts_dict['web_enabled'] is False and os.path.isfile(opts_dict['sumfile']) is False:
         print('ERROR: Summary file name is not valid.')
-        sys.exit()
+        sys.exit(2)
     if os.path.exists(opts_dict['indir']) is False:
         print('ERROR: --indir path is not valid.')
-        sys.exit()
+        sys.exit(2)
 
     # Ensure sensible EET value
     if opts_dict['eet'] and opts_dict['numRunFile'] > opts_dict['eet']:
@@ -158,26 +169,16 @@ def main(argv):
 
     # Read in savedResults and load saved variables
     if opts_dict['useSavedResults']:
-        nc_savefile = nc.Dataset(opts_dict['useSavedResults'], 'r')
-
-        ens_var_name = nc_savefile.variables['vars']
-        comp_std_gm = nc_savefile.variables['std_gm']
-        new_scores = nc_savefile.variables['scores']
-        ifiles = nc_savefile.variables['ifiles']
-        means = nc_savefile.variables['gm']
-        sum_std_mean = nc_savefile.variables['sum_std_mean']
+        with nc.Dataset(opts_dict['useSavedResults'], 'r') as nc_savefile:
+            ens_var_name = nc_savefile.variables['vars'][:]
+            comp_std_gm = nc_savefile.variables['std_gm'][:]
+            new_scores = nc_savefile.variables['scores'][:]
+            ifiles = nc_savefile.variables['ifiles'][:]
+            means = nc_savefile.variables['gm'][:]
+            sum_std_mean = nc_savefile.variables['sum_std_mean'][:]
 
     else:
-        # Random pick pop files from not_pick_files list
-        if opts_dict['casejson']:
-            with open(opts_dict['casejson']) as fin:
-                result = json.load(fin)
-                in_files_first = result['not_pick_files']
-                in_files = random.sample(in_files_first, opts_dict['npick'])
-                print('Testcase files:')
-                print('\n'.join(in_files))
-
-        elif opts_dict['json_case']:
+        if opts_dict['json_case']:
             json_file = opts_dict['json_case']
             if os.path.exists(json_file):
                 fd = open(json_file)
@@ -192,7 +193,7 @@ def main(argv):
                             in_files.extend(glob_file)
             else:
                 print('ERROR: ' + opts_dict['json_case'] + ' does not exist.')
-                sys.exit()
+                sys.exit(2)
             print('in_files=', in_files)
         else:
             wildname = '*' + str(opts_dict['input_globs']) + '*.nc'
@@ -208,7 +209,7 @@ def main(argv):
                         + wildname
                         + ' found in specified --indir'
                     )
-                    sys.exit()
+                    sys.exit(2)
                 else:
                     print('Found ' + str(num_file) + ' matching files in specified --indir')
                 if opts_dict['numRunFile'] > num_file:
@@ -219,15 +220,15 @@ def main(argv):
                         + str(num_file)
                         + ').'
                     )
-                    sys.exit()
+                    sys.exit(2)
 
         in_files.sort()
         # print in_files
 
     if ens == 'pop':
-        # Partition the input file list
-        in_files_list = me.partition(in_files, func=EqualStride(), involved=True)
-
+        in_files_list = in_files
+    elif ens == 'mom':
+        in_files_list = in_files
     else:  # cam or mpas
         # Random pick
         in_files_list = pyEnsLib.Random_pickup(in_files, opts_dict)
@@ -241,11 +242,11 @@ def main(argv):
             ifiles.append(frun_temp)
         else:
             print('ERROR: COULD NOT LOCATE FILE ' + frun_temp)
-            sys.exit()
+            sys.exit(2)
 
     if opts_dict['web_enabled']:
         if len(opts_dict['sumfile']) == 0:
-            opts_dict['sumfile'] = '/glade/p/cesmdata/cseg/inputdata/validation/'
+            opts_dict['sumfile'] = '/glade/campaign/cesm/cesmdata/inputdata/validation/'
         # need to open ifiles
 
         opts_dict['sumfile'], machineid, compiler = pyEnsLib.search_sumfile(opts_dict, ifiles)
@@ -261,7 +262,7 @@ def main(argv):
         # Read in the included var list
         if not os.path.exists(opts_dict['jsonfile']):
             print('ERROR: POP-ECT requires the specification of a valid json file via --jsonfile.')
-            sys.exit()
+            sys.exit(2)
         Var2d, Var3d = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ESP')
         print(' ')
         print('Z-score tolerance = ' + '{:3.2f}'.format(opts_dict['pop_tol']))
@@ -272,15 +273,20 @@ def main(argv):
 
         np.set_printoptions(threshold=sys.maxsize)
 
-        if opts_dict['mpi_enable']:
-            zmall = pyEnsLib.gather_npArray_pop(
-                zmall, me, (me.get_size(), len(Var3d) + len(Var2d), len(ifiles), opts_dict['nbin'])
-            )
-            if me.get_rank() == 0:
-                fout = open(opts_dict['outfile'], 'w')
-                for i in range(me.get_size()):
-                    for j in zmall[i]:
-                        np.savetxt(fout, j, fmt='%-7.2e')
+        with open(opts_dict['outfile'], 'w') as fout:
+            for j in zmall:
+                np.savetxt(fout, j, fmt='%-7.2e')
+
+    elif ens == 'mom':
+        # variable lists and timeslices come from the summary file
+        print(' ')
+        print('Z-score tolerance = ' + '{:3.2f}'.format(opts_dict['mom_tol']))
+        print('ZPR = ' + '{:.2%}'.format(opts_dict['mom_threshold']))
+        zmall = pyEnsLib.mom_compare_raw_score(opts_dict, ifiles)
+
+        with open(opts_dict['outfile'], 'w') as fout:
+            for j in zmall:
+                np.savetxt(fout, j, fmt='%-7.2e')
 
     # mpas and cam
     else:
@@ -484,10 +490,11 @@ def main(argv):
             tsize = comp_std_gm.shape[1]
             b = list(ens_var_name)
             for f, avar in enumerate(b):
-                if np.ma.is_masked(std_gm[avar]):
-                    tempa = std_gm[avar]
-                else:
-                    tempa = np.array(std_gm[avar])
+                
+                # drop masked (fill) values before computing percentiles
+                tempa = np.ma.asarray(std_gm[avar]).compressed()
+                if tempa.size == 0:
+                    continue
 
                 dist_995 = np.percentile(tempa, 99.5)
                 dist_005 = np.percentile(tempa, 0.5)
@@ -606,7 +613,7 @@ def main(argv):
             v_std_gm[:, :] = comp_std_gm[:, :]
             v_scores[:, :] = new_scores[:, :]
             v_ifiles[:] = np.array(ifiles)
-            v_sum_std_mean[:] = v_sum_std_mean[:]
+            v_sum_std_mean[:] = sum_std_mean[:]
             v_gm[:, :] = means[:, :]
 
             nc_savefile.close()
