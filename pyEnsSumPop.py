@@ -49,7 +49,7 @@ def main(argv):
     opts_dict['mpi_disable'] = False
     # opts_dict['zscoreonly'] = True
     opts_dict['popens'] = True
-    
+
     # This creates the dictionary of input arguments
     # print "before parseconfig"
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ESP', opts_dict)

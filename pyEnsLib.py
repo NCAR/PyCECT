@@ -2041,10 +2041,11 @@ def CECT_usage():
     print(
         '   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from '
     )
-    print (
+    print(
         '   --base_year <num>       :We assume the mom test files names start in year 0001. Use this option to specify a different start year.'
     )
-    
+
+
 #
 # Command options for pyEnsSum.py
 #
@@ -2174,6 +2175,7 @@ def Random_pickup(ifiles, opts_dict):
         print(ifiles[i])
 
     return new_ifiles
+
 
 #
 # Get the shape of all variable list in tuple for all processor
@@ -2486,7 +2488,12 @@ def mom_compare_raw_score(opts_dict, ifiles):
                 mismatch.append(d + ' (missing)')
             elif len(o_fid.dimensions[d]) != sum_dims[d]:
                 mismatch.append(
-                    d + ' (' + str(len(o_fid.dimensions[d])) + ' vs. summary ' + str(sum_dims[d]) + ')'
+                    d
+                    + ' ('
+                    + str(len(o_fid.dimensions[d]))
+                    + ' vs. summary '
+                    + str(sum_dims[d])
+                    + ')'
                 )
         if mismatch:
             print(
@@ -2498,9 +2505,8 @@ def mom_compare_raw_score(opts_dict, ifiles):
             o_fid.close()
             continue
 
-
         # find the matching timeslice in the summary file
-        match = np.where(np.isclose(ens_time, otimeSeries['time'][0], rtol=0.0, atol=.5))[0]
+        match = np.where(np.isclose(ens_time, otimeSeries['time'][0], rtol=0.0, atol=0.5))[0]
         if len(match) == 0:
             print(
                 'WARNING: time value ',
