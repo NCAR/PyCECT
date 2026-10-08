@@ -27,8 +27,6 @@ def main(argv):
          base_year= pop_threshold= mom_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET= useSavedResults="""
     optkeys = s.split()
     try:
-
-
         opts, args = getopt.getopt(argv, 'h', optkeys)
     except getopt.GetoptError as error:
         print(error)
@@ -51,7 +49,7 @@ def main(argv):
     opts_dict['cam'] = False
     opts_dict['pop'] = False
     opts_dict['jsonfile'] = ''
-    #can't run cect in parallel, so disable mpi_enable
+    # can't run cect in parallel, so disable mpi_enable
     opts_dict['mpi_enable'] = False
     opts_dict['mom'] = False
     opts_dict['nbin'] = 40
@@ -62,7 +60,7 @@ def main(argv):
     opts_dict['pop_tol'] = 3.0
     opts_dict['pop_threshold'] = 0.90
     opts_dict['mom_tol'] = 3.0
-    opts_dict['mom_threshold'] = 0.90  
+    opts_dict['mom_threshold'] = 0.90
     opts_dict['printStdMean'] = False
     opts_dict['lev'] = 0
     opts_dict['eet'] = 0
@@ -102,9 +100,10 @@ def main(argv):
 
     # --web_enabled (summary file lookup) is not supported for MOM-ECT
     if ens == 'mom' and opts_dict['web_enabled']:
-        print('ERROR: --web_enabled is not supported with --mom. Please specify --sumfile instead => EXITING....')
+        print(
+            'ERROR: --web_enabled is not supported with --mom. Please specify --sumfile instead => EXITING....'
+        )
         sys.exit(2)
-
 
     # for POP-ECT and MOM-ECTonly take one file
     if ens == 'pop' or ens == 'mom':
@@ -128,7 +127,7 @@ def main(argv):
     # pyCECT only runs in serial
     opts_dict['mpi_enable'] = False
     me = pyTools.create_comm(True)
-    
+
     # Print out timestamp, input ensemble file and new run directory
     dt = datetime.now()
     verbose = opts_dict['verbose']
@@ -490,7 +489,6 @@ def main(argv):
             tsize = comp_std_gm.shape[1]
             b = list(ens_var_name)
             for f, avar in enumerate(b):
-                
                 # drop masked (fill) values before computing percentiles
                 tempa = np.ma.asarray(std_gm[avar]).compressed()
                 if tempa.size == 0:
