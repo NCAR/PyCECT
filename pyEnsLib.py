@@ -208,7 +208,7 @@ def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_l
 #
 # Calculate mom zscore pass rate (ZPR) or mom zpdf values
 #
-def mom_zpdf(input_array, nbin, zrange, ens_avg, ens_stddev, FillValue, threshold, opts_dict):
+def mom_zpdf(input_array, nbin, zrange, ens_avg, ens_stddev, FillValue, min_stddev, opts_dict):
     # test_failure is set in pyCECT
     if 'test_failure' in opts_dict:
         test_failure = opts_dict['test_failure']
@@ -220,10 +220,17 @@ def mom_zpdf(input_array, nbin, zrange, ens_avg, ens_stddev, FillValue, threshol
     # note: here we could mask out a region in the future
 
     # Use the masked array moutput to calculate Zscore_temp=(data-avg)/stddev
-    Zscore_temp = np.fabs(
-        (moutput.astype(np.float64) - ens_avg)
-        / np.where(ens_stddev <= threshold, FillValue, ens_stddev)
-    )
+    #if the ensemble has no spread at the point, then 
+    # require the test value to be nearly the same 
+    diff = np.ma.fabs(moutput.astype(np.float64) - ens_avg)
+    zero_spread = ens_stddev <= min_stddev
+    zscore = diff / np.where(zero_spread, 1.0, ens_stddev)
+
+    # where the ensemble has (essentially) no spread, the test value must match 
+    # the ensemble mean (to float32 precision) - otherwise it fails
+    zero_tol = 1e-6
+    same = diff <= zero_tol * np.maximum(1.0, np.fabs(ens_avg))
+    Zscore_temp = np.ma.where(zero_spread, np.ma.where(same, 0.0, np.inf), zscore)
 
     # To retrieve only the valid entries (unmasked) of Zscore_temp
     Zscore_nomask = Zscore_temp[~Zscore_temp.mask]
@@ -2039,7 +2046,7 @@ def CECT_usage():
     print('   --mom_tol <num>         : set mom zscore tolerance (default is 3.0 - recommended)')
     print('   --mom_threshold <num>   : set mom threshold (default is 0.9)')
     print(
-        '   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from '
+        '   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from (optional)'
     )
     print(
         '   --base_year <num>       :We assume the mom test files names start in year 0001. Use this option to specify a different start year.'
@@ -2478,6 +2485,12 @@ def mom_compare_raw_score(opts_dict, ifiles):
         print(' ')
         o_fid = nc.Dataset(fid, 'r')
         otimeSeries = o_fid.variables
+
+        if 'time' not in otimeSeries:
+            print('WARNING: no time variable in this file. Skipping this run evaluation...')
+            skip_count = skip_count + 1
+            o_fid.close()
+            continue
 
         print('**********' + 'Run ' + str(fcount + 1) + ' (file=' + fid + '):')
 
