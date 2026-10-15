@@ -3,7 +3,7 @@ import getopt
 import os
 import sys
 import time
-
+import random
 import netCDF4 as nc
 import numpy as np
 
@@ -17,7 +17,7 @@ from pyTools import EqualStride
 
 def main(argv):
     # Get command line stuff and store in a dictionary
-    s = 'tag= mach= nyear= nmonth= esize= nbin= minrange= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable'
+    s = 'tag= mach= nyear= nmonth= esize= nbin= minrange= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable rand seed='
     optkeys = s.split()
 
     try:
@@ -46,8 +46,8 @@ def main(argv):
     opts_dict['verbose'] = False
     opts_dict['mpi_enable'] = True
     opts_dict['mpi_disable'] = False
-
-    # TO DO: why not listed in help: seq, minrange, maxrange, nbin, mpi_enable
+    opts_dict['rand'] = False
+    opts_dict['seed'] = 1
 
     # This creates the dictionary of input arguments
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ES_MOM', opts_dict)
@@ -99,6 +99,8 @@ def main(argv):
             print('VERBOSE: opts_dict = ')
             print(opts_dict)
 
+    ntslices = opts_dict['nmonth'] * opts_dict['nyear']
+
     in_files = []
     if os.path.exists(input_dir):
         # Get the list of files
@@ -109,12 +111,15 @@ def main(argv):
             print('ERROR: Input directory: ', input_dir, ' not found => EXITING....')
         sys.exit(2)
 
-    # make sure we have enough files
-    files_needed = opts_dict['nmonth'] * esize * opts_dict['nyear']
-    if num_files != files_needed:
+    #each member must have exactly ntslices files (sorted member-major:
+    # all months for member 0, then member 1, ...)
+    files_needed = esize * ntslices
+    if num_files < files_needed or num_files % ntslices != 0:
         if me.get_rank() == 0:
             print(
-                'ERROR: Input directory must contain exactly esize*nyear*nmonth = ',
+                'ERROR: Input directory must contain a multiple of nyear*nmonth = ',
+                ntslices,
+                ' files, and at least esize*nyear*nmonth = ',
                 files_needed,
                 ' ( but it has',
                 num_files,
@@ -122,9 +127,34 @@ def main(argv):
             )
         sys.exit(2)
 
+   # select esize members if there are more than needed
+    n_members = num_files // ntslices
+    if n_members > esize:
+        if opts_dict['rand']:
+            # same seed on every rank => same selection on every rank
+            rng = random.Random(opts_dict['seed'])
+            members = sorted(rng.sample(range(n_members), esize))
+            how = 'random (seed = ' + str(opts_dict['seed']) + ')'
+        else:
+            members = list(range(esize))
+            how = 'first ' + str(esize)
+        if me.get_rank() == 0:
+            print(
+                'STATUS: Input directory has ',
+                n_members,
+                ' members; using ',
+                how,
+                ': members ',
+                members,
+            )
+        in_files = [f for m in members for f in in_files[m * ntslices : (m + 1) * ntslices]]
+    else:
+        members = list(range(n_members))
+        how = 'all'
+
+
     # if using parallel, then we want exactly one timeslice per process
-    # (serial handles all timeslices)
-    ntslices = opts_dict['nmonth'] * opts_dict['nyear']
+    # (serial mode handles all timeslices)
     if opts_dict['mpi_enable'] and me.get_size() != ntslices:
         if me.get_rank() == 0:
             print(
@@ -135,6 +165,7 @@ def main(argv):
                 ') => EXITING....',
             )
         sys.exit(2)
+
 
     # Partition the timeslices (serial gets all of them, MPI gets one per rank)
     my_slices = me.partition(list(range(ntslices)), func=EqualStride(), involved=True)
@@ -243,6 +274,9 @@ def main(argv):
         nc_sumfile.model = opts_dict['model']
         nc_sumfile.resolution = opts_dict['res']
         nc_sumfile.machine = opts_dict['mach']
+        nc_sumfile.member_selection = how
+        nc_sumfile.members = ' '.join(str(m) for m in members)
+
 
         # Create variables
         if verbose:

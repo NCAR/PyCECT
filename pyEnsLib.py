@@ -2046,7 +2046,7 @@ def CECT_usage():
     print('   --mom_tol <num>         : set mom zscore tolerance (default is 3.0 - recommended)')
     print('   --mom_threshold <num>   : set mom threshold (default is 0.9)')
     print(
-        '   --input_globs <search pattern> : set the search pattern (wildcard) for the file(s) to compare from (optional)'
+        '   --input_globs <search pattern> : set the search pattern (wildcard) for specifying a subset of input file(s) to compare from (optional)'
     )
     print(
         '   --base_year <num>       :We assume the mom test files names start in year 0001. Use this option to specify a different start year.'
@@ -2074,6 +2074,10 @@ def EnsSum_usage():
     print('   --tslice <num>       : the index into the time dimension (default = 0)')
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will ')
     print('                          be excluded (default = exclude_empty.json)')
+    print('   --rand               : if indir has more than esize members, pick esize at random')
+    print('                          (default: use the first esize members)')
+    print('   --seed <num>         : random seed for --rand (default = 1)')
+
     print('   --mpi_disable        : Disable mpi mode to run in serial (off by default)')
     print('   ')
 

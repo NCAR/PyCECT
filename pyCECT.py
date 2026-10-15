@@ -277,7 +277,7 @@ def main(argv):
                 np.savetxt(fout, j, fmt='%-7.2e')
 
     elif ens == 'mom':
-        # variable lists and timeslices come from the summary file
+        # variable lists and timeslices come from the summary file (in mom_compare_raw_scores)
         print(' ')
         print('Z-score tolerance = ' + '{:3.2f}'.format(opts_dict['mom_tol']))
         print('ZPR = ' + '{:.2%}'.format(opts_dict['mom_threshold']))
