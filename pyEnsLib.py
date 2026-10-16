@@ -2157,6 +2157,13 @@ def EnsSumMom_usage():
     print('   --mach <name>        : Machine name used in the metadata (default = derecho)')
     print('   --nyear  <num>       : Number of years (default = 1)')
     print('   --nmonth  <num>      : Number of months (default = 12)')
+    print('   --start_year <num>   : First year of files to use (default = 1)')
+    print('   --start_month <num>  : First month of files to use (default = 1)')    
+    print('   --rand               : If indir has more than esize members, select esize members')
+    print('                          at random (default: off, i.e., use the first esize members)')
+    print('   --seed <num>         : Random seed used with --rand; the same seed always selects')
+    print('                          the same members (default = 1)')
+
     print('   --jsonfile <fname>   : Jsonfile to provide that a list of variables that will be')
     print('                          included  (RECOMMENDED: default = mom6_ensemble.json)')
     print(
@@ -2212,8 +2219,8 @@ def get_stride_list(len_of_list, me):
 #
 # Gather arrays from each processor by the file_list to the master processor and make it an array
 #
-def gather_npArray_pop(npArray, me, array_shape):
-    the_array = np.zeros(array_shape, dtype=np.float32)
+def gather_npArray_pop(npArray, me, array_shape, dtype=np.float32):
+    the_array = np.zeros(array_shape, dtype=dtype)
 
     if me.get_rank() == 0:
         j = me.get_rank()

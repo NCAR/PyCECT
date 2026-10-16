@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import getopt
 import os
+import re
 import random
 import sys
 import time
@@ -20,7 +21,7 @@ from pyTools import EqualStride
 
 def main(argv):
     # Get command line stuff and store in a dictionary
-    s = 'tag= mach= nyear= nmonth= esize= nbin= minrange= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable rand seed='
+    s = 'tag= mach= nyear= nmonth= start_year= start_month= esize= nbin= minrange= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable rand seed='
     optkeys = s.split()
 
     try:
@@ -51,6 +52,9 @@ def main(argv):
     opts_dict['mpi_disable'] = False
     opts_dict['rand'] = False
     opts_dict['seed'] = 1
+    opts_dict['start_month'] = 1
+    opts_dict['start_year'] = 1
+
 
     # This creates the dictionary of input arguments
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ES_MOM', opts_dict)
@@ -71,21 +75,32 @@ def main(argv):
     if opts_dict['mpi_enable']:
         me = pyTools.create_comm()
     else:
-        me = pyTools.create_comm(False)
+        me = pyTools.create_comm(True)
 
-        # Z, Y,X
-    if opts_dict['jsonfile']:
-        # Read in the included var list
-        json_vars = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES_MOM')
-        if len(json_vars) != 4:
+    # Z, Y,X
+    # Read in the included var lists (required)
+    if not opts_dict['jsonfile']:
+        if me.get_rank() == 0:
+            print('ERROR: a json file listing the MOM6 variables is required (--jsonfile) => EXITING....')
+        sys.exit(2)
+    json_vars = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES_MOM')
+    if len(json_vars) != 4:
+        if me.get_rank() == 0:
+            print('ERROR: could not read MOM6 variable lists from ', opts_dict['jsonfile'])
+        sys.exit(2)
+    Var_lhh, Var_ihh, Var_lhq, Var_lqh = json_vars
+
+    # each variable group must be non-empty (a size-0 netcdf dimension
+    # would be treated as unlimited, which NETCDF4_CLASSIC doesn't allow)
+    for name, vlist in (('Var_zl_yh_xh', Var_lhh), ('Var_zi_yh_xh', Var_ihh),
+                        ('Var_zl_yh_xq', Var_lhq), ('Var_zl_yq_xh', Var_lqh)):
+        if len(vlist) == 0:
             if me.get_rank() == 0:
-                print('ERROR: could not read MOM6 variable lists from ', opts_dict['jsonfile'])
+                print('ERROR: ', name, ' in ', opts_dict['jsonfile'], ' has no variables => EXITING....')
             sys.exit(2)
-        Var_lhh, Var_ihh, Var_lhq, Var_lqh = json_vars
 
-        # get max size of var names
-        str_size = 0
-        str_size = max(len(v) for v in Var_lhh + Var_ihh + Var_lhq + Var_lqh)
+    # get max size of var names
+    str_size = max(len(v) for v in Var_lhh + Var_ihh + Var_lhq + Var_lqh)
 
     # get number of each variable type
     n_var_lhh = len(Var_lhh)
@@ -114,13 +129,59 @@ def main(argv):
             print('ERROR: Input directory: ', input_dir, ' not found => EXITING....')
         sys.exit(2)
 
+
+    # keep only files in years start_year .. start_year+nyear-1 and
+    # months start_month .. start_month+nmonth-1 (assumes file names end in YYYY-MM.nc)
+    start_year = opts_dict['start_year']
+    end_year = start_year + opts_dict['nyear'] - 1
+    start_month = opts_dict['start_month']
+    end_month = start_month + opts_dict['nmonth'] - 1
+    if start_month < 1 or end_month > 12:
+        if me.get_rank() == 0:
+            print(
+                'ERROR: start_month (',
+                start_month,
+                ') + nmonth (',
+                opts_dict['nmonth'],
+                ') - 1 must be between 1 and 12 => EXITING....',
+            )
+        sys.exit(2)
+    date_p = re.compile(r'(\d{4})-(\d{2})\.nc$')
+    keep_files = []
+    for f in in_files:
+        m = date_p.search(f)
+        if m is None:
+            continue
+        year, month = int(m.group(1)), int(m.group(2))
+        if start_year <= year <= end_year and start_month <= month <= end_month:
+            keep_files.append(f)
+
+    if me.get_rank() == 0 and len(keep_files) < len(in_files):
+        print(
+            'STATUS: using ',
+            len(keep_files),
+            ' of ',
+            len(in_files),
+            ' files (years ',
+            start_year,
+            '-',
+            end_year,
+            ', months ',
+            start_month,
+            '-',
+            end_month,
+            ')',
+        )
+    in_files = keep_files
+    num_files = len(in_files)
+
     # each member must have exactly ntslices files (sorted member-major:
     # all months for member 0, then member 1, ...)
     files_needed = esize * ntslices
     if num_files < files_needed or num_files % ntslices != 0:
         if me.get_rank() == 0:
             print(
-                'ERROR: Input directory must contain a multiple of nyear*nmonth = ',
+                'ERROR: after selecting years/months, input directory must contain a multiple of nyear*nmonth = ',
                 ntslices,
                 ' files, and at least esize*nyear*nmonth = ',
                 files_needed,
@@ -150,7 +211,7 @@ def main(argv):
                 ': members ',
                 members,
             )
-        in_files = [f for m in members for f in in_files[m * ntslices : (m + 1) * ntslices]]
+        in_files = [f for mem in members for f in in_files[mem * ntslices : (mem + 1) * ntslices]]
     else:
         members = list(range(n_members))
         how = 'all'
@@ -277,7 +338,9 @@ def main(argv):
         nc_sumfile.machine = opts_dict['mach']
         nc_sumfile.member_selection = how
         nc_sumfile.members = ' '.join(str(m) for m in members)
-
+        nc_sumfile.start_month = start_month
+        nc_sumfile.start_year = start_year
+    
         # Create variables
         if verbose:
             print('VERBOSE: Creating variables .....')
@@ -412,7 +475,7 @@ def main(argv):
 
     # gather time array to root (0)
     if opts_dict['mpi_enable']:
-        time_array = pyEnsLib.gather_npArray_pop(time_array, me, (me.get_size(),))
+        time_array = pyEnsLib.gather_npArray_pop(time_array, me, (me.get_size(),), dtype=np.float64)
     if me.get_rank() == 0:
         v_time[:] = time_array[:]
 
@@ -482,7 +545,7 @@ def main(argv):
     if verbose and me.get_rank() == 0:
         print('VERBOSE: Finished with RMSZ scores .....')
 
-    zmall = np.concatenate((zscore_lhh, zscore_ihh, zscore_lhq, zscore_lhq), axis=1)
+    zmall = np.concatenate((zscore_lhh, zscore_ihh, zscore_lhq, zscore_lqh), axis=1)
 
     # Collect from all processors (serial already has all timeslices)
     if opts_dict['mpi_enable']:
