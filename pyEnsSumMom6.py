@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import getopt
 import os
+import random
 import sys
 import time
-import random
+
 import netCDF4 as nc
 import numpy as np
 
@@ -13,6 +14,8 @@ from pyTools import EqualStride
 
 # files should have member, then year, then month in the filename (in that order) to be recognized by this script
 # we want 1 rank per timeslice (so months*years)
+
+# need nprocs = months*years
 
 
 def main(argv):
@@ -111,7 +114,7 @@ def main(argv):
             print('ERROR: Input directory: ', input_dir, ' not found => EXITING....')
         sys.exit(2)
 
-    #each member must have exactly ntslices files (sorted member-major:
+    # each member must have exactly ntslices files (sorted member-major:
     # all months for member 0, then member 1, ...)
     files_needed = esize * ntslices
     if num_files < files_needed or num_files % ntslices != 0:
@@ -127,7 +130,7 @@ def main(argv):
             )
         sys.exit(2)
 
-   # select esize members if there are more than needed
+    # select esize members if there are more than needed
     n_members = num_files // ntslices
     if n_members > esize:
         if opts_dict['rand']:
@@ -152,7 +155,6 @@ def main(argv):
         members = list(range(n_members))
         how = 'all'
 
-
     # if using parallel, then we want exactly one timeslice per process
     # (serial mode handles all timeslices)
     if opts_dict['mpi_enable'] and me.get_size() != ntslices:
@@ -165,7 +167,6 @@ def main(argv):
                 ') => EXITING....',
             )
         sys.exit(2)
-
 
     # Partition the timeslices (serial gets all of them, MPI gets one per rank)
     my_slices = me.partition(list(range(ntslices)), func=EqualStride(), involved=True)
@@ -276,7 +277,6 @@ def main(argv):
         nc_sumfile.machine = opts_dict['mach']
         nc_sumfile.member_selection = how
         nc_sumfile.members = ' '.join(str(m) for m in members)
-
 
         # Create variables
         if verbose:
