@@ -34,6 +34,7 @@ def read_summary_series(folder, file_prefix, file_suffix, starting_timestep, sav
     # get list of *.nc files in directory
     summ_files = glob.glob(folder + f'/{file_prefix}*')
     file_count = len(summ_files)
+    print(f'Found {file_count} summary files')
 
     datasets = []
     variable_lists = []
@@ -230,8 +231,8 @@ def stable_PCs_required(
     stable_count = 1
 
     while stable_count < 5:
-        print(i)
         sample_sizes.append(sample_sizes[i - 1] + 50)
+        print(f"Sample size: {sample_sizes[i]}")
 
         scores_variances, cum_sum = var_explained_sample(standardized_gm, sample_sizes[i], 10)
         test_variances = np.vstack([test_variances, np.mean(scores_variances, axis=0)])
@@ -460,7 +461,7 @@ def run_fpr_tests(
     fpr_by_ensemble_size = np.zeros(len(sample_sizes))
 
     for i, sample_size in enumerate(sample_sizes):
-        print(i)
+        print(f"Sample size: {sample_size}")
         temp = 0
         for j in range(ensemble_repeats):
             temp += fpr(standardized_gm, sample_size, test_repeats, pc_count, m_sigma)
