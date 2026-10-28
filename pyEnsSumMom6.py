@@ -83,6 +83,10 @@ def main(argv):
         if me.get_rank() == 0:
             print('ERROR: a json file listing the MOM6 variables is required (--jsonfile) => EXITING....')
         sys.exit(2)
+    if not os.path.isfile(opts_dict['jsonfile']):
+        if me.get_rank() == 0:
+            print('ERROR: specified json file does not exist: ', opts_dict['jsonfile'], ' => EXITING....', flush=True)
+        sys.exit(2)
     json_vars = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES_MOM')
     if len(json_vars) != 4:
         if me.get_rank() == 0:
