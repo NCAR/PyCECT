@@ -2220,34 +2220,21 @@ def get_stride_list(len_of_list, me):
 # Gather arrays from each processor by the file_list to the master processor and make it an array
 #
 def gather_npArray_pop(npArray, me, array_shape, dtype=np.float32):
-    the_array = np.zeros(array_shape, dtype=dtype)
-
+    # only rank 0 needs the full gathered array
     if me.get_rank() == 0:
-        j = me.get_rank()
+        the_array = np.zeros(array_shape, dtype=dtype)
         if len(array_shape) == 1:
-            the_array[j] = npArray[0]
-        elif len(array_shape) == 2:
-            the_array[j, :] = npArray[:]
-        elif len(array_shape) == 3:
-            the_array[j, :, :] = npArray[:, :]
-        elif len(array_shape) == 4:
-            the_array[j, :, :, :] = npArray[:, :, :]
-        elif len(array_shape) == 5:
-            the_array[j, :, :, :, :] = npArray[:, :, :, :]
-    for i in range(1, me.get_size()):
-        if me.get_rank() == 0:
+            the_array[0] = npArray[0]
+        else:
+            the_array[0, ...] = npArray
+        for i in range(1, me.get_size()):
             rank, npArray = me.collect()
             if len(array_shape) == 1:
                 the_array[rank] = npArray[0]
-            elif len(array_shape) == 2:
-                the_array[rank, :] = npArray[:]
-            elif len(array_shape) == 3:
-                the_array[rank, :, :] = npArray[:, :]
-            elif len(array_shape) == 4:
-                the_array[rank, :, :, :] = npArray[:, :, :]
-            elif len(array_shape) == 5:
-                the_array[rank, :, :, :, :] = npArray[:, :, :, :]
-    if me.get_rank() != 0:
+            else:
+                the_array[rank, ...] = npArray
+    else:
+        the_array = None
         me.collect(npArray)
     me.sync()
     return the_array
