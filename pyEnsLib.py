@@ -51,11 +51,6 @@ def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_l
     xq = len(input_dims['xq'])
     xh = len(input_dims['xh'])
 
-    output_lhh = np.zeros((len(o_files), z_l, yh, xh), dtype=np.float32)
-    output_ihh = np.zeros((len(o_files), z_i, yh, xh), dtype=np.float32)
-    output_lqh = np.zeros((len(o_files), z_l, yq, xh), dtype=np.float32)
-    output_lhq = np.zeros((len(o_files), z_l, yh, xq), dtype=np.float32)
-
     ens_avg_lhh = np.zeros((len(var_name_lhh), z_l, yh, xh), dtype=np.float32)
     ens_stddev_lhh = np.zeros((len(var_name_lhh), z_l, yh, xh), dtype=np.float32)
 
@@ -82,6 +77,7 @@ def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_l
         handle_o_files.append(nc.Dataset(fname, 'r'))
 
     # Now lOOP THROUGH lhh
+    output_lhh = np.zeros((len(o_files), z_l, yh, xh), dtype=np.float32)
     for vcount, vname in enumerate(var_name_lhh):
         # Read in vname's data from all ens. files
         for fcount, this_file in enumerate(handle_o_files):
@@ -106,8 +102,10 @@ def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_l
                 opts_dict,
             )
             zscore_lhh[vcount, fcount, :] = Zscore[:]
+    del output_lhh, moutput_lhh
 
     # LOOP THROUGH ihh
+    output_ihh = np.zeros((len(o_files), z_i, yh, xh), dtype=np.float32)
     for vcount, vname in enumerate(var_name_ihh):
         # Read in vname's data from all ens. files
         for fcount, this_file in enumerate(handle_o_files):
@@ -132,8 +130,10 @@ def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_l
                 opts_dict,
             )
             zscore_ihh[vcount, fcount, :] = Zscore[:]
+    del output_ihh, moutput_ihh
 
     # LOOP THROUGH lqh
+    output_lqh = np.zeros((len(o_files), z_l, yq, xh), dtype=np.float32)
     for vcount, vname in enumerate(var_name_lqh):
         # Read in vname's data from all ens. files
         for fcount, this_file in enumerate(handle_o_files):
@@ -158,8 +158,10 @@ def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_l
                 opts_dict,
             )
             zscore_lqh[vcount, fcount, :] = Zscore[:]
+    del output_lqh, moutput_lqh
 
     # LOOP THROUGH lhq
+    output_lhq = np.zeros((len(o_files), z_l, yh, xq), dtype=np.float32)
     for vcount, vname in enumerate(var_name_lhq):
         # Read in vname's data from all ens. files
         for fcount, this_file in enumerate(handle_o_files):
@@ -184,6 +186,7 @@ def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_l
                 opts_dict,
             )
             zscore_lhq[vcount, fcount, :] = Zscore[:]
+    del output_lhq, moutput_lhq
 
     # close files
     for this_file in handle_o_files:
