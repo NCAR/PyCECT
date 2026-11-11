@@ -23,7 +23,7 @@ def main(argv):
     s = """verbose sumfile= indir= input_globs= tslice= nPC= sigMul=
          minPCFail= minRunFail= numRunFile= popens mpas pop mom cam
          jsonfile=  nbin= minrange= maxrange= outfile=
-         mom_tol= pop_tol= web_enabled
+         mom_tol= pop_tol= web_enabled rand
          base_year= pop_threshold= mom_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET= useSavedResults="""
     optkeys = s.split()
     try:
@@ -71,6 +71,7 @@ def main(argv):
     opts_dict['base_year'] = 1
     opts_dict['saveEET'] = ''
     opts_dict['useSavedResults'] = ''
+    opts_dict['rand'] = False
 
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -227,7 +228,11 @@ def main(argv):
     if ens == 'pop':
         in_files_list = in_files
     elif ens == 'mom':
-        in_files_list = in_files
+        if opts_dict['rand']:
+            # pick one matching file at random
+            in_files_list = pyEnsLib.Random_pickup(in_files, opts_dict)
+        else:
+            in_files_list = in_files
     else:  # cam or mpas
         # Random pick
         in_files_list = pyEnsLib.Random_pickup(in_files, opts_dict)

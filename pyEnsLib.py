@@ -2052,6 +2052,9 @@ def CECT_usage():
         '   --input_globs <search pattern> : set the search pattern (wildcard) for specifying a subset of input file(s) to compare from (optional)'
     )
     print(
+        '   --rand                  : test one randomly selected file that matches --input_globs (default is to test all matching files)'
+    )
+    print(
         '   --base_year <num>       :We assume the mom test files names start in year 0001. Use this option to specify a different start year.'
     )
 
