@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import getopt
 import os
-import re
 import random
+import re
 import sys
 import time
 
@@ -56,7 +56,6 @@ def main(argv):
     opts_dict['start_year'] = 1
     opts_dict['ntsteps'] = 0
 
-
     # This creates the dictionary of input arguments
     opts_dict = pyEnsLib.getopt_parseconfig(opts, optkeys, 'ES_MOM', opts_dict)
 
@@ -82,11 +81,18 @@ def main(argv):
     # Read in the included var lists (required)
     if not opts_dict['jsonfile']:
         if me.get_rank() == 0:
-            print('ERROR: a json file listing the MOM6 variables is required (--jsonfile) => EXITING....')
+            print(
+                'ERROR: a json file listing the MOM6 variables is required (--jsonfile) => EXITING....'
+            )
         sys.exit(2)
     if not os.path.isfile(opts_dict['jsonfile']):
         if me.get_rank() == 0:
-            print('ERROR: specified json file does not exist: ', opts_dict['jsonfile'], ' => EXITING....', flush=True)
+            print(
+                'ERROR: specified json file does not exist: ',
+                opts_dict['jsonfile'],
+                ' => EXITING....',
+                flush=True,
+            )
         sys.exit(2)
     json_vars = pyEnsLib.read_jsonlist(opts_dict['jsonfile'], 'ES_MOM')
     if len(json_vars) != 4:
@@ -97,11 +103,21 @@ def main(argv):
 
     # each variable group must be non-empty (a size-0 netcdf dimension
     # would be treated as unlimited, which NETCDF4_CLASSIC doesn't allow)
-    for name, vlist in (('Var_zl_yh_xh', Var_lhh), ('Var_zi_yh_xh', Var_ihh),
-                        ('Var_zl_yh_xq', Var_lhq), ('Var_zl_yq_xh', Var_lqh)):
+    for name, vlist in (
+        ('Var_zl_yh_xh', Var_lhh),
+        ('Var_zi_yh_xh', Var_ihh),
+        ('Var_zl_yh_xq', Var_lhq),
+        ('Var_zl_yq_xh', Var_lqh),
+    ):
         if len(vlist) == 0:
             if me.get_rank() == 0:
-                print('ERROR: ', name, ' in ', opts_dict['jsonfile'], ' has no variables => EXITING....')
+                print(
+                    'ERROR: ',
+                    name,
+                    ' in ',
+                    opts_dict['jsonfile'],
+                    ' has no variables => EXITING....',
+                )
             sys.exit(2)
 
     # get max size of var names
@@ -141,7 +157,6 @@ def main(argv):
         if me.get_rank() == 0:
             print('ERROR: Input directory: ', input_dir, ' not found => EXITING....')
         sys.exit(2)
-
 
     # keep only files in years start_year .. start_year+nyear-1 and
     # months start_month .. start_month+nmonth-1 (assumes file names end in YYYY-MM.nc)
@@ -398,7 +413,7 @@ def main(argv):
             nc_sumfile.start_year = start_year
             nc_sumfile.nmonth = opts_dict['nmonth']
             nc_sumfile.nyear = opts_dict['nyear']
-    
+
         # Create variables
         if verbose:
             print('VERBOSE: Creating variables .....')

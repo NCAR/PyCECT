@@ -2175,7 +2175,9 @@ def EnsSumMom_usage():
     print('   --start_year <num>   : First year of files to use (default = 1)')
     print('   --start_month <num>  : First month of files to use (default = 1)')
     print('   --ntsteps <num>      : Files have <num> time steps each (one file per member); use')
-    print('                          each time step as a timeslice (nyear/nmonth/start_* are ignored,')
+    print(
+        '                          each time step as a timeslice (nyear/nmonth/start_* are ignored,'
+    )
     print('                          and the number of mpi tasks must equal <num>) (default: off)')
     print('   --rand               : If indir has more than esize members, select esize members')
     print('                          at random (default: off, i.e., use the first esize members)')
@@ -2539,7 +2541,16 @@ def mom_compare_raw_score(opts_dict, ifiles):
             o_fid.close()
             continue
 
-        print('**********' + 'Run ' + str(fcount + 1) + ' (file=' + fid + ', tslice=' + str(tidx) + '):')
+        print(
+            '**********'
+            + 'Run '
+            + str(fcount + 1)
+            + ' (file='
+            + fid
+            + ', tslice='
+            + str(tidx)
+            + '):'
+        )
 
         # make sure the test file is on the same grid as the summary file
         mismatch = []
