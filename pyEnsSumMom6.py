@@ -149,7 +149,7 @@ def main(argv):
     end_year = start_year + opts_dict['nyear'] - 1
     start_month = opts_dict['start_month']
     end_month = start_month + opts_dict['nmonth'] - 1
-    if start_month < 1 or end_month > 12:
+    if ntsteps == 0 and (start_month < 1 or end_month > 12):
         if me.get_rank() == 0:
             print(
                 'ERROR: start_month (',
@@ -390,8 +390,14 @@ def main(argv):
         nc_sumfile.machine = opts_dict['mach']
         nc_sumfile.member_selection = how
         nc_sumfile.members = ' '.join(str(m) for m in members)
-        nc_sumfile.start_month = start_month
-        nc_sumfile.start_year = start_year
+        if ntsteps > 0:
+            # timeslices are the first ntsteps time steps of each member's file
+            nc_sumfile.ntsteps = ntsteps
+        else:
+            nc_sumfile.start_month = start_month
+            nc_sumfile.start_year = start_year
+            nc_sumfile.nmonth = opts_dict['nmonth']
+            nc_sumfile.nyear = opts_dict['nyear']
     
         # Create variables
         if verbose:
@@ -402,6 +408,12 @@ def main(argv):
         v_var_lhq = nc_sumfile.createVariable('var_lhq', 'S1', ('nvars_lhq', 'str_size'))
         v_var_lqh = nc_sumfile.createVariable('var_lqh', 'S1', ('nvars_lqh', 'str_size'))
         v_time = nc_sumfile.createVariable('time', 'd', ('time',))
+        # keep the time units/calendar so pyCECT can match test files that use
+        # a different time reference date
+        in_time = first_file.variables['time']
+        for att in ('units', 'calendar'):
+            if att in in_time.ncattrs():
+                v_time.setncattr(att, in_time.getncattr(att))
 
         v_ens_avg_lhh = nc_sumfile.createVariable(
             'ens_avg_lhh', 'f', ('time', 'nvars_lhh', 'z_l', 'yh', 'xh')

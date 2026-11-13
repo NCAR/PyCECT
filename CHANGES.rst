@@ -16,6 +16,38 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
+VERSION 3.4.0
+-------------
+
+- Added MOM6 ensemble consistency testing (MOM-ECT). The new pyEnsSumMom6.py
+  creates the ensemble summary file, and pyCECT.py --mom tests runs against it.
+  The variables to test are listed in a json file (see mom6_ensemble.json).
+
+- pyEnsSumMom6.py uses monthly files by default (--nyear, --nmonth, --start_year,
+  --start_month), or files with several time steps each via --ntsteps. With more
+  members than --esize, --rand and --seed select the members at random.
+
+- New pyCECT.py options for MOM-ECT: --mom_tol, --mom_threshold, --tslice (time
+  step to test), --rand (test one randomly selected file) and --noOutfile. MOM-ECT
+  results are written to --outfile as a labeled table.
+
+- The MOM6 summary file stores the time units and calendar, so pyCECT.py can
+  test runs whose time uses a different reference date (test times are converted
+  to the summary file's units before matching).
+
+- Reduced memory use in pyEnsSumPop.py and pyEnsSumMom6.py (only the root task
+  allocates the gathered results).
+
+- pyCECT.py now runs in serial only. Removed the pyCECT.py options --mpi_enable,
+  --casejson and --npick, and the pyEnsSumPop.py options --rand, --nrand, --seq
+  and --jsondir.
+
+- pyCECT.py exits with an error if more than one of --pop, --mom, --mpas and
+  --cam is given, and error exits now return status 2.
+
+- Bug fix: --saveResults did not save sum_std_mean correctly.
+
+
 VERSION 3.2.0
 -------------
 

@@ -2491,7 +2491,17 @@ def mom_compare_raw_score(opts_dict, ifiles):
         print('=> EXITING....')
         sys.exit(2)
 
-    ens_time = sum_vars['time'][:]
+    ens_time = np.asarray(sum_vars['time'][:], dtype=np.float64)
+    # (older summary files have no time units, so no conversion is done for them)
+    sum_tunits = getattr(sum_vars['time'], 'units', None)
+    sum_tcal = getattr(sum_vars['time'], 'calendar', 'standard')
+
+    # a test time matches the closest summary timeslice if it is within
+    # time_tol: 0.5 (time units, i.e. half a day), or half the spacing between
+    # summary timeslices if that is smaller (e.g. many time steps per day)
+    time_tol = 0.5
+    if len(ens_time) > 1:
+        time_tol = min(time_tol, 0.5 * np.min(np.diff(np.sort(ens_time))))
 
     # time index to test in each file (--tslice, default 0)
     tidx = opts_dict['tslice']
@@ -2557,19 +2567,57 @@ def mom_compare_raw_score(opts_dict, ifiles):
             continue
 
         # find the matching timeslice in the summary file
-        match = np.where(np.isclose(ens_time, otimeSeries['time'][tidx], rtol=0.0, atol=0.5))[0]
-        if len(match) == 0:
+        test_time = float(otimeSeries['time'][tidx])
+        test_tunits = getattr(otimeSeries['time'], 'units', None)
+        if sum_tunits and test_tunits and test_tunits != sum_tunits:
+            # different time reference: convert the test time to the summary file's units
+            test_tcal = getattr(otimeSeries['time'], 'calendar', 'standard')
+            try:
+                test_time = float(
+                    nc.date2num(
+                        nc.num2date(test_time, test_tunits, test_tcal), sum_tunits, sum_tcal
+                    )
+                )
+            except Exception as err:
+                print(
+                    'WARNING: could not convert time from "'
+                    + test_tunits
+                    + '" to the summary file units "'
+                    + sum_tunits
+                    + '" ('
+                    + str(err)
+                    + '). Skipping this run evaluation...'
+                )
+                file_info[fcount]['skip'] = 'time units could not be converted'
+                skip_count = skip_count + 1
+                o_fid.close()
+                continue
+            print(
+                'STATUS: converted test time from "'
+                + test_tunits
+                + '" to summary file units "'
+                + sum_tunits
+                + '"'
+            )
+        time_diff = np.abs(ens_time - test_time)
+        timeslice = int(np.argmin(time_diff))
+        if time_diff[timeslice] > time_tol:
             print(
                 'WARNING: time value ',
-                otimeSeries['time'][tidx],
-                ' of this file was not found in the summary file. Skipping this run evaluation...',
+                test_time,
+                ' of this file was not found in the summary file (closest summary time is ',
+                ens_time[timeslice],
+                ', summary times range from ',
+                ens_time.min(),
+                ' to ',
+                ens_time.max(),
+                '). Skipping this run evaluation...',
             )
             file_info[fcount]['skip'] = 'time not in summary file'
             skip_count = skip_count + 1
             o_fid.close()
             continue
-        timeslice = match[0]
-        file_info[fcount]['timeslice'] = int(timeslice)
+        file_info[fcount]['timeslice'] = timeslice
         print('STATUS: Summary file timeslice = ', timeslice)
 
         vcount = 0
