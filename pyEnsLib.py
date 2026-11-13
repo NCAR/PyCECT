@@ -223,13 +223,13 @@ def mom_zpdf(input_array, nbin, zrange, ens_avg, ens_stddev, FillValue, min_stdd
     # note: here we could mask out a region in the future
 
     # Use the masked array moutput to calculate Zscore_temp=(data-avg)/stddev
-    #if the ensemble has no spread at the point, then 
-    # require the test value to be nearly the same 
+    # if the ensemble has no spread at the point, then
+    # require the test value to be nearly the same
     diff = np.ma.fabs(moutput.astype(np.float64) - ens_avg)
     zero_spread = ens_stddev <= min_stddev
     zscore = diff / np.where(zero_spread, 1.0, ens_stddev)
 
-    # where the ensemble has (essentially) no spread, the test value must match 
+    # where the ensemble has (essentially) no spread, the test value must match
     # the ensemble mean (to float32 precision) - otherwise it fails
     zero_tol = 1e-6
     same = diff <= zero_tol * np.maximum(1.0, np.fabs(ens_avg))
@@ -2167,7 +2167,7 @@ def EnsSumMom_usage():
     print('   --nyear  <num>       : Number of years (default = 1)')
     print('   --nmonth  <num>      : Number of months (default = 12)')
     print('   --start_year <num>   : First year of files to use (default = 1)')
-    print('   --start_month <num>  : First month of files to use (default = 1)')    
+    print('   --start_month <num>  : First month of files to use (default = 1)')
     print('   --rand               : If indir has more than esize members, select esize members')
     print('                          at random (default: off, i.e., use the first esize members)')
     print('   --seed <num>         : Random seed used with --rand; the same seed always selects')

@@ -309,7 +309,9 @@ def main(argv):
                 for fcount, info in enumerate(file_info):
                     if info['timeslice'] is None:
                         fout.write(
-                            row.format(fnames[fcount], '-', '-', '-', 'SKIPPED (' + info['skip'] + ')')
+                            row.format(
+                                fnames[fcount], '-', '-', '-', 'SKIPPED (' + info['skip'] + ')'
+                            )
                         )
                         continue
                     nfail = 0
@@ -322,7 +324,11 @@ def main(argv):
                             result = 'PASS'
                         fout.write(
                             row.format(
-                                fnames[fcount], info['timeslice'], vname, '{:.2%}'.format(zpr), result
+                                fnames[fcount],
+                                info['timeslice'],
+                                vname,
+                                '{:.2%}'.format(zpr),
+                                result,
                             )
                         )
                     fout.write(
