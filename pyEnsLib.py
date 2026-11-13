@@ -2484,6 +2484,10 @@ def mom_compare_raw_score(opts_dict, ifiles):
     Zscore = np.zeros((nvars, len(ifiles), nbin), dtype=np.float32)
     failure_count = np.zeros((len(ifiles)), dtype=np.int32)
 
+    # per-file results for the output file (timeslice is None and skip
+    # holds the reason if the file was skipped)
+    file_info = [{'file': fid, 'timeslice': None, 'skip': ''} for fid in ifiles]
+
     skip_count = 0
     for fcount, fid in enumerate(ifiles):
         print(' ')
@@ -2492,6 +2496,7 @@ def mom_compare_raw_score(opts_dict, ifiles):
 
         if 'time' not in otimeSeries:
             print('WARNING: no time variable in this file. Skipping this run evaluation...')
+            file_info[fcount]['skip'] = 'no time variable'
             skip_count = skip_count + 1
             o_fid.close()
             continue
@@ -2518,6 +2523,7 @@ def mom_compare_raw_score(opts_dict, ifiles):
                 + ', '.join(mismatch)
                 + '. Skipping this run evaluation...'
             )
+            file_info[fcount]['skip'] = 'grid does not match summary file'
             skip_count = skip_count + 1
             o_fid.close()
             continue
@@ -2530,10 +2536,12 @@ def mom_compare_raw_score(opts_dict, ifiles):
                 otimeSeries['time'][0],
                 ' of this file was not found in the summary file. Skipping this run evaluation...',
             )
+            file_info[fcount]['skip'] = 'time not in summary file'
             skip_count = skip_count + 1
             o_fid.close()
             continue
         timeslice = match[0]
+        file_info[fcount]['timeslice'] = int(timeslice)
         print('STATUS: Summary file timeslice = ', timeslice)
 
         vcount = 0
@@ -2580,7 +2588,8 @@ def mom_compare_raw_score(opts_dict, ifiles):
         print('ERROR: no files to process with valid timeslices. Exiting...')
         sys.exit(2)
 
-    return Zscore
+    all_var_names = [v for g in groups for v in var_names[g]]
+    return Zscore, all_var_names, file_info
 
 
 # Get the deficit row number of the standardized global mean matrix

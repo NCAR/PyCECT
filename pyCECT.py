@@ -286,11 +286,49 @@ def main(argv):
         print(' ')
         print('Z-score tolerance = ' + '{:3.2f}'.format(opts_dict['mom_tol']))
         print('ZPR = ' + '{:.2%}'.format(opts_dict['mom_threshold']))
-        zmall = pyEnsLib.mom_compare_raw_score(opts_dict, ifiles)
+        zmall, var_names, file_info = pyEnsLib.mom_compare_raw_score(opts_dict, ifiles)
 
+        # write a labeled table: one row per file and variable, plus an
+        # OVERALL row per file (or a SKIPPED row if the file wasn't evaluated)
+        fnames = [os.path.basename(info['file']) for info in file_info]
+        fw = max(len('file'), max(len(f) for f in fnames))
+        vw = max(len('variable'), len('OVERALL'), max(len(v) for v in var_names))
+        row = '{:<' + str(fw) + '}  {:>9}  {:<' + str(vw) + '}  {:>8}  {}\n'
         with open(opts_dict['outfile'], 'w') as fout:
-            for j in zmall:
-                np.savetxt(fout, j, fmt='%-7.2e')
+            fout.write('# MOM-ECT results\n')
+            fout.write('# sumfile = ' + opts_dict['sumfile'] + '\n')
+            fout.write(
+                '# mom_tol = {:3.2f}   mom_threshold = {:.2%}\n#\n'.format(
+                    opts_dict['mom_tol'], opts_dict['mom_threshold']
+                )
+            )
+            fout.write(row.format('file', 'timeslice', 'variable', 'ZPR', 'result'))
+            for fcount, info in enumerate(file_info):
+                if info['timeslice'] is None:
+                    fout.write(row.format(fnames[fcount], '-', '-', '-', 'SKIPPED (' + info['skip'] + ')'))
+                    continue
+                nfail = 0
+                for vcount, vname in enumerate(var_names):
+                    zpr = zmall[vcount, fcount, 0]
+                    if zpr < opts_dict['mom_threshold']:
+                        result = 'FAIL'
+                        nfail = nfail + 1
+                    else:
+                        result = 'PASS'
+                    fout.write(
+                        row.format(fnames[fcount], info['timeslice'], vname, '{:.2%}'.format(zpr), result)
+                    )
+                fout.write(
+                    row.format(
+                        fnames[fcount],
+                        info['timeslice'],
+                        'OVERALL',
+                        str(nfail) + ' of ' + str(len(var_names)),
+                        'FAIL' if nfail > 0 else 'PASS',
+                    )
+                )
+        print(' ')
+        print('Results written to ' + opts_dict['outfile'])
 
     # mpas and cam
     else:
