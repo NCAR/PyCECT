@@ -2052,6 +2052,9 @@ def CECT_usage():
         '   --input_globs <search pattern> : set the search pattern (wildcard) for specifying a subset of input file(s) to compare from (optional)'
     )
     print(
+        '   --noOutfile             : do not write the results table to --outfile (default is to write it)'
+    )
+    print(
         '   --rand                  : test one randomly selected file that matches --input_globs (default is to test all matching files)'
     )
     print(

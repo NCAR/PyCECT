@@ -23,7 +23,7 @@ def main(argv):
     s = """verbose sumfile= indir= input_globs= tslice= nPC= sigMul=
          minPCFail= minRunFail= numRunFile= popens mpas pop mom cam
          jsonfile=  nbin= minrange= maxrange= outfile=
-         mom_tol= pop_tol= web_enabled rand
+         mom_tol= pop_tol= web_enabled rand noOutfile
          base_year= pop_threshold= mom_threshold= printStdMean fIndex= lev= eet= saveResults= json_case=  saveEET= useSavedResults="""
     optkeys = s.split()
     try:
@@ -72,6 +72,7 @@ def main(argv):
     opts_dict['saveEET'] = ''
     opts_dict['useSavedResults'] = ''
     opts_dict['rand'] = False
+    opts_dict['noOutfile'] = False
 
     # Call utility library getopt_parseconfig to parse the option keys
     # and save to the dictionary
@@ -290,45 +291,51 @@ def main(argv):
 
         # write a labeled table: one row per file and variable, plus an
         # OVERALL row per file (or a SKIPPED row if the file wasn't evaluated)
-        fnames = [os.path.basename(info['file']) for info in file_info]
-        fw = max(len('file'), max(len(f) for f in fnames))
-        vw = max(len('variable'), len('OVERALL'), max(len(v) for v in var_names))
-        row = '{:<' + str(fw) + '}  {:>9}  {:<' + str(vw) + '}  {:>8}  {}\n'
-        with open(opts_dict['outfile'], 'w') as fout:
-            fout.write('# MOM-ECT results\n')
-            fout.write('# sumfile = ' + opts_dict['sumfile'] + '\n')
-            fout.write(
-                '# mom_tol = {:3.2f}   mom_threshold = {:.2%}\n#\n'.format(
-                    opts_dict['mom_tol'], opts_dict['mom_threshold']
-                )
-            )
-            fout.write(row.format('file', 'timeslice', 'variable', 'ZPR', 'result'))
-            for fcount, info in enumerate(file_info):
-                if info['timeslice'] is None:
-                    fout.write(row.format(fnames[fcount], '-', '-', '-', 'SKIPPED (' + info['skip'] + ')'))
-                    continue
-                nfail = 0
-                for vcount, vname in enumerate(var_names):
-                    zpr = zmall[vcount, fcount, 0]
-                    if zpr < opts_dict['mom_threshold']:
-                        result = 'FAIL'
-                        nfail = nfail + 1
-                    else:
-                        result = 'PASS'
-                    fout.write(
-                        row.format(fnames[fcount], info['timeslice'], vname, '{:.2%}'.format(zpr), result)
-                    )
+        if not opts_dict['noOutfile']:
+            fnames = [os.path.basename(info['file']) for info in file_info]
+            fw = max(len('file'), max(len(f) for f in fnames))
+            vw = max(len('variable'), len('OVERALL'), max(len(v) for v in var_names))
+            row = '{:<' + str(fw) + '}  {:>9}  {:<' + str(vw) + '}  {:>8}  {}\n'
+            with open(opts_dict['outfile'], 'w') as fout:
+                fout.write('# MOM-ECT results\n')
+                fout.write('# sumfile = ' + opts_dict['sumfile'] + '\n')
+                fout.write('# indir = ' + opts_dict['indir'] + '\n')
                 fout.write(
-                    row.format(
-                        fnames[fcount],
-                        info['timeslice'],
-                        'OVERALL',
-                        str(nfail) + ' of ' + str(len(var_names)),
-                        'FAIL' if nfail > 0 else 'PASS',
+                    '# mom_tol = {:3.2f}   mom_threshold = {:.2%}\n#\n'.format(
+                        opts_dict['mom_tol'], opts_dict['mom_threshold']
                     )
                 )
-        print(' ')
-        print('Results written to ' + opts_dict['outfile'])
+                fout.write(row.format('file', 'timeslice', 'variable', 'ZPR', 'result'))
+                for fcount, info in enumerate(file_info):
+                    if info['timeslice'] is None:
+                        fout.write(
+                            row.format(fnames[fcount], '-', '-', '-', 'SKIPPED (' + info['skip'] + ')')
+                        )
+                        continue
+                    nfail = 0
+                    for vcount, vname in enumerate(var_names):
+                        zpr = zmall[vcount, fcount, 0]
+                        if zpr < opts_dict['mom_threshold']:
+                            result = 'FAIL'
+                            nfail = nfail + 1
+                        else:
+                            result = 'PASS'
+                        fout.write(
+                            row.format(
+                                fnames[fcount], info['timeslice'], vname, '{:.2%}'.format(zpr), result
+                            )
+                        )
+                    fout.write(
+                        row.format(
+                            fnames[fcount],
+                            info['timeslice'],
+                            'OVERALL',
+                            str(nfail) + ' of ' + str(len(var_names)),
+                            'FAIL' if nfail > 0 else 'PASS',
+                        )
+                    )
+            print(' ')
+            print('Results written to ' + opts_dict['outfile'])
 
     # mpas and cam
     else:
