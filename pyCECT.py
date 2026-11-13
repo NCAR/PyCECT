@@ -300,6 +300,7 @@ def main(argv):
                 fout.write('# MOM-ECT results\n')
                 fout.write('# sumfile = ' + opts_dict['sumfile'] + '\n')
                 fout.write('# indir = ' + opts_dict['indir'] + '\n')
+                fout.write('# tslice = ' + str(opts_dict['tslice']) + '\n')
                 fout.write(
                     '# mom_tol = {:3.2f}   mom_threshold = {:.2%}\n#\n'.format(
                         opts_dict['mom_tol'], opts_dict['mom_threshold']

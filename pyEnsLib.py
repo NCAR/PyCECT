@@ -33,9 +33,11 @@ def parse_header_file(filename):
 # Create RMSZ zscores for ensemble file sets
 # o_files are not open
 # this is used for MOM6
-def mom6_calc_rmsz(o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_lqh, opts_dict):
+def mom6_calc_rmsz(
+    o_files, var_name_lhh, var_name_ihh, var_name_lhq, var_name_lqh, opts_dict, tslice=0
+):
+    # tslice = time index to read from each file
     threshold = 1e-12
-    tslice = 0
     nbin = opts_dict['nbin']
     minrange = opts_dict['minrange']
     maxrange = opts_dict['maxrange']
@@ -2052,6 +2054,10 @@ def CECT_usage():
         '   --input_globs <search pattern> : set the search pattern (wildcard) for specifying a subset of input file(s) to compare from (optional)'
     )
     print(
+        '   --tslice <num>          : time index to test in each input file (default = 0); use with'
+    )
+    print('                             summary files made with pyEnsSumMom6.py --ntsteps')
+    print(
         '   --noOutfile             : do not write the results table to --outfile (default is to write it)'
     )
     print(
@@ -2168,6 +2174,9 @@ def EnsSumMom_usage():
     print('   --nmonth  <num>      : Number of months (default = 12)')
     print('   --start_year <num>   : First year of files to use (default = 1)')
     print('   --start_month <num>  : First month of files to use (default = 1)')
+    print('   --ntsteps <num>      : Files have <num> time steps each (one file per member); use')
+    print('                          each time step as a timeslice (nyear/nmonth/start_* are ignored,')
+    print('                          and the number of mpi tasks must equal <num>) (default: off)')
     print('   --rand               : If indir has more than esize members, select esize members')
     print('                          at random (default: off, i.e., use the first esize members)')
     print('   --seed <num>         : Random seed used with --rand; the same seed always selects')
@@ -2484,6 +2493,9 @@ def mom_compare_raw_score(opts_dict, ifiles):
 
     ens_time = sum_vars['time'][:]
 
+    # time index to test in each file (--tslice, default 0)
+    tidx = opts_dict['tslice']
+
     Zscore = np.zeros((nvars, len(ifiles), nbin), dtype=np.float32)
     failure_count = np.zeros((len(ifiles)), dtype=np.int32)
 
@@ -2504,7 +2516,20 @@ def mom_compare_raw_score(opts_dict, ifiles):
             o_fid.close()
             continue
 
-        print('**********' + 'Run ' + str(fcount + 1) + ' (file=' + fid + '):')
+        if tidx >= len(otimeSeries['time']):
+            print(
+                'WARNING: --tslice = '
+                + str(tidx)
+                + ' but this file has only '
+                + str(len(otimeSeries['time']))
+                + ' time step(s). Skipping this run evaluation...'
+            )
+            file_info[fcount]['skip'] = 'tslice out of range'
+            skip_count = skip_count + 1
+            o_fid.close()
+            continue
+
+        print('**********' + 'Run ' + str(fcount + 1) + ' (file=' + fid + ', tslice=' + str(tidx) + '):')
 
         # make sure the test file is on the same grid as the summary file
         mismatch = []
@@ -2532,11 +2557,11 @@ def mom_compare_raw_score(opts_dict, ifiles):
             continue
 
         # find the matching timeslice in the summary file
-        match = np.where(np.isclose(ens_time, otimeSeries['time'][0], rtol=0.0, atol=0.5))[0]
+        match = np.where(np.isclose(ens_time, otimeSeries['time'][tidx], rtol=0.0, atol=0.5))[0]
         if len(match) == 0:
             print(
                 'WARNING: time value ',
-                otimeSeries['time'][0],
+                otimeSeries['time'][tidx],
                 ' of this file was not found in the summary file. Skipping this run evaluation...',
             )
             file_info[fcount]['skip'] = 'time not in summary file'
@@ -2550,7 +2575,7 @@ def mom_compare_raw_score(opts_dict, ifiles):
         vcount = 0
         for g in groups:
             for i, var_name in enumerate(var_names[g]):
-                orig = otimeSeries[var_name][0]
+                orig = otimeSeries[var_name][tidx]
                 FillValue = otimeSeries[var_name]._FillValue
                 Zscore[vcount, fcount, :] = mom_zpdf(
                     orig,

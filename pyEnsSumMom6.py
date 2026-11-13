@@ -21,7 +21,7 @@ from pyTools import EqualStride
 
 def main(argv):
     # Get command line stuff and store in a dictionary
-    s = 'tag= mach= nyear= nmonth= start_year= start_month= esize= nbin= minrange= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable rand seed='
+    s = 'tag= mach= nyear= nmonth= start_year= start_month= esize= nbin= minrange= maxrange= res= sumfile= indir= jsonfile= verbose mpi_enable mpi_disable rand seed= ntsteps='
     optkeys = s.split()
 
     try:
@@ -54,6 +54,7 @@ def main(argv):
     opts_dict['seed'] = 1
     opts_dict['start_month'] = 1
     opts_dict['start_year'] = 1
+    opts_dict['ntsteps'] = 0
 
 
     # This creates the dictionary of input arguments
@@ -121,7 +122,15 @@ def main(argv):
             print('VERBOSE: opts_dict = ')
             print(opts_dict)
 
-    ntslices = opts_dict['nmonth'] * opts_dict['nyear']
+    # --ntsteps: each member has one file with ntsteps time steps (one timeslice
+    # per time step); otherwise each member has one file per month (one timeslice per file)
+    ntsteps = opts_dict['ntsteps']
+    if ntsteps > 0:
+        ntslices = ntsteps
+        files_per_member = 1
+    else:
+        ntslices = opts_dict['nmonth'] * opts_dict['nyear']
+        files_per_member = ntslices
 
     in_files = []
     if os.path.exists(input_dir):
@@ -150,15 +159,19 @@ def main(argv):
                 ') - 1 must be between 1 and 12 => EXITING....',
             )
         sys.exit(2)
-    date_p = re.compile(r'(\d{4})-(\d{2})\.nc$')
-    keep_files = []
-    for f in in_files:
-        m = date_p.search(f)
-        if m is None:
-            continue
-        year, month = int(m.group(1)), int(m.group(2))
-        if start_year <= year <= end_year and start_month <= month <= end_month:
-            keep_files.append(f)
+    if ntsteps > 0:
+        # multi-step files: no year/month selection
+        keep_files = list(in_files)
+    else:
+        date_p = re.compile(r'(\d{4})-(\d{2})\.nc$')
+        keep_files = []
+        for f in in_files:
+            m = date_p.search(f)
+            if m is None:
+                continue
+            year, month = int(m.group(1)), int(m.group(2))
+            if start_year <= year <= end_year and start_month <= month <= end_month:
+                keep_files.append(f)
 
     if me.get_rank() == 0 and len(keep_files) < len(in_files):
         print(
@@ -179,24 +192,33 @@ def main(argv):
     in_files = keep_files
     num_files = len(in_files)
 
-    # each member must have exactly ntslices files (sorted member-major:
+    # each member must have exactly files_per_member files (sorted member-major:
     # all months for member 0, then member 1, ...)
-    files_needed = esize * ntslices
-    if num_files < files_needed or num_files % ntslices != 0:
+    files_needed = esize * files_per_member
+    if num_files < files_needed or num_files % files_per_member != 0:
         if me.get_rank() == 0:
-            print(
-                'ERROR: after selecting years/months, input directory must contain a multiple of nyear*nmonth = ',
-                ntslices,
-                ' files, and at least esize*nyear*nmonth = ',
-                files_needed,
-                ' ( but it has',
-                num_files,
-                ' files).',
-            )
+            if ntsteps > 0:
+                print(
+                    'ERROR: input directory must contain at least esize = ',
+                    esize,
+                    ' files (one per member), but it has ',
+                    num_files,
+                    ' files.',
+                )
+            else:
+                print(
+                    'ERROR: after selecting years/months, input directory must contain a multiple of nyear*nmonth = ',
+                    ntslices,
+                    ' files, and at least esize*nyear*nmonth = ',
+                    files_needed,
+                    ' ( but it has',
+                    num_files,
+                    ' files).',
+                )
         sys.exit(2)
 
     # select esize members if there are more than needed
-    n_members = num_files // ntslices
+    n_members = num_files // files_per_member
     if n_members > esize:
         if opts_dict['rand']:
             # same seed on every rank => same selection on every rank
@@ -215,7 +237,11 @@ def main(argv):
                 ': members ',
                 members,
             )
-        in_files = [f for mem in members for f in in_files[mem * ntslices : (mem + 1) * ntslices]]
+        in_files = [
+            f
+            for mem in members
+            for f in in_files[mem * files_per_member : (mem + 1) * files_per_member]
+        ]
     else:
         members = list(range(n_members))
         how = 'all'
@@ -227,7 +253,7 @@ def main(argv):
             print(
                 'ERROR: number of processors (',
                 me.get_size(),
-                ') must equal nmonth*nyear (',
+                ') must equal the number of timeslices (ntsteps, or nmonth*nyear) (',
                 ntslices,
                 ') => EXITING....',
             )
@@ -236,12 +262,21 @@ def main(argv):
     # Partition the timeslices (serial gets all of them, MPI gets one per rank)
     my_slices = me.partition(list(range(ntslices)), func=EqualStride(), involved=True)
 
-    # Files for timeslice k are in_files[k::ntslices] (assumes the sorted file
-    # names are member-major: all months for member 0, then member 1, ...)
+    # Monthly files: files for timeslice k are in_files[k::ntslices] (assumes the
+    # sorted file names are member-major: all months for member 0, then member 1, ...)
+    # and the data is at time index 0 of each file.
+    # Multi-step files (--ntsteps): timeslice k is time index k of every member's file.
     slice_files = []
+    slice_tidx = []
     for k in my_slices:
+        if ntsteps > 0:
+            k_files = in_files
+            slice_tidx.append(k)
+        else:
+            k_files = in_files[k::ntslices]
+            slice_tidx.append(0)
         full_in_files = []
-        for onefile in in_files[k::ntslices]:
+        for onefile in k_files:
             fname = input_dir + '/' + onefile
             if os.path.isfile(fname):
                 full_in_files.append(fname)
@@ -287,6 +322,19 @@ def main(argv):
     if z_i == -1 or z_l == -1 or xq == -1 or xh == -1 or yh == -1 or yq == -1:
         if me.get_rank() == 0:
             print('ERROR: Need dimensions z_i, z_l, xq, xh, yh and yq => EXITING....')
+        sys.exit(2)
+
+    if ntsteps > 0 and len(first_file.dimensions['time']) < ntsteps:
+        if me.get_rank() == 0:
+            print(
+                'ERROR: ntsteps = ',
+                ntsteps,
+                ' but ',
+                slice_files[0][0],
+                ' has only ',
+                len(first_file.dimensions['time']),
+                ' time steps => EXITING....',
+            )
         sys.exit(2)
 
     if verbose and me.get_rank() == 0:
@@ -475,7 +523,7 @@ def main(argv):
     time_array = np.zeros(len(slice_files), dtype=np.float64)
     for i, full_in_files in enumerate(slice_files):
         with nc.Dataset(full_in_files[0], 'r') as f:
-            time_array[i] = f.variables['time'][0]
+            time_array[i] = f.variables['time'][slice_tidx[i]]
 
     # gather time array to root (0)
     if opts_dict['mpi_enable']:
@@ -527,9 +575,11 @@ def main(argv):
     # compute each of this rank's timeslices, then stack the results so that
     # every array gets a leading time dimension
     results = []
-    for full_in_files in slice_files:
+    for full_in_files, tidx in zip(slice_files, slice_tidx):
         results.append(
-            pyEnsLib.mom6_calc_rmsz(full_in_files, Var_lhh, Var_ihh, Var_lhq, Var_lqh, opts_dict)
+            pyEnsLib.mom6_calc_rmsz(
+                full_in_files, Var_lhh, Var_ihh, Var_lhq, Var_lqh, opts_dict, tslice=tidx
+            )
         )
     (
         zscore_lhh,
